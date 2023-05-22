@@ -87,13 +87,13 @@ typedef struct {
  *  size: 0x18 = 24 bytes
  *  dmitry: struct HealthData
  */
-typedef struct {    // strut HealthData
-    /* +0x00 */ uint32_t be_total_steps;
-    /* +0x04 */ uint32_t be_today_steps;
-    /* +0x08 */ uint32_t be_last_sync;
-    /* +0x0c */ uint16_t be_total_days;
-    /* +0x0e */ uint16_t be_current_watts;
-    /* +0x10 */ uint16_t be_walk_minute_counter;
+typedef struct {
+    /* +0x00 */ uint32_t total_steps;           // BE in eeorom
+    /* +0x04 */ uint32_t today_steps;           // BE in eeprom
+    /* +0x08 */ uint32_t last_sync;             // BE in eeprom
+    /* +0x0c */ uint16_t total_days;            // BE in eeprom
+    /* +0x0e */ uint16_t current_watts;         // BE in eeprom
+    /* +0x10 */ uint16_t walk_minute_counter;   // BE in walker
     /* +0x12 */ uint8_t  steps_this_watt;
     /* +0x13 */ uint8_t  event_log_index;
     /* +0x14 */ uint8_t  padding[3];

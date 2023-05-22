@@ -13,12 +13,12 @@
 #include "globals.h"
 
 static pw_state_t const MENU_ENTRIES[] = {
-	STATE_POKE_RADAR,
-	STATE_DOWSING,
-	STATE_CONNECT,
-	STATE_TRAINER_CARD,
-	STATE_INVENTORY,
-	STATE_SETTINGS,
+    STATE_POKE_RADAR,
+    STATE_DOWSING,
+    STATE_CONNECT,
+    STATE_TRAINER_CARD,
+    STATE_INVENTORY,
+    STATE_SETTINGS,
 };
 const int8_t MENU_SIZE = sizeof(MENU_ENTRIES);
 
@@ -90,15 +90,13 @@ void pw_menu_init_display(state_vars_t *sv) {
         }
     }
 
-    const uint16_t current_watts = swap_bytes_u16(health_data_cache.be_current_watts);;
-
     pw_screen_draw_from_eeprom(
         SCREEN_WIDTH-16, SCREEN_HEIGHT-16,
         16, 16,
         PW_EEPROM_ADDR_IMG_WATTS,
         PW_EEPROM_SIZE_IMG_WATTS
     );
-    pw_screen_draw_integer(current_watts, SCREEN_WIDTH-16, SCREEN_HEIGHT-16);
+    pw_screen_draw_integer(health_data_cache.current_watts, SCREEN_WIDTH-16, SCREEN_HEIGHT-16);
 
 }
 
@@ -112,23 +110,30 @@ void pw_menu_handle_input(state_vars_t *sv, uint8_t b) {
         return;
     }
 
-	switch(b) {
-		case BUTTON_L: { pw_menu_move_cursor(sv, -1); break; };
-		case BUTTON_M: {
-            if(sv->current_cursor == 4) {
-                pw_read_inventory(sv);
-                // no pokemon or items
-                if(sv->reg_a == 0 && sv->reg_b == 0) {
-                    sv->current_substate = MSG_NOTHING_HELD;
-                    break;
-                }
+    switch(b) {
+    case BUTTON_L: {
+        pw_menu_move_cursor(sv, -1);
+        break;
+    };
+    case BUTTON_M: {
+        if(sv->current_cursor == 4) {
+            pw_read_inventory(sv);
+            // no pokemon or items
+            if(sv->reg_a == 0 && sv->reg_b == 0) {
+                sv->current_substate = MSG_NOTHING_HELD;
+                break;
             }
-            pw_request_state(MENU_ENTRIES[sv->current_cursor]);
-            break;
-        };
-		case BUTTON_R: { pw_menu_move_cursor(sv, +1); break; };
-		default: break;
-	}
+        }
+        pw_request_state(MENU_ENTRIES[sv->current_cursor]);
+        break;
+    };
+    case BUTTON_R: {
+        pw_menu_move_cursor(sv, +1);
+        break;
+    };
+    default:
+        break;
+    }
 
 }
 
@@ -180,11 +185,11 @@ void pw_menu_update_display(state_vars_t *sv) {
 }
 
 void pw_menu_set_cursor(state_vars_t *sv, int8_t c) {
-	if( c < 0 || c >= MENU_SIZE ) {
-		sv->current_cursor = 0;
-	} else {
-		sv->current_cursor = c;
-	}
+    if( c < 0 || c >= MENU_SIZE ) {
+        sv->current_cursor = 0;
+    } else {
+        sv->current_cursor = c;
+    }
     //pw_request_redraw();
 
 }
@@ -193,17 +198,17 @@ void pw_menu_set_cursor(state_vars_t *sv, int8_t c) {
 // + = right
 // - = left
 bool pw_menu_move_cursor(state_vars_t *sv, int8_t move) {
-	sv->current_cursor += move;
+    sv->current_cursor += move;
 
-	if( sv->current_cursor < 0 || sv->current_cursor >= MENU_SIZE ) {
+    if( sv->current_cursor < 0 || sv->current_cursor >= MENU_SIZE ) {
         sv->current_cursor = 0;
-		pw_request_state(STATE_SPLASH);
-		return true;
-	}
+        pw_request_state(STATE_SPLASH);
+        return true;
+    }
 
-	sv->current_cursor %= MENU_SIZE;
+    sv->current_cursor %= MENU_SIZE;
     pw_request_redraw();
 
-	return false;
+    return false;
 }
 

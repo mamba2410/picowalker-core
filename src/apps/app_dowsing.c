@@ -81,7 +81,7 @@ static void move_cursor(state_vars_t *sv, int8_t m) {
 }
 
 static uint16_t get_item(state_vars_t *sv, route_info_t *ri, health_data_t *hd) {
-    uint32_t today_steps = swap_bytes_u32(hd->be_today_steps);
+    uint32_t today_steps = hd->today_steps;
 
     // TODO: checks for gift item
     struct {

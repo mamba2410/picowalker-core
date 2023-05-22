@@ -109,9 +109,7 @@ void pw_splash_init_display(state_vars_t *sv) {
         );
     }
 
-    // TODO: Store swapped in 32-bit reg?
-    uint32_t today_steps = swap_bytes_u32(health_data_cache.be_today_steps);
-    pw_screen_draw_integer(today_steps, SCREEN_WIDTH, SCREEN_HEIGHT-16);
+    pw_screen_draw_integer(health_data_cache.today_steps, SCREEN_WIDTH, SCREEN_HEIGHT-16);
     pw_screen_draw_horiz_line(0, SCREEN_HEIGHT-16, SCREEN_WIDTH, SCREEN_BLACK);
 }
 
@@ -134,8 +132,7 @@ void pw_splash_update_display(state_vars_t *sv) {
 
     }
 
-    uint32_t today_steps = swap_bytes_u32(health_data_cache.be_today_steps);
-    pw_screen_draw_integer(today_steps, SCREEN_WIDTH, SCREEN_HEIGHT-16);
+    pw_screen_draw_integer(health_data_cache.today_steps, SCREEN_WIDTH, SCREEN_HEIGHT-16);
     pw_screen_draw_horiz_line(48, SCREEN_HEIGHT-16, SCREEN_WIDTH-48, SCREEN_BLACK);
 
 }

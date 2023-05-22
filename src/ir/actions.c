@@ -52,74 +52,80 @@ ir_err_t pw_action_try_find_peer(state_vars_t *sv, pw_packet_t *packet, size_t p
     size_t n_read = 0;
 
     switch(sv->current_substate) {
-        case COMM_SUBSTATE_FINDING_PEER: {
+    case COMM_SUBSTATE_FINDING_PEER: {
 
-            err = pw_action_listen_and_advertise(packet, &n_read, &(sv->reg_c));
+        err = pw_action_listen_and_advertise(packet, &n_read, &(sv->reg_c));
 
-            switch(err) {
-                case IR_ERR_SIZE_MISMATCH:  // also ok since we might recv 0xfc
-                case IR_OK:
-                    // we got a valid packet back, now check if master or slave on next iteration
-                    sv->current_substate = COMM_SUBSTATE_DETERMINE_ROLE;
-                    break;
-                case IR_ERR_TIMEOUT: err = IR_OK; return IR_OK; // ignore timeout
-                case IR_ERR_ADVERTISING_MAX: return IR_ERR_ADVERTISING_MAX;
-                default: return err; // TODO: change this
-            }
-
-            //break;
-        }
-        case COMM_SUBSTATE_DETERMINE_ROLE: {
-
-            // We should already have a response in the packet buffer
-            switch(packet->cmd) {
-                case CMD_ADVERTISING: // we found peer, we request master
-
-                    packet->cmd = CMD_ASSERT_MASTER;
-                    packet->extra = EXTRA_BYTE_FROM_WALKER;
-                    err = pw_ir_send_packet(packet, 8, &n_read);
-
-                    sv->current_substate = COMM_SUBSTATE_AWAITING_SLAVE_ACK;
-                    break;
-                case CMD_ASSERT_MASTER: // peer found us, peer requests master
-                    packet->cmd = CMD_SLAVE_ACK;
-                    packet->extra = 2;
-
-                    // record master key
-                    uint8_t session_id_master[4];
-                    for(int i = 0; i < 4; i++)
-                        session_id_master[i] = packet->session_id_bytes[i];
-
-                    err = pw_ir_send_packet(packet, 8, &n_read);
-
-                    // combine keys
-                    for(int i = 0; i < 4; i++)
-                        session_id[i] ^= session_id_master[i];
-                    pw_ir_delay_ms(ACTION_DELAY_MS);
-
-                    pw_ir_set_comm_state(COMM_STATE_SLAVE);
-                    break;
-                default: return IR_ERR_UNEXPECTED_PACKET;
-            }
+        switch(err) {
+        case IR_ERR_SIZE_MISMATCH:  // also ok since we might recv 0xfc
+        case IR_OK:
+            // we got a valid packet back, now check if master or slave on next iteration
+            sv->current_substate = COMM_SUBSTATE_DETERMINE_ROLE;
             break;
+        case IR_ERR_TIMEOUT:
+            err = IR_OK;
+            return IR_OK; // ignore timeout
+        case IR_ERR_ADVERTISING_MAX:
+            return IR_ERR_ADVERTISING_MAX;
+        default:
+            return err; // TODO: change this
         }
-        case COMM_SUBSTATE_AWAITING_SLAVE_ACK: {   // we have sent master request
 
-            // wait for answer
-            err = pw_ir_recv_packet(packet, 8, &n_read);
-            if(err != IR_OK) return err;
+        //break;
+    }
+    case COMM_SUBSTATE_DETERMINE_ROLE: {
 
-            if(packet->cmd != CMD_SLAVE_ACK) return IR_ERR_UNEXPECTED_PACKET;
+        // We should already have a response in the packet buffer
+        switch(packet->cmd) {
+        case CMD_ADVERTISING: // we found peer, we request master
+
+            packet->cmd = CMD_ASSERT_MASTER;
+            packet->extra = EXTRA_BYTE_FROM_WALKER;
+            err = pw_ir_send_packet(packet, 8, &n_read);
+
+            sv->current_substate = COMM_SUBSTATE_AWAITING_SLAVE_ACK;
+            break;
+        case CMD_ASSERT_MASTER: // peer found us, peer requests master
+            packet->cmd = CMD_SLAVE_ACK;
+            packet->extra = 2;
+
+            // record master key
+            uint8_t session_id_master[4];
+            for(int i = 0; i < 4; i++)
+                session_id_master[i] = packet->session_id_bytes[i];
+
+            err = pw_ir_send_packet(packet, 8, &n_read);
 
             // combine keys
             for(int i = 0; i < 4; i++)
-                session_id[i] ^= packet->session_id_bytes[i];
+                session_id[i] ^= session_id_master[i];
+            pw_ir_delay_ms(ACTION_DELAY_MS);
 
-            // key exchange done, we are now master
-            pw_ir_set_comm_state(COMM_STATE_MASTER);
+            pw_ir_set_comm_state(COMM_STATE_SLAVE);
             break;
+        default:
+            return IR_ERR_UNEXPECTED_PACKET;
         }
-        default: return IR_ERR_UNKNOWN_SUBSTATE;
+        break;
+    }
+    case COMM_SUBSTATE_AWAITING_SLAVE_ACK: {   // we have sent master request
+
+        // wait for answer
+        err = pw_ir_recv_packet(packet, 8, &n_read);
+        if(err != IR_OK) return err;
+
+        if(packet->cmd != CMD_SLAVE_ACK) return IR_ERR_UNEXPECTED_PACKET;
+
+        // combine keys
+        for(int i = 0; i < 4; i++)
+            session_id[i] ^= packet->session_id_bytes[i];
+
+        // key exchange done, we are now master
+        pw_ir_set_comm_state(COMM_STATE_MASTER);
+        break;
+    }
+    default:
+        return IR_ERR_UNKNOWN_SUBSTATE;
     }
     return err;
 }
@@ -134,122 +140,124 @@ ir_err_t pw_action_slave_perform_request(pw_packet_t *packet, size_t len) {
     size_t n_rw;
 
     switch(packet->cmd) {
-        case CMD_IDENTITY_REQ: {
-            packet->cmd = CMD_IDENTITY_RSP;
-            packet->extra = EXTRA_BYTE_FROM_WALKER;
+    case CMD_IDENTITY_REQ: {
+        packet->cmd = CMD_IDENTITY_RSP;
+        packet->extra = EXTRA_BYTE_FROM_WALKER;
 
-            int r = pw_eeprom_reliable_read(
-                 PW_EEPROM_ADDR_IDENTITY_DATA_1,
-                 PW_EEPROM_ADDR_IDENTITY_DATA_2,
-                 packet->payload,
-                 PW_EEPROM_SIZE_IDENTITY_DATA_1
-             );
+        int r = pw_eeprom_reliable_read(
+                    PW_EEPROM_ADDR_IDENTITY_DATA_1,
+                    PW_EEPROM_ADDR_IDENTITY_DATA_2,
+                    packet->payload,
+                    PW_EEPROM_SIZE_IDENTITY_DATA_1
+                );
 
-            if(r < 0) { return IR_ERR_BAD_DATA; }
-
-            pw_ir_delay_ms(ACTION_DELAY_MS);
-
-            err = pw_ir_send_packet(packet, 8+PW_EEPROM_SIZE_IDENTITY_DATA_1, &n_rw);
-
-            break;
+        if(r < 0) {
+            return IR_ERR_BAD_DATA;
         }
-        case CMD_IDENTITY_SEND:
-        case CMD_IDENTITY_SEND_ALIAS1:
-        case CMD_IDENTITY_SEND_ALIAS2:
-        case CMD_IDENTITY_SEND_ALIAS3: {
-            err = pw_ir_identity_ack(packet);
-            break;
-        }
-        case CMD_EEPROM_WRITE_CMP_00:
-        case CMD_EEPROM_WRITE_RAW_00:
-        case CMD_EEPROM_WRITE_CMP_80:
-        case CMD_EEPROM_WRITE_RAW_80: {
-            err = pw_ir_eeprom_do_write(packet, len);
 
-            pw_ir_delay_ms(ACTION_DELAY_MS);
-            packet->cmd = CMD_EEPROM_WRITE_ACK;
-            packet->extra = EXTRA_BYTE_FROM_WALKER;
-            pw_ir_send_packet(packet, 8, &n_rw);
-            break;
-        }
-        case CMD_EEPROM_READ_REQ: {
-            uint16_t addr = packet->payload[0]<<8 | packet->payload[1];
-            size_t len = packet->payload[2];
+        pw_ir_delay_ms(ACTION_DELAY_MS);
 
-            packet->cmd = CMD_EEPROM_READ_RSP;
-            packet->extra = EXTRA_BYTE_FROM_WALKER;
-            pw_eeprom_read(addr, packet->payload, len);
+        err = pw_ir_send_packet(packet, 8+PW_EEPROM_SIZE_IDENTITY_DATA_1, &n_rw);
 
-            pw_ir_delay_ms(ACTION_DELAY_MS);
+        break;
+    }
+    case CMD_IDENTITY_SEND:
+    case CMD_IDENTITY_SEND_ALIAS1:
+    case CMD_IDENTITY_SEND_ALIAS2:
+    case CMD_IDENTITY_SEND_ALIAS3: {
+        err = pw_ir_identity_ack(packet);
+        break;
+    }
+    case CMD_EEPROM_WRITE_CMP_00:
+    case CMD_EEPROM_WRITE_RAW_00:
+    case CMD_EEPROM_WRITE_CMP_80:
+    case CMD_EEPROM_WRITE_RAW_80: {
+        err = pw_ir_eeprom_do_write(packet, len);
 
-            err = pw_ir_send_packet(packet, 8+len, &n_rw);
-            break;
-        }
-        case CMD_PING: {
-            packet->cmd = CMD_PONG;
-            packet->extra = EXTRA_BYTE_FROM_WALKER;
+        pw_ir_delay_ms(ACTION_DELAY_MS);
+        packet->cmd = CMD_EEPROM_WRITE_ACK;
+        packet->extra = EXTRA_BYTE_FROM_WALKER;
+        pw_ir_send_packet(packet, 8, &n_rw);
+        break;
+    }
+    case CMD_EEPROM_READ_REQ: {
+        uint16_t addr = packet->payload[0]<<8 | packet->payload[1];
+        size_t len = packet->payload[2];
 
-            pw_ir_delay_ms(ACTION_DELAY_MS);
+        packet->cmd = CMD_EEPROM_READ_RSP;
+        packet->extra = EXTRA_BYTE_FROM_WALKER;
+        pw_eeprom_read(addr, packet->payload, len);
 
-            err = pw_ir_send_packet(packet, 8, &n_rw);
-            break;
-        }
-        case CMD_CONNECT_COMPLETE: {
-            packet->cmd = CMD_CONNECT_COMPLETE_ACK;
-            packet->cmd = EXTRA_BYTE_FROM_WALKER;
-            pw_ir_delay_ms(ACTION_DELAY_MS);
+        pw_ir_delay_ms(ACTION_DELAY_MS);
 
-            err = pw_ir_send_packet(packet, 8, &n_rw);
-            break;
-        }
-        case CMD_WALK_END_REQ: {
-            packet->cmd = CMD_WALK_END_ACK;
-            packet->extra = EXTRA_BYTE_FROM_WALKER;
-            pw_ir_delay_ms(ACTION_DELAY_MS);
-            err = pw_ir_send_packet(packet, 8, &n_rw);
+        err = pw_ir_send_packet(packet, 8+len, &n_rw);
+        break;
+    }
+    case CMD_PING: {
+        packet->cmd = CMD_PONG;
+        packet->extra = EXTRA_BYTE_FROM_WALKER;
 
-            pw_ir_end_walk();
+        pw_ir_delay_ms(ACTION_DELAY_MS);
 
-            pw_ir_set_comm_state(COMM_STATE_DISCONNECTED);
-            break;
-        }
-        case CMD_WALK_START_INIT:
-        case CMD_WALK_START: {
-            // keep cmd
-            packet->extra = EXTRA_BYTE_FROM_WALKER;
-            pw_ir_delay_ms(ACTION_DELAY_MS);
-            err = pw_ir_send_packet(packet, 8, &n_rw);
-            pw_ir_start_walk();
-            break;
-        }
-        case CMD_DISCONNECT: {
-            err = IR_OK;
-            pw_ir_set_comm_state(COMM_STATE_DISCONNECTED);
-            break;
-        }
-        case CMD_NOCOMPLETE_ALIAS1: {
-            err = IR_OK;
-            pw_ir_set_comm_state(COMM_STATE_DISCONNECTED);
-            break;
-        }
-        case CMD_WALKER_RESET_1: {
-            packet->extra = EXTRA_BYTE_FROM_WALKER;
-            pw_ir_delay_ms(ACTION_DELAY_MS);
-            pw_eeprom_reliable_read(
-                PW_EEPROM_ADDR_UNIQUE_IDENTITY_DATA_1,
-                PW_EEPROM_ADDR_UNIQUE_IDENTITY_DATA_2,
-                packet->payload,
-                sizeof(unique_identity_data_t)
-            );
-            err = pw_ir_send_packet(packet, 8+sizeof(unique_identity_data_t), &n_rw);
-            pw_eeprom_reset(true, false);
-            break;
-        }
-        default: {
-            printf("[Error] Slave recv unhandled packet: %02x\n", packet->cmd);
-            err = IR_ERR_UNEXPECTED_PACKET;
-            break;
-        }
+        err = pw_ir_send_packet(packet, 8, &n_rw);
+        break;
+    }
+    case CMD_CONNECT_COMPLETE: {
+        packet->cmd = CMD_CONNECT_COMPLETE_ACK;
+        packet->cmd = EXTRA_BYTE_FROM_WALKER;
+        pw_ir_delay_ms(ACTION_DELAY_MS);
+
+        err = pw_ir_send_packet(packet, 8, &n_rw);
+        break;
+    }
+    case CMD_WALK_END_REQ: {
+        packet->cmd = CMD_WALK_END_ACK;
+        packet->extra = EXTRA_BYTE_FROM_WALKER;
+        pw_ir_delay_ms(ACTION_DELAY_MS);
+        err = pw_ir_send_packet(packet, 8, &n_rw);
+
+        pw_ir_end_walk();
+
+        pw_ir_set_comm_state(COMM_STATE_DISCONNECTED);
+        break;
+    }
+    case CMD_WALK_START_INIT:
+    case CMD_WALK_START: {
+        // keep cmd
+        packet->extra = EXTRA_BYTE_FROM_WALKER;
+        pw_ir_delay_ms(ACTION_DELAY_MS);
+        err = pw_ir_send_packet(packet, 8, &n_rw);
+        pw_ir_start_walk();
+        break;
+    }
+    case CMD_DISCONNECT: {
+        err = IR_OK;
+        pw_ir_set_comm_state(COMM_STATE_DISCONNECTED);
+        break;
+    }
+    case CMD_NOCOMPLETE_ALIAS1: {
+        err = IR_OK;
+        pw_ir_set_comm_state(COMM_STATE_DISCONNECTED);
+        break;
+    }
+    case CMD_WALKER_RESET_1: {
+        packet->extra = EXTRA_BYTE_FROM_WALKER;
+        pw_ir_delay_ms(ACTION_DELAY_MS);
+        pw_eeprom_reliable_read(
+            PW_EEPROM_ADDR_UNIQUE_IDENTITY_DATA_1,
+            PW_EEPROM_ADDR_UNIQUE_IDENTITY_DATA_2,
+            packet->payload,
+            sizeof(unique_identity_data_t)
+        );
+        err = pw_ir_send_packet(packet, 8+sizeof(unique_identity_data_t), &n_rw);
+        pw_eeprom_reset(true, false);
+        break;
+    }
+    default: {
+        printf("[Error] Slave recv unhandled packet: %02x\n", packet->cmd);
+        err = IR_ERR_UNEXPECTED_PACKET;
+        break;
+    }
 
     }
 
@@ -277,219 +285,222 @@ ir_err_t pw_action_peer_play(state_vars_t *sv, pw_packet_t *packet, size_t max_l
     size_t n_read;
 
     switch(sv->current_substate) {
-        case COMM_SUBSTATE_START_PEER_PLAY: {
+    case COMM_SUBSTATE_START_PEER_PLAY: {
 
-            packet->cmd = CMD_PEER_PLAY_START;
-            packet->extra = EXTRA_BYTE_FROM_WALKER;
-            pw_eeprom_reliable_read(PW_EEPROM_ADDR_IDENTITY_DATA_1, PW_EEPROM_ADDR_IDENTITY_DATA_2,
-                    packet->payload, PW_EEPROM_SIZE_IDENTITY_DATA_1);
-            //pw_eeprom_read(PW_EEPROM_ADDR_IDENTITY_DATA_1,
-            //        packet+8, PW_EEPROM_SIZE_IDENTITY_DATA_1);
-            packet->bytes[0x18] = (uint8_t)(pw_rand()&0xff);  // Hack to change UID each time
-                                                    // to prevent "already connected" error
-                                                    // TODO: remove this in proper code
-            err = pw_ir_send_packet(packet, 8+PW_EEPROM_SIZE_IDENTITY_DATA_1, &n_read);
-            if(err != IR_OK) return err;
+        packet->cmd = CMD_PEER_PLAY_START;
+        packet->extra = EXTRA_BYTE_FROM_WALKER;
+        pw_eeprom_reliable_read(PW_EEPROM_ADDR_IDENTITY_DATA_1, PW_EEPROM_ADDR_IDENTITY_DATA_2,
+                                packet->payload, PW_EEPROM_SIZE_IDENTITY_DATA_1);
+        //pw_eeprom_read(PW_EEPROM_ADDR_IDENTITY_DATA_1,
+        //        packet+8, PW_EEPROM_SIZE_IDENTITY_DATA_1);
+        packet->bytes[0x18] = (uint8_t)(pw_rand()&0xff);  // Hack to change UID each time
+        // to prevent "already connected" error
+        // TODO: remove this in proper code
+        err = pw_ir_send_packet(packet, 8+PW_EEPROM_SIZE_IDENTITY_DATA_1, &n_read);
+        if(err != IR_OK) return err;
 
-            sv->current_substate = COMM_SUBSTATE_PEER_PLAY_ACK;
+        sv->current_substate = COMM_SUBSTATE_PEER_PLAY_ACK;
+        break;
+    }
+    case COMM_SUBSTATE_PEER_PLAY_ACK: {
+
+        err = pw_ir_recv_packet(packet, 8+PW_EEPROM_SIZE_IDENTITY_DATA_1, &n_read);
+        switch(packet->cmd) {
+        case CMD_PEER_PLAY_RSP:
             break;
-        }
-        case COMM_SUBSTATE_PEER_PLAY_ACK: {
-
-            err = pw_ir_recv_packet(packet, 8+PW_EEPROM_SIZE_IDENTITY_DATA_1, &n_read);
-            switch(packet->cmd) {
-                case CMD_PEER_PLAY_RSP: break;
-                case CMD_PEER_PLAY_SEEN: return IR_ERR_PEER_ALREADY_SEEN;
-                default: return IR_ERR_UNEXPECTED_PACKET;
-            }
-            if(err != IR_OK) return err;
-
-            sv->current_substate = COMM_SUBSTATE_SEND_MASTER_SPRITES;
-            sv->reg_c = 0; // reset loop counter
-            break;
-        }
-        case COMM_SUBSTATE_SEND_MASTER_SPRITES: {
-
-            size_t write_size = 128;    // should always be 128-bytes
-            size_t cur_write_size   = (size_t)(sv->reg_c) * write_size;
-
-            err = pw_action_send_large_raw_data_from_eeprom(
-                        PW_EEPROM_ADDR_IMG_POKEMON_SMALL_ANIMATED,              // src
-                        PW_EEPROM_ADDR_IMG_CURRENT_PEER_POKEMON_ANIMATED_SMALL, // dst
-                        PW_EEPROM_SIZE_IMG_POKEMON_SMALL_ANIMATED,              // size
-                        write_size, &(sv->reg_c), packet, max_len
-                    );
-            if(err != IR_OK) return err;
-
-            if(cur_write_size >= PW_EEPROM_SIZE_IMG_POKEMON_SMALL_ANIMATED){
-                sv->reg_c = 0;  // reset loop counter
-                sv->current_substate = COMM_SUBSTATE_SEND_MASTER_NAME_IMAGE;
-            }
-            break;
-        }
-        case COMM_SUBSTATE_SEND_MASTER_NAME_IMAGE: {
-
-            size_t write_size = 128;
-            size_t cur_write_size   = (size_t)(sv->reg_c) * write_size;
-
-            err = pw_action_send_large_raw_data_from_eeprom(
-                        PW_EEPROM_ADDR_TEXT_POKEMON_NAME,               // src
-                        PW_EEPROM_ADDR_TEXT_CURRENT_PEER_POKEMON_NAME,  // dst
-                        PW_EEPROM_SIZE_TEXT_POKEMON_NAME,               // size
-                        write_size, &(sv->reg_c), packet, max_len
-                    );
-
-            if(cur_write_size >= PW_EEPROM_SIZE_TEXT_POKEMON_NAME){
-                sv->reg_c = 0; // reset loop counter
-                sv->current_substate = COMM_SUBSTATE_SEND_MASTER_TEAMDATA;
-            }
-            break;
-        }
-        case COMM_SUBSTATE_SEND_MASTER_TEAMDATA: {
-
-            size_t write_size = 128;
-            size_t cur_write_size   = (size_t)(sv->reg_c) * write_size;
-
-            err = pw_action_send_large_raw_data_from_eeprom(
-                        PW_EEPROM_ADDR_TEAM_DATA_STRUCT,            // src
-                        PW_EEPROM_ADDR_CURRENT_PEER_TEAM_DATA,      // dst
-                        PW_EEPROM_SIZE_TEAM_DATA_STRUCT,            // size
-                        write_size, &(sv->reg_c), packet, max_len
-                    );
-
-            if(cur_write_size >= PW_EEPROM_SIZE_TEAM_DATA_STRUCT){
-                sv->reg_c = 0; // reset loop counter
-                sv->current_substate = COMM_SUBSTATE_READ_SLAVE_SPRITES;
-            }
-            break;
-        }
-        case COMM_SUBSTATE_READ_SLAVE_SPRITES: {
-
-            size_t read_size = 128; // NOTE: this can be anything so long as it fits in your buffer
-                                    // TODO: move this buffer dependancy inti pw_ir_read()
-            err = pw_action_read_large_raw_data_from_eeprom(
-                        PW_EEPROM_ADDR_IMG_POKEMON_SMALL_ANIMATED,              // src
-                        PW_EEPROM_ADDR_IMG_CURRENT_PEER_POKEMON_ANIMATED_SMALL, // dst
-                        PW_EEPROM_SIZE_IMG_POKEMON_SMALL_ANIMATED,              // size
-                        read_size, &(sv->reg_c), packet, max_len
-                    );
-
-            size_t cur_read_size   = (size_t)(sv->reg_c) * read_size;
-
-            if(cur_read_size >= PW_EEPROM_SIZE_IMG_POKEMON_SMALL_ANIMATED) {
-                sv->reg_c = 0;  // reset loop counter
-                sv->current_substate = COMM_SUBSTATE_READ_SLAVE_NAME_IMAGE;
-            }
-            break;
-        }
-        case COMM_SUBSTATE_READ_SLAVE_NAME_IMAGE: {
-
-            size_t read_size = 128;  // TODO: See above
-            err = pw_action_read_large_raw_data_from_eeprom(
-                        PW_EEPROM_ADDR_TEXT_POKEMON_NAME,               // src
-                        PW_EEPROM_ADDR_TEXT_CURRENT_PEER_POKEMON_NAME,  // dst
-                        PW_EEPROM_SIZE_TEXT_POKEMON_NAME,               // size
-                        read_size, &(sv->reg_c), packet, max_len
-                    );
-
-            size_t cur_read_size   = (size_t)(sv->reg_c) * read_size;
-
-            if(cur_read_size >= PW_EEPROM_SIZE_IMG_POKEMON_SMALL_ANIMATED) {
-                sv->reg_c = 0;  // reset loop counter
-                sv->current_substate = COMM_SUBSTATE_READ_SLAVE_TEAMDATA;
-            }
-            break;
-        }
-        case COMM_SUBSTATE_READ_SLAVE_TEAMDATA: {
-
-            size_t read_size = 128;  // TODO: See above
-            err = pw_action_read_large_raw_data_from_eeprom(
-                        PW_EEPROM_ADDR_IMG_POKEMON_SMALL_ANIMATED,              // src
-                        PW_EEPROM_ADDR_IMG_CURRENT_PEER_POKEMON_ANIMATED_SMALL, // dst
-                        PW_EEPROM_SIZE_IMG_POKEMON_SMALL_ANIMATED,              // size
-                        read_size, &(sv->reg_c), packet, max_len
-                    );
-
-            size_t cur_read_size   = (size_t)(sv->reg_c) * read_size;
-
-            if(cur_read_size >= PW_EEPROM_SIZE_IMG_POKEMON_SMALL_ANIMATED) {
-                sv->reg_c = 0;  // reset loop counter
-                sv->current_substate = COMM_SUBSTATE_SEND_PEER_PLAY_DX;
-            }
-            break;
-        }
-        case COMM_SUBSTATE_SEND_PEER_PLAY_DX: {
-            packet->cmd = CMD_PEER_PLAY_DX;
-            packet->extra = 1;
-
-            // TODO: Actually make proper peer_play_data_t
-            // eg peer_play_data_t *ppd = packet->payload
-            packet->payload[0x00] = 0x0f;    // current steps = 9999
-            packet->payload[0x01] = 0x27;
-            packet->payload[0x02] = 0;
-            packet->payload[0x03] = 0;
-            packet->payload[0x04] = 0x0f;    // current watts = 9999
-            packet->payload[0x05] = 0x27;
-            // 0x0e, 0x0f padding
-            packet->payload[0x08] = 1;   // identity_data_t.unk0
-            packet->payload[0x09] = 0;
-            packet->payload[0x0a] = 0;
-            packet->payload[0x0b] = 0;
-            packet->payload[0x0c] = 7;   // identity_data_t.unk2
-            packet->payload[0x0d] = 0;
-            // species
-            pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO+0, packet->bytes+0x16, 2);
-            // 22 bytes pokemon nickname
-            pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO+10, packet->bytes+0x18, 22);
-            // 16 bytes trainer name
-            pw_eeprom_read(PW_EEPROM_ADDR_IDENTITY_DATA_1+72, packet->bytes+0x2e, 16);
-            // 1 byte pokemon gender
-            pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO+13, packet->bytes+0x3e, 1);
-            // 1 byte pokeIsSpecial
-            pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO+14, packet->bytes+0x3f, 1);
-
-            // TODO: move sizze to #define
-            err = pw_ir_send_packet(packet, 0x40, &n_read);;
-            if(err != IR_OK) return err;
-
-            sv->current_substate = COMM_SUBSTATE_RECV_PEER_PLAY_DX;
-            break;
-        }
-        case COMM_SUBSTATE_RECV_PEER_PLAY_DX: {
-            err = pw_ir_recv_packet(packet, 0x40, &n_read);
-            if(err != IR_OK) return err;
-
-            pw_eeprom_write(PW_EEPROM_ADDR_CURRENT_PEER_DATA, packet->payload, PW_EEPROM_SIZE_CURRENT_PEER_DATA);
-
-            sv->current_substate = COMM_SUBSTATE_SEND_PEER_PLAY_END;
-            break;
-        }
-        case COMM_SUBSTATE_SEND_PEER_PLAY_END: {
-            packet->cmd = CMD_PEER_PLAY_END;
-            packet->extra = EXTRA_BYTE_TO_WALKER;
-            err = pw_ir_send_packet(packet, 8, &n_read);
-
-            sv->current_substate = COMM_SUBSTATE_RECV_PEER_PLAY_END;
-            break;
-        }
-        case COMM_SUBSTATE_RECV_PEER_PLAY_END: {
-            err = pw_ir_recv_packet(packet, 8, &n_read);
-            if(err != IR_OK) return err;
-            if(packet->cmd != CMD_PEER_PLAY_END) return IR_ERR_UNEXPECTED_PACKET;
-            sv->current_substate = COMM_SUBSTATE_DISPLAY_PEER_PLAY_ANIMATION;
-            break;
-        }
-        case COMM_SUBSTATE_DISPLAY_PEER_PLAY_ANIMATION: {
-            err = IR_ERR_NOT_IMPLEMENTED;
-            break;
-        }
-        case COMM_SUBSTATE_CALCULATE_PEER_PLAY_GIFT: {
-            err = IR_ERR_NOT_IMPLEMENTED;
-            break;
-        }
+        case CMD_PEER_PLAY_SEEN:
+            return IR_ERR_PEER_ALREADY_SEEN;
         default:
-            err = IR_ERR_UNKNOWN_SUBSTATE;
-            break;
+            return IR_ERR_UNEXPECTED_PACKET;
+        }
+        if(err != IR_OK) return err;
+
+        sv->current_substate = COMM_SUBSTATE_SEND_MASTER_SPRITES;
+        sv->reg_c = 0; // reset loop counter
+        break;
+    }
+    case COMM_SUBSTATE_SEND_MASTER_SPRITES: {
+
+        size_t write_size = 128;    // should always be 128-bytes
+        size_t cur_write_size   = (size_t)(sv->reg_c) * write_size;
+
+        err = pw_action_send_large_raw_data_from_eeprom(
+                  PW_EEPROM_ADDR_IMG_POKEMON_SMALL_ANIMATED,              // src
+                  PW_EEPROM_ADDR_IMG_CURRENT_PEER_POKEMON_ANIMATED_SMALL, // dst
+                  PW_EEPROM_SIZE_IMG_POKEMON_SMALL_ANIMATED,              // size
+                  write_size, &(sv->reg_c), packet, max_len
+              );
+        if(err != IR_OK) return err;
+
+        if(cur_write_size >= PW_EEPROM_SIZE_IMG_POKEMON_SMALL_ANIMATED) {
+            sv->reg_c = 0;  // reset loop counter
+            sv->current_substate = COMM_SUBSTATE_SEND_MASTER_NAME_IMAGE;
+        }
+        break;
+    }
+    case COMM_SUBSTATE_SEND_MASTER_NAME_IMAGE: {
+
+        size_t write_size = 128;
+        size_t cur_write_size   = (size_t)(sv->reg_c) * write_size;
+
+        err = pw_action_send_large_raw_data_from_eeprom(
+                  PW_EEPROM_ADDR_TEXT_POKEMON_NAME,               // src
+                  PW_EEPROM_ADDR_TEXT_CURRENT_PEER_POKEMON_NAME,  // dst
+                  PW_EEPROM_SIZE_TEXT_POKEMON_NAME,               // size
+                  write_size, &(sv->reg_c), packet, max_len
+              );
+
+        if(cur_write_size >= PW_EEPROM_SIZE_TEXT_POKEMON_NAME) {
+            sv->reg_c = 0; // reset loop counter
+            sv->current_substate = COMM_SUBSTATE_SEND_MASTER_TEAMDATA;
+        }
+        break;
+    }
+    case COMM_SUBSTATE_SEND_MASTER_TEAMDATA: {
+
+        size_t write_size = 128;
+        size_t cur_write_size   = (size_t)(sv->reg_c) * write_size;
+
+        err = pw_action_send_large_raw_data_from_eeprom(
+                  PW_EEPROM_ADDR_TEAM_DATA_STRUCT,            // src
+                  PW_EEPROM_ADDR_CURRENT_PEER_TEAM_DATA,      // dst
+                  PW_EEPROM_SIZE_TEAM_DATA_STRUCT,            // size
+                  write_size, &(sv->reg_c), packet, max_len
+              );
+
+        if(cur_write_size >= PW_EEPROM_SIZE_TEAM_DATA_STRUCT) {
+            sv->reg_c = 0; // reset loop counter
+            sv->current_substate = COMM_SUBSTATE_READ_SLAVE_SPRITES;
+        }
+        break;
+    }
+    case COMM_SUBSTATE_READ_SLAVE_SPRITES: {
+
+        size_t read_size = 128; // NOTE: this can be anything so long as it fits in your buffer
+        // TODO: move this buffer dependancy inti pw_ir_read()
+        err = pw_action_read_large_raw_data_from_eeprom(
+                  PW_EEPROM_ADDR_IMG_POKEMON_SMALL_ANIMATED,              // src
+                  PW_EEPROM_ADDR_IMG_CURRENT_PEER_POKEMON_ANIMATED_SMALL, // dst
+                  PW_EEPROM_SIZE_IMG_POKEMON_SMALL_ANIMATED,              // size
+                  read_size, &(sv->reg_c), packet, max_len
+              );
+
+        size_t cur_read_size   = (size_t)(sv->reg_c) * read_size;
+
+        if(cur_read_size >= PW_EEPROM_SIZE_IMG_POKEMON_SMALL_ANIMATED) {
+            sv->reg_c = 0;  // reset loop counter
+            sv->current_substate = COMM_SUBSTATE_READ_SLAVE_NAME_IMAGE;
+        }
+        break;
+    }
+    case COMM_SUBSTATE_READ_SLAVE_NAME_IMAGE: {
+
+        size_t read_size = 128;  // TODO: See above
+        err = pw_action_read_large_raw_data_from_eeprom(
+                  PW_EEPROM_ADDR_TEXT_POKEMON_NAME,               // src
+                  PW_EEPROM_ADDR_TEXT_CURRENT_PEER_POKEMON_NAME,  // dst
+                  PW_EEPROM_SIZE_TEXT_POKEMON_NAME,               // size
+                  read_size, &(sv->reg_c), packet, max_len
+              );
+
+        size_t cur_read_size   = (size_t)(sv->reg_c) * read_size;
+
+        if(cur_read_size >= PW_EEPROM_SIZE_IMG_POKEMON_SMALL_ANIMATED) {
+            sv->reg_c = 0;  // reset loop counter
+            sv->current_substate = COMM_SUBSTATE_READ_SLAVE_TEAMDATA;
+        }
+        break;
+    }
+    case COMM_SUBSTATE_READ_SLAVE_TEAMDATA: {
+
+        size_t read_size = 128;  // TODO: See above
+        err = pw_action_read_large_raw_data_from_eeprom(
+                  PW_EEPROM_ADDR_IMG_POKEMON_SMALL_ANIMATED,              // src
+                  PW_EEPROM_ADDR_IMG_CURRENT_PEER_POKEMON_ANIMATED_SMALL, // dst
+                  PW_EEPROM_SIZE_IMG_POKEMON_SMALL_ANIMATED,              // size
+                  read_size, &(sv->reg_c), packet, max_len
+              );
+
+        size_t cur_read_size   = (size_t)(sv->reg_c) * read_size;
+
+        if(cur_read_size >= PW_EEPROM_SIZE_IMG_POKEMON_SMALL_ANIMATED) {
+            sv->reg_c = 0;  // reset loop counter
+            sv->current_substate = COMM_SUBSTATE_SEND_PEER_PLAY_DX;
+        }
+        break;
+    }
+    case COMM_SUBSTATE_SEND_PEER_PLAY_DX: {
+        packet->cmd = CMD_PEER_PLAY_DX;
+        packet->extra = 1;
+
+        // TODO: Actually make proper peer_play_data_t
+        // eg peer_play_data_t *ppd = packet->payload
+        packet->payload[0x00] = 0x0f;    // current steps = 9999
+        packet->payload[0x01] = 0x27;
+        packet->payload[0x02] = 0;
+        packet->payload[0x03] = 0;
+        packet->payload[0x04] = 0x0f;    // current watts = 9999
+        packet->payload[0x05] = 0x27;
+        // 0x0e, 0x0f padding
+        packet->payload[0x08] = 1;   // identity_data_t.unk0
+        packet->payload[0x09] = 0;
+        packet->payload[0x0a] = 0;
+        packet->payload[0x0b] = 0;
+        packet->payload[0x0c] = 7;   // identity_data_t.unk2
+        packet->payload[0x0d] = 0;
+        // species
+        pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO+0, packet->bytes+0x16, 2);
+        // 22 bytes pokemon nickname
+        pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO+10, packet->bytes+0x18, 22);
+        // 16 bytes trainer name
+        pw_eeprom_read(PW_EEPROM_ADDR_IDENTITY_DATA_1+72, packet->bytes+0x2e, 16);
+        // 1 byte pokemon gender
+        pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO+13, packet->bytes+0x3e, 1);
+        // 1 byte pokeIsSpecial
+        pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO+14, packet->bytes+0x3f, 1);
+
+        // TODO: move sizze to #define
+        err = pw_ir_send_packet(packet, 0x40, &n_read);;
+        if(err != IR_OK) return err;
+
+        sv->current_substate = COMM_SUBSTATE_RECV_PEER_PLAY_DX;
+        break;
+    }
+    case COMM_SUBSTATE_RECV_PEER_PLAY_DX: {
+        err = pw_ir_recv_packet(packet, 0x40, &n_read);
+        if(err != IR_OK) return err;
+
+        pw_eeprom_write(PW_EEPROM_ADDR_CURRENT_PEER_DATA, packet->payload, PW_EEPROM_SIZE_CURRENT_PEER_DATA);
+
+        sv->current_substate = COMM_SUBSTATE_SEND_PEER_PLAY_END;
+        break;
+    }
+    case COMM_SUBSTATE_SEND_PEER_PLAY_END: {
+        packet->cmd = CMD_PEER_PLAY_END;
+        packet->extra = EXTRA_BYTE_TO_WALKER;
+        err = pw_ir_send_packet(packet, 8, &n_read);
+
+        sv->current_substate = COMM_SUBSTATE_RECV_PEER_PLAY_END;
+        break;
+    }
+    case COMM_SUBSTATE_RECV_PEER_PLAY_END: {
+        err = pw_ir_recv_packet(packet, 8, &n_read);
+        if(err != IR_OK) return err;
+        if(packet->cmd != CMD_PEER_PLAY_END) return IR_ERR_UNEXPECTED_PACKET;
+        sv->current_substate = COMM_SUBSTATE_DISPLAY_PEER_PLAY_ANIMATION;
+        break;
+    }
+    case COMM_SUBSTATE_DISPLAY_PEER_PLAY_ANIMATION: {
+        err = IR_ERR_NOT_IMPLEMENTED;
+        break;
+    }
+    case COMM_SUBSTATE_CALCULATE_PEER_PLAY_GIFT: {
+        err = IR_ERR_NOT_IMPLEMENTED;
+        break;
+    }
+    default:
+        err = IR_ERR_UNKNOWN_SUBSTATE;
+        break;
     }
 
     return err;
@@ -692,11 +703,11 @@ void pw_ir_start_walk() {
 
     buf[0] = 0xa5;
     n = pw_eeprom_reliable_write(
-        PW_EEPROM_ADDR_COPY_MARKER_1,
-        PW_EEPROM_ADDR_COPY_MARKER_2,
-        buf,
-        1
-    );
+            PW_EEPROM_ADDR_COPY_MARKER_1,
+            PW_EEPROM_ADDR_COPY_MARKER_2,
+            buf,
+            1
+        );
 
     // buf_size must wholly divide into copy size
     const size_t sz = 128;
@@ -718,22 +729,22 @@ void pw_ir_start_walk() {
 
     buf[0] = 0x00;
     n = pw_eeprom_reliable_write(
-        PW_EEPROM_ADDR_COPY_MARKER_1,
-        PW_EEPROM_ADDR_COPY_MARKER_2,
-        buf,
-        1
-    );
+            PW_EEPROM_ADDR_COPY_MARKER_1,
+            PW_EEPROM_ADDR_COPY_MARKER_2,
+            buf,
+            1
+        );
 
-    health_data_cache.be_walk_minute_counter = 0;
+    health_data_cache.walk_minute_counter = 0;
     health_data_cache.event_log_index = 0;
-    health_data_cache.be_current_watts = 0;
+    health_data_cache.current_watts = 0;
 
     n = pw_eeprom_reliable_write(
-        PW_EEPROM_ADDR_HEALTH_DATA_1,
-        PW_EEPROM_ADDR_HEALTH_DATA_2,
-        (uint8_t*)&health_data_cache,
-        sizeof(health_data_cache)
-    );
+            PW_EEPROM_ADDR_HEALTH_DATA_1,
+            PW_EEPROM_ADDR_HEALTH_DATA_2,
+            (uint8_t*)&health_data_cache,
+            sizeof(health_data_cache)
+        );
 
     // this always reads ok, so the write must have been fine
     route_info_t *route_info = (route_info_t*)buf;
@@ -822,11 +833,20 @@ void pw_log_event(event_log_item_t *event_item) {
 ir_err_t pw_ir_identity_ack(pw_packet_t *packet) {
     size_t n_rw;
     switch(packet->cmd) {
-        case CMD_IDENTITY_SEND:        packet->cmd = CMD_IDENTITY_ACK; break;
-        case CMD_IDENTITY_SEND_ALIAS1: packet->cmd = CMD_IDENTITY_ACK_ALIAS1; break;
-        case CMD_IDENTITY_SEND_ALIAS2: packet->cmd = CMD_IDENTITY_ACK_ALIAS2; break;
-        case CMD_IDENTITY_SEND_ALIAS3: packet->cmd = CMD_IDENTITY_ACK_ALIAS3; break;
-        default: return IR_ERR_UNEXPECTED_PACKET;
+    case CMD_IDENTITY_SEND:
+        packet->cmd = CMD_IDENTITY_ACK;
+        break;
+    case CMD_IDENTITY_SEND_ALIAS1:
+        packet->cmd = CMD_IDENTITY_ACK_ALIAS1;
+        break;
+    case CMD_IDENTITY_SEND_ALIAS2:
+        packet->cmd = CMD_IDENTITY_ACK_ALIAS2;
+        break;
+    case CMD_IDENTITY_SEND_ALIAS3:
+        packet->cmd = CMD_IDENTITY_ACK_ALIAS3;
+        break;
+    default:
+        return IR_ERR_UNEXPECTED_PACKET;
     }
 
     for(size_t i = 0; i < sizeof(walker_info_t); i++) {

@@ -5,6 +5,7 @@
 #include "eeprom.h"
 #include "eeprom_map.h"
 #include "globals.h"
+#include "utils.h"
 
 static const char const NINTENDO_STRING[] = "nintendo";
 
@@ -161,6 +162,7 @@ void pw_eeprom_reset(bool clear_events, bool clear_steps) {
 
 void pw_eeprom_initialise_health_data(bool clear_time) {
     if(clear_time) {
+        <<<<<<< HEAD
         health_data_cache.be_total_steps = 0;
         health_data_cache.be_total_days = 0;
         health_data_cache.be_last_sync = 220924800; // 2nd Jan 2008
@@ -169,17 +171,27 @@ void pw_eeprom_initialise_health_data(bool clear_time) {
 
     health_data_cache.be_walk_minute_counter = 0;
     health_data_cache.be_current_watts = 0;
-    health_data_cache.steps_this_watt = 0;
-    health_data_cache.settings &= 0xa4;
-    health_data_cache.settings |= 0x24;
-    health_data_cache.event_log_index = 0;
+    =======
+        health_data_cache.total_steps = 0;
+    health_data_cache.total_days = 0;
+    health_data_cache.last_sync = swap_bytes_u32(220924800); // 2nd Jan 2008
+    health_data_cache.today_steps = 0;
+}
 
-    pw_eeprom_reliable_write(
-        PW_EEPROM_ADDR_HEALTH_DATA_1,
-        PW_EEPROM_ADDR_HEALTH_DATA_2,
-        (uint8_t*)(&health_data_cache),
-        sizeof(health_data_t)
-    );
+health_data_cache.walk_minute_counter = 0;
+health_data_cache.current_watts = 0;
+>>>>>>> 7f9ed5c (health: health data is host endianness)
+health_data_cache.steps_this_watt = 0;
+health_data_cache.settings &= 0xa4;
+health_data_cache.settings |= 0x24;
+health_data_cache.event_log_index = 0;
+
+pw_eeprom_reliable_write(
+    PW_EEPROM_ADDR_HEALTH_DATA_1,
+    PW_EEPROM_ADDR_HEALTH_DATA_2,
+    (uint8_t*)(&health_data_cache),
+    sizeof(health_data_t)
+);
 }
 
 
