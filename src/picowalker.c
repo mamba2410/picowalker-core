@@ -64,7 +64,7 @@ void walker_entry() {
 
     uint64_t now, prev_screen_redraw, prev_accel_check, td;
     prev_screen_redraw = pw_now_us();
-    prev_accel_check = prev_screen_redraw;
+    prev_accel_check = 0;
 
     //health_data_cache.be_total_steps = swap_bytes_u32(99999);
     //health_data_cache.be_today_steps = swap_bytes_u32(99999);

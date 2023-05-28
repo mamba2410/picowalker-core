@@ -23,6 +23,8 @@ add_library(picowalker-core
     src/rand.c
     src/rand.h
     src/flash.h
+    src/accel.c
+    src/accel.h
     src/ir/compression.c
     src/ir/compression.h
     src/ir/ir.c

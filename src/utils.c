@@ -7,6 +7,8 @@
 #include "eeprom_map.h"
 #include "eeprom.h"
 
+extern uint16_t swap_bytes_u16(uint16_t x);
+extern uint32_t swap_bytes_u32(uint32_t x);
 
 /*
  * Sets sv->reg{a,b,c}
