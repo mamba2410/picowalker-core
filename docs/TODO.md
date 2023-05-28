@@ -4,8 +4,6 @@ Most of this stuff has been moved to focalboard, but here will be more detailed 
 
 ## Ideas
 
-- Speed up screen I2C speed?
-- Change button code to polling instead of interrupts?
 - redo state machine code to use tagged unions
 
 ## Bugs
@@ -23,3 +21,4 @@ Most of this stuff has been moved to focalboard, but here will be more detailed 
   - Shade
   - Secret pico settings?
 - Sleep
+
