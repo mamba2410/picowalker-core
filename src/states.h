@@ -7,7 +7,6 @@
 /// @file states.h
 
 #define PW_REQUEST_REDRAW       (1<<0)
-#define PW_REQUEST_STATE_CHANGE (1<<1)
 
 #define PW_CLR_REQUEST(x, y) x &= ~(y)
 #define PW_SET_REQUEST(x, y) x |=  (y)
@@ -27,36 +26,107 @@ typedef enum {
     STATE_FIRST_CONNECT,
     STATE_BATTLE,
     N_STATES,
+} pw_state_id_t;
+
+typedef struct {
+    uint8_t pad;
+} pw_screensaver_t;
+
+typedef struct {
+    uint8_t inventory;
+} pw_splash_t;
+
+typedef struct {
+    int8_t cursor;
+    uint8_t message;
+} pw_menu_t;
+
+typedef struct {
+    int8_t user_cursor;
+    int8_t active_bush;
+    uint8_t current_substate;
+    uint8_t previous_substate;
+    uint8_t chosen_pokemon;
+    uint8_t radar_level;
+    uint8_t current_level;
+    int8_t active_timer;
+    int8_t invisible_timer;
+} pw_radar_t;
+
+typedef struct {
+    uint8_t item_position;
+    uint8_t chosen_positions;
+    uint8_t choices_remaining;
+    uint16_t chosen_item;
+    uint8_t chosen_item_index;
+    uint8_t bush_shakes;
+    uint8_t user_input;
+} pw_dowsing_t;
+
+typedef struct {
+    uint8_t current_substate;
+    uint8_t advertising_attempts;
+    uint8_t screen_state;
+} pw_connect_t;
+
+typedef struct {
+    uint8_t current_substate;
+    uint8_t previous_substate;
+} pw_trainer_card_t;
+
+typedef struct {
+    int8_t cursor;
+    uint8_t current_substate;
+    uint8_t previous_substate;
+} pw_inventory_t;
+
+typedef struct {} pw_settings_t;
+
+typedef struct {
+    uint8_t current_hp; // lo= , hi=
+    uint8_t chosen_pokemon; // 0..3
+    uint8_t actions;
+    uint8_t substate_queue_index;
+    uint8_t substate_queue_len;
+} pw_battle_t;
+
+typedef struct {
+    uint8_t sid;
+    uint8_t requests;   // [0]=redraw
+    union {
+        pw_screensaver_t screensaver;
+        pw_splash_t splash;
+        pw_menu_t menu;
+        pw_connect_t connect;
+        pw_radar_t radar;
+        pw_dowsing_t dowsing;
+        pw_trainer_card_t trainer_card;
+        pw_inventory_t inventory;
+        pw_battle_t battle;
+    };
 } pw_state_t;
 
-/*
- *  Struct to keep all state variables the same across states
- */
 typedef struct {
-    int8_t  current_cursor;
-    int8_t  cursor_2;
-    uint8_t current_substate;
-    uint8_t substate_2;
-    uint8_t anim_frame;
-    uint8_t reg_a;
-    uint8_t reg_b;
-    uint8_t reg_c;
-    uint8_t reg_d;
-    uint16_t reg_x;
-    uint16_t reg_y;
-    uint16_t reg_z;
-} state_vars_t;
+    uint8_t frame;
+} screen_flags_t;
 
 #define ANIM_FRAME_NORMAL_TIME_OFFSET       1
 #define ANIM_FRAME_NORMAL_TIME              (1<<ANIM_FRAME_NORMAL_TIME_OFFSET)  // every half second
 #define ANIM_FRAME_DOUBLE_TIME_OFFSET       0
 #define ANIM_FRAME_DOUBLE_TIME              (1<<ANIM_FRAME_DOUBLE_TIME_OFFSET)  // every quarter second
 
-typedef void (state_draw_func_t)(state_vars_t*);
-typedef void (state_event_func_t)(state_vars_t*);
-typedef void (state_input_func_t)(state_vars_t*, uint8_t);
-typedef void (draw_func_t)(state_vars_t*);
+typedef void (*state_loop_func_t)(pw_state_t* s, pw_state_t *p, const screen_flags_t *sf);
+typedef void (*state_void_func_t)(pw_state_t* s, const screen_flags_t *sf);
+typedef void (*state_input_func_t)(pw_state_t* s, const screen_flags_t *sf, uint8_t b);
 
+typedef struct {
+    state_loop_func_t loop;
+    state_void_func_t draw_init;
+    state_void_func_t draw_update;
+    state_void_func_t init;
+    state_void_func_t deinit;
+    state_input_func_t input;
+} state_funcs_t;
 
 /*
  *  Use an array of structures to represent each state.
@@ -69,19 +139,8 @@ typedef void (draw_func_t)(state_vars_t*);
  *  - draw update function
  */
 extern const char* const state_strings[];
-extern state_event_func_t* const state_init_funcs[];
-extern state_event_func_t* const state_event_loop_funcs[];
-extern state_input_func_t* const state_input_funcs[];
-extern state_draw_func_t* const state_draw_init_funcs[];
-extern state_draw_func_t* const state_draw_update_funcs[];
+extern const state_funcs_t STATE_FUNCS[];
 
-void pw_send_to_error(state_vars_t *sv, uint8_t b);
-void pw_send_to_splash(state_vars_t *sv, uint8_t b);
-
-void pw_request_redraw();
-void pw_request_state(pw_state_t s);
-
-bool pw_set_state(pw_state_t s);
 pw_state_t pw_get_state();
 
 void pw_state_init();
@@ -93,11 +152,11 @@ void pw_state_draw_update();
 /*
  *  State functions
  */
-void pw_empty_event(state_vars_t *sv);
-void pw_empty_input(state_vars_t *sv, uint8_t b);
+void pw_empty_event(pw_state_t *s, screen_flags_t *sf);
+void pw_empty_input(pw_state_t *s, screen_flags_t *sf, uint8_t b);
 
 // STATE_ERROR
-void pw_error_init_display(state_vars_t *sv);
+void pw_error_init_display(pw_state_t *s, screen_flags_t *sf);
 
 #endif /* PW_STATES_H */
 

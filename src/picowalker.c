@@ -69,6 +69,9 @@ void walker_setup() {
 
 }
 
+pw_state_t a1, a2;
+pw_state_t *current_state = &a1, *pending_state = &a2;
+screen_flags_t screen_flags;
 
 void walker_loop() {
     uint64_t td;
@@ -82,16 +85,33 @@ void walker_loop() {
     }
 
     // Run current state's event loop
-    pw_state_run_event_loop();
+    STATE_FUNCS[current_state->sid].loop(current_state, pending_state, &screen_flags);
+
+    // TODO: invalid sid checking
+    if(pending_state->sid != current_state->sid) {
+        STATE_FUNCS[current_state->sid].deinit(current_state, &screen_flags);
+
+        pw_state_t *tmp = current_state;
+        current_state = pending_state;
+        pending_state = tmp;
+
+        *pending_state = (pw_state_t) {
+            0
+        }; // clang-format why
+        pending_state->sid = current_state->sid;
+
+        STATE_FUNCS[current_state->sid].init(current_state, &screen_flags);
+        STATE_FUNCS[current_state->sid].draw_init(current_state, &screen_flags);
+    }
 
     // Update screen since (presumably) we aren't doing anything time-critical
     walker_timings.now = pw_now_us();
     td = (walker_timings.prev_screen_redraw>walker_timings.now)?(walker_timings.prev_screen_redraw-walker_timings.now):(walker_timings.now-walker_timings.prev_screen_redraw);
-    if(td > SCREEN_REDRAW_DELAY_US) {
+    if(td > SCREEN_REDRAW_DELAY_US || PW_GET_REQUEST(current_state->requests, PW_REQUEST_REDRAW)) {
         walker_timings.prev_screen_redraw = walker_timings.now;
-        pw_state_draw_update();
+        STATE_FUNCS[current_state->sid].draw_update(current_state, &screen_flags);
+        screen_flags.frame = (screen_flags.frame+1)%4;
     }
-
 }
 
 
