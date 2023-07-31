@@ -14,11 +14,11 @@
 /// @file app_splash.c
 
 
-void pw_splash_init(state_vars_t *sv) {
-    pw_read_inventory(sv);
+void pw_splash_init(pw_state_t *s, screen_flags_t *sf) {
+    pw_read_inventory(&(s->splash.inventory));
 }
 
-void pw_splash_handle_input(state_vars_t *sv, uint8_t b) {
+void pw_splash_handle_input(pw_state_t *s, screen_flags_t *sf, uint8_t b) {
     switch(b) {
     case BUTTON_M: {
         pw_menu_set_cursor(sv, (MENU_SIZE-1)/2);
@@ -37,10 +37,10 @@ void pw_splash_handle_input(state_vars_t *sv, uint8_t b) {
     pw_request_state(STATE_MAIN_MENU);
 }
 
-void pw_splash_init_display(state_vars_t *sv) {
+void pw_splash_init_display(pw_state_t *s, screen_flags_t *sf) {
 
 
-    if(sv->reg_a & INV_WALKING_POKEMON) {
+    if(s->splash.inventory.caught_pokemon & INV_WALKING_POKEMON) {
         pw_screen_draw_from_eeprom(
             SCREEN_WIDTH-64, 0,
             64, 48,
@@ -57,7 +57,7 @@ void pw_splash_init_display(state_vars_t *sv) {
     );
 
     for(uint8_t i = 0; i < 3; i++) {
-        if(sv->reg_a & (1<<(i+1))) {
+        if(s->splash.inventory.caught_pokemon & (1<<(i+1))) {
             pw_screen_draw_from_eeprom(
                 i*8, SCREEN_HEIGHT-8,
                 8, 8,
@@ -68,7 +68,7 @@ void pw_splash_init_display(state_vars_t *sv) {
     }
 
     for(uint8_t i = 0; i < 3; i++) {
-        if(sv->reg_b & (1<<(i+1))) {
+        if(s->splash.inventory.dowsed_items & (1<<(i+1))) {
             pw_screen_draw_from_eeprom(
                 24+i*8, SCREEN_HEIGHT-8,
                 8, 8,
@@ -80,7 +80,7 @@ void pw_splash_init_display(state_vars_t *sv) {
 
 
     for(uint8_t i = 0; i < 4; i++) {
-        if( (sv->reg_c&(1<<i)) ) {
+        if( (s->splash.inventory.received_bitfield&(1<<i)) ) {
             pw_screen_draw_from_eeprom(
                 16+i*8, SCREEN_HEIGHT-16,
                 8, 8,
@@ -91,7 +91,7 @@ void pw_splash_init_display(state_vars_t *sv) {
 
     }
 
-    if( sv->reg_a&INV_EVENT_POKEMON ) {
+    if( s->splash.inventory.caught_pokemon & INV_EVENT_POKEMON ) {
         pw_screen_draw_from_eeprom(
             0, SCREEN_HEIGHT-16,
             8, 8,
@@ -100,7 +100,7 @@ void pw_splash_init_display(state_vars_t *sv) {
         );
     }
 
-    if( sv->reg_b&INV_FOUND_EVENT_ITEM ) {
+    if( s->splash.inventory.dowsed_items & INV_FOUND_EVENT_ITEM ) {
         pw_screen_draw_from_eeprom(
             8, SCREEN_HEIGHT-16,
             8, 8,
@@ -113,16 +113,16 @@ void pw_splash_init_display(state_vars_t *sv) {
     pw_screen_draw_horiz_line(0, SCREEN_HEIGHT-16, SCREEN_WIDTH, SCREEN_BLACK);
 }
 
-void pw_splash_update_display(state_vars_t *sv) {
+void pw_splash_update_display(pw_state_t *s, screen_flags_t *sf) {
 
     uint16_t frame_addr;
-    if(sv->anim_frame&ANIM_FRAME_NORMAL_TIME) {
+    if(sf->frame&ANIM_FRAME_NORMAL_TIME) {
         frame_addr = PW_EEPROM_ADDR_IMG_POKEMON_LARGE_ANIMATED_FRAME1;
     } else {
         frame_addr = PW_EEPROM_ADDR_IMG_POKEMON_LARGE_ANIMATED_FRAME2;
     }
 
-    if(sv->reg_a & INV_WALKING_POKEMON) {
+    if(s->splash.inventory.caught_pokemon & INV_WALKING_POKEMON) {
         pw_screen_draw_from_eeprom(
             SCREEN_WIDTH-64, 0,
             64, 48,

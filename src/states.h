@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "utils.h"
+
 /// @file states.h
 
 #define PW_REQUEST_REDRAW       (1<<0)
@@ -30,16 +32,16 @@ typedef enum {
 
 typedef struct {
     uint8_t pad;
-} pw_screensaver_t;
+} app_screensaver_t;
 
 typedef struct {
-    uint8_t inventory;
-} pw_splash_t;
+    pw_inventory_t inventory;
+} app_splash_t;
 
 typedef struct {
     int8_t cursor;
     uint8_t message;
-} pw_menu_t;
+} app_menu_t;
 
 typedef struct {
     int8_t user_cursor;
@@ -51,7 +53,7 @@ typedef struct {
     uint8_t current_level;
     int8_t active_timer;
     int8_t invisible_timer;
-} pw_radar_t;
+} app_radar_t;
 
 typedef struct {
     uint8_t item_position;
@@ -61,24 +63,24 @@ typedef struct {
     uint8_t chosen_item_index;
     uint8_t bush_shakes;
     uint8_t user_input;
-} pw_dowsing_t;
+} app_dowsing_t;
 
 typedef struct {
     uint8_t current_substate;
     uint8_t advertising_attempts;
     uint8_t screen_state;
-} pw_connect_t;
+} app_connect_t;
 
 typedef struct {
     uint8_t current_substate;
     uint8_t previous_substate;
-} pw_trainer_card_t;
+} app_trainer_card_t;
 
 typedef struct {
     int8_t cursor;
     uint8_t current_substate;
     uint8_t previous_substate;
-} pw_inventory_t;
+} app_inventory_t;
 
 typedef struct {} pw_settings_t;
 
@@ -88,21 +90,21 @@ typedef struct {
     uint8_t actions;
     uint8_t substate_queue_index;
     uint8_t substate_queue_len;
-} pw_battle_t;
+} app_battle_t;
 
 typedef struct {
     uint8_t sid;
     uint8_t requests;   // [0]=redraw
     union {
-        pw_screensaver_t screensaver;
-        pw_splash_t splash;
-        pw_menu_t menu;
-        pw_connect_t connect;
-        pw_radar_t radar;
-        pw_dowsing_t dowsing;
-        pw_trainer_card_t trainer_card;
-        pw_inventory_t inventory;
-        pw_battle_t battle;
+        app_screensaver_t screensaver;
+        app_splash_t splash;
+        app_menu_t menu;
+        app_connect_t connect;
+        app_radar_t radar;
+        app_dowsing_t dowsing;
+        app_trainer_card_t trainer_card;
+        app_inventory_t inventory;
+        app_battle_t battle;
     };
 } pw_state_t;
 
