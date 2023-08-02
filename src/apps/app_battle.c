@@ -702,14 +702,14 @@ void pw_battle_update_display(state_vars_t *sv) {
                     (SCREEN_WIDTH-16)/2, 0,
                     16, 32,
                     PW_EEPROM_ADDR_IMG_RADAR_CRITICAL_HIT,
-                    PW_EEPROM_ADDR_IMG_RADAR_CRITICAL_HIT
+                    PW_EEPROM_SIZE_IMG_RADAR_CRITICAL_HIT
                 );
             } else if(their_action != ACTION_EVADE) {
                 pw_screen_draw_from_eeprom(
                     (SCREEN_WIDTH-16)/2, 0,
                     16, 32,
                     PW_EEPROM_ADDR_IMG_RADAR_ATTACK_HIT,
-                    PW_EEPROM_ADDR_IMG_RADAR_ATTACK_HIT
+                    PW_EEPROM_SIZE_IMG_RADAR_ATTACK_HIT
                 );
             }
 
@@ -737,7 +737,7 @@ void pw_battle_update_display(state_vars_t *sv) {
                     (SCREEN_WIDTH-16)/2, 0,
                     16, 32,
                     PW_EEPROM_ADDR_IMG_RADAR_ATTACK_HIT,
-                    PW_EEPROM_ADDR_IMG_RADAR_ATTACK_HIT
+                    PW_EEPROM_SIZE_IMG_RADAR_ATTACK_HIT
                 );
             }
 
