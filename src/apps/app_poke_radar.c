@@ -240,13 +240,14 @@ void pw_poke_radar_choose_pokemon(state_vars_t *sv, route_info_t *ri, health_dat
     special_inventory_t inv;
     pw_eeprom_read(PW_EEPROM_ADDR_RECEIVED_BITFIELD, (uint8_t*)&inv, 1);
 
-    uint8_t event_index;
-    pw_eeprom_read(PW_EEPROM_ADDR_SPECIAL_POKEMON_EVENT_INDEX, &event_index, 1);
+    int8_t event_index;
+    pw_eeprom_read(PW_EEPROM_ADDR_SPECIAL_POKEMON_EVENT_INDEX, (uint8_t*)(&event_index), 1);
 
     //pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_POKEMON, (uint8_t*)(ri->route_pokemon), PW_EEPROM_SIZE_ROUTE_POKEMON);
 
     // event
-    if( event_index > 0 && !inv.event_pokemon) {
+    bool valid_event = event_index > 0;
+    if( valid_event && !inv.event_pokemon ) {
 
         pokemon_summary_t event_pokemon;
         pw_eeprom_read(
