@@ -8,25 +8,11 @@
 
 /// @file menu.h
 
-/*
- *  Message index + 1
- *  Offset from eeprom 0x4330
- */
-enum {
-    MSG_NONE,
-    MSG_NEED_WATTS,
-    MSG_NO_POKEMON_HELD,
-    MSG_NOTHING_HELD,
-};
-
-void pw_menu_init(state_vars_t *sv);
-void pw_menu_init_display(state_vars_t *sv);
-void pw_menu_update_display(state_vars_t *sv);
-void pw_menu_handle_input(state_vars_t *sv, uint8_t b);
-void pw_menu_set_cursor(state_vars_t *sv, int8_t c);
-
-
-bool pw_menu_move_cursor(state_vars_t *sv, int8_t move);
+void pw_menu_init(pw_state_t *s, const screen_flags_t *sf);
+void pw_menu_init_display(pw_state_t *s, const screen_flags_t *sf);
+void pw_menu_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf);
+void pw_menu_update_display(pw_state_t *s, const screen_flags_t *sf);
+void pw_menu_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b);
 
 extern const int8_t MENU_SIZE;
 

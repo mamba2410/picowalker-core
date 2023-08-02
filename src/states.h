@@ -38,9 +38,22 @@ typedef struct {
     pw_inventory_t inventory;
 } app_splash_t;
 
+/*
+ *  Message index + 1
+ *  Offset from eeprom 0x4330
+ */
+typedef enum {
+    MSG_NONE,
+    MSG_NEED_WATTS,
+    MSG_NO_POKEMON_HELD,
+    MSG_NOTHING_HELD,
+} pw_menu_message_id_t;
+
 typedef struct {
     int8_t cursor;
-    uint8_t message;
+    pw_menu_message_id_t message;
+    bool redraw_message;
+    bool transition;
 } app_menu_t;
 
 typedef struct {

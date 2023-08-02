@@ -50,7 +50,7 @@ state_funcs_t const STATE_FUNCS[N_STATES] = {
     },
     [STATE_MAIN_MENU]       = {
         .init=pw_menu_init,
-        .loop=pw_empty_event,
+        .loop=pw_menu_event_loop,
         .input=pw_menu_handle_input,
         .draw_init=pw_menu_init_display,
         .draw_update=pw_menu_update_display,
