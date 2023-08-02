@@ -68,7 +68,7 @@ void pw_read_inventory(state_vars_t *sv) {
     }
 
     pw_eeprom_read(
-        PW_EEPROM_ADDR_EVENT_ITEM,
+        PW_EEPROM_ADDR_EVENT_ITEM+6,    // ignore first 6 bytes of zeroes
         (uint8_t*)items,
         2
     );
