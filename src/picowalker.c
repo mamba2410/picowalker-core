@@ -17,11 +17,14 @@
 #include "eeprom_map.h"
 #include "accel.h"
 
-/**
- *  Entry for the picowalker
- */
-void walker_entry() {
+struct {
+    uint64_t now;
+    uint64_t prev_screen_redraw;
+    uint64_t prev_accel_check;
+} walker_timings;
 
+
+void walker_setup() {
     // Setup IR uart and rx interrupts
     pw_ir_init();
     pw_button_init();
@@ -31,7 +34,6 @@ void walker_entry() {
     pw_srand(0x12345678);
 
     if(!pw_eeprom_check_for_nintendo()) {
-        printf("'nintendo' not found, resetting\n");
         pw_eeprom_reset(true, true);
     }
 
@@ -62,37 +64,48 @@ void walker_entry() {
         pw_set_state(STATE_FIRST_CONNECT);
     }
 
-    uint64_t now, prev_screen_redraw, prev_accel_check, td;
-    prev_screen_redraw = pw_now_us();
-    prev_accel_check = 0;
+    walker_timings.now = pw_now_us();
+    walker_timings.prev_accel_check = 0;
 
-    //health_data_cache.be_total_steps = swap_bytes_u32(99999);
-    //health_data_cache.be_today_steps = swap_bytes_u32(99999);
-    //health_data_cache.be_current_watts = swap_bytes_u16(9999);
+}
 
+
+void walker_loop() {
+    uint64_t td;
+
+    // TODO: Things to do regardless of state (eg check steps, battery etc.)
+    walker_timings.now = pw_now_us();
+    td = (walker_timings.prev_accel_check>walker_timings.now)?(walker_timings.prev_accel_check-walker_timings.now):(walker_timings.now-walker_timings.prev_accel_check);
+    if(td > ACCEL_NORMAL_SAMPLE_TIME_US) {
+        walker_timings.prev_accel_check = walker_timings.now;
+        pw_accel_process_steps();
+    }
+
+    // Run current state's event loop
+    pw_state_run_event_loop();
+
+    // Update screen since (presumably) we aren't doing anything time-critical
+    walker_timings.now = pw_now_us();
+    td = (walker_timings.prev_screen_redraw>walker_timings.now)?(walker_timings.prev_screen_redraw-walker_timings.now):(walker_timings.now-walker_timings.prev_screen_redraw);
+    if(td > SCREEN_REDRAW_DELAY_US) {
+        walker_timings.prev_screen_redraw = walker_timings.now;
+        pw_state_draw_update();
+    }
+
+}
+
+
+/**
+ *  Entry for the picowalker
+ */
+void walker_entry() {
+
+    walker_setup();
 
     // Event loop
     // BEWARE: Could (WILL) receive interrupts during this time
     while(true) {
-        // TODO: Things to do regardless of state (eg check steps, battery etc.)
-        now = pw_now_us();
-        td = (prev_accel_check>now)?(prev_accel_check-now):(now-prev_accel_check);
-        if(td > ACCEL_NORMAL_SAMPLE_TIME_US) {
-            prev_accel_check = now;
-            pw_accel_process_steps();
-        }
-
-        // Run current state's event loop
-        pw_state_run_event_loop();
-
-        // Update screen since (presumably) we aren't doing anything time-critical
-        now = pw_now_us();
-        td = (prev_screen_redraw>now)?(prev_screen_redraw-now):(now-prev_screen_redraw);
-        if(td > SCREEN_REDRAW_DELAY_US) {
-            prev_screen_redraw = now;
-            pw_state_draw_update();
-        }
-
+        walker_loop();
     }
 
 }
