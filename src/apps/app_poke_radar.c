@@ -153,7 +153,7 @@ void pw_poke_radar_handle_input(state_vars_t *sv, uint8_t b) {
     case RADAR_CHOOSING: {
         switch(b) {
         case BUTTON_L: {
-            sv->current_cursor = (sv->current_cursor-1)%4;
+            sv->current_cursor = (sv->current_cursor-1+4)%4; // in mod 4, +3 == -1
             break;
         }
         case BUTTON_R: {
@@ -235,7 +235,7 @@ void pw_poke_radar_event_loop(state_vars_t *sv) {
  * Sets reg_a, reg_b
  */
 void pw_poke_radar_choose_pokemon(state_vars_t *sv, route_info_t *ri, health_data_t *hd) {
-    uint32_t today_steps = swap_bytes_u32(hd->today_steps);
+    uint32_t today_steps =hd->today_steps;
 
     special_inventory_t inv;
     pw_eeprom_read(PW_EEPROM_ADDR_RECEIVED_BITFIELD, (uint8_t*)&inv, 1);
