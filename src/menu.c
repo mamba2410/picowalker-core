@@ -20,7 +20,7 @@ static pw_state_t const MENU_ENTRIES[] = {
     STATE_INVENTORY,
     STATE_SETTINGS,
 };
-const int8_t MENU_SIZE = sizeof(MENU_ENTRIES);
+const int8_t MENU_SIZE = sizeof(MENU_ENTRIES)/sizeof(pw_state_t);
 
 static uint16_t const MENU_TITLES[] = {
     PW_EEPROM_ADDR_IMG_MENU_TITLE_POKERADAR,
@@ -159,10 +159,11 @@ void pw_menu_update_display(state_vars_t *sv) {
     size_t y_values[] = {24, 26, 28, 30, 26, 24};
     for(size_t i = 0; i < MENU_SIZE; i++) {
         if(sv->current_cursor == i) {
+            eeprom_addr_t addr = (sv->anim_frame&ANIM_FRAME_NORMAL_TIME)?PW_EEPROM_ADDR_IMG_ARROW_DOWN_NORMAL:PW_EEPROM_ADDR_IMG_ARROW_DOWN_OFFSET;
             pw_screen_draw_from_eeprom(
                 4+i*16, y_values[i]-8,
                 8, 8,
-                PW_EEPROM_ADDR_IMG_ARROW_DOWN_NORMAL,
+                addr,
                 PW_EEPROM_SIZE_IMG_ARROW
             );
 
