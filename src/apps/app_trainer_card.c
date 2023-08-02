@@ -160,6 +160,7 @@ void pw_trainer_card_handle_input(state_vars_t *sv, uint8_t b) {
     switch(b) {
     case BUTTON_L:
         if(sv->current_cursor <= 0) {
+            sv->current_cursor = 3; // position of trainer card in menu
             pw_request_state(STATE_MAIN_MENU);
         } else {
             pw_trainer_card_move_cursor(sv, -1);
