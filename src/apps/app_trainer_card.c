@@ -15,14 +15,15 @@
 
 static uint32_t prev_step_counts[7] = {0,};
 
-void pw_trainer_card_move_cursor(state_vars_t *sv, int8_t m);
+void pw_trainer_card_move_cursor(pw_state_t *s, int8_t m);
 
-void pw_trainer_card_init(state_vars_t *sv) {
-    sv->current_cursor = 0;
-    sv->cursor_2 = -1;
+void pw_trainer_card_init(pw_state_t *s, const screen_flags_t *sf) {
+    s->trainer_card.current_cursor = 0;
+    s->trainer_card.previous_cursor = -1;
+    s->trainer_card.current_substate = TC_NORMAL;
 }
 
-void pw_trainer_card_init_display(state_vars_t *sv) {
+void pw_trainer_card_init_display(pw_state_t *s, const screen_flags_t *sf) {
     pw_screen_draw_from_eeprom(
         8, 0,
         80, 16,
@@ -149,53 +150,69 @@ void pw_trainer_card_draw_dayview(uint8_t day, uint32_t day_steps,
 
 }
 
-void pw_trainer_card_move_cursor(state_vars_t *sv, int8_t m) {
-    sv->current_cursor += m;
-    if(sv->current_cursor < 0) sv->current_cursor = 0;
-    if(sv->current_cursor > TRAINER_CARD_MAX_DAYS) sv->current_cursor = TRAINER_CARD_MAX_DAYS;
-    pw_request_redraw();
+void pw_trainer_card_move_cursor(pw_state_t *s, int8_t m) {
+    s->trainer_card.current_cursor += m;
+    if(s->trainer_card.current_cursor < 0) s->trainer_card.current_cursor = 0;
+    if(s->trainer_card.current_cursor > TRAINER_CARD_MAX_DAYS) s->trainer_card.current_cursor = TRAINER_CARD_MAX_DAYS;
+    PW_SET_REQUEST(s->requests, PW_REQUEST_REDRAW);
 }
 
-void pw_trainer_card_handle_input(state_vars_t *sv, uint8_t b) {
+void pw_trainer_card_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b) {
     switch(b) {
-    case BUTTON_L:
-        if(sv->current_cursor <= 0) {
-            sv->current_cursor = 3; // position of trainer card in menu
-            pw_request_state(STATE_MAIN_MENU);
+    case BUTTON_L: {
+        if(s->trainer_card.current_cursor <= 0) {
+            s->trainer_card.current_substate = TC_GO_TO_MENU;
         } else {
-            pw_trainer_card_move_cursor(sv, -1);
+            pw_trainer_card_move_cursor(s, -1);
         }
         break;
-    case BUTTON_M:
-        pw_request_state(STATE_SPLASH);
+    }
+    case BUTTON_M: {
+        s->trainer_card.current_substate = TC_GO_TO_SPLASH;
         break;
-    case BUTTON_R:
-        pw_trainer_card_move_cursor(sv, +1);
+    }
+    case BUTTON_R: {
+        pw_trainer_card_move_cursor(s, +1);
         break;
-    default:
-        pw_request_state(STATE_ERROR);
-        break;
+    }
     }
 }
 
-void pw_trainer_card_draw_update(state_vars_t *sv) {
-    if(sv->cursor_2 != sv->current_cursor) {
-        if(sv->current_cursor <= 0) {
-            pw_trainer_card_init_display(sv);
+void pw_trainer_card_draw_update(pw_state_t *s, const screen_flags_t *sf) {
+    if(s->trainer_card.previous_cursor != s->trainer_card.current_cursor) {
+        if(s->trainer_card.current_cursor <= 0) {
+            pw_trainer_card_init_display(s, sf);
         } else {
             uint32_t const total_steps = health_data_cache.total_steps;
             uint32_t const today_steps = health_data_cache.today_steps;
             uint16_t const total_days  = health_data_cache.total_days;
             pw_trainer_card_draw_dayview(
-                sv->current_cursor,
-                swap_bytes_u32(prev_step_counts[sv->current_cursor-1]),
+                s->trainer_card.current_cursor,
+                swap_bytes_u32(prev_step_counts[s->trainer_card.current_cursor-1]),
                 total_steps,
                 //total_steps+today_steps,
                 total_days
             );
         }
-        sv->cursor_2 = sv->current_cursor;
+        s->trainer_card.previous_cursor = s->trainer_card.current_cursor;
     }
 }
 
+
+void pw_trainer_card_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf) {
+    switch(s->trainer_card.current_substate) {
+    case TC_NORMAL: {
+        break;
+    }
+    case TC_GO_TO_MENU: {
+        p->sid = STATE_MAIN_MENU;
+        p->menu.cursor = 3;
+        break;
+    }
+    case TC_GO_TO_SPLASH: {
+        p->sid = STATE_SPLASH;
+        break;
+    }
+    }
+}
 

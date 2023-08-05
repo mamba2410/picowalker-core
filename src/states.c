@@ -22,19 +22,19 @@ const char* const state_strings[N_STATES] = {
     [STATE_MAIN_MENU]       = "Main menu",
     [STATE_POKE_RADAR]      = "Poke radar",
     [STATE_DOWSING]         = "Dowsing",
-    [STATE_CONNECT]         = "Connect",
+    [STATE_COMMS]           = "Connect",
     [STATE_TRAINER_CARD]    = "Trainer card",
     [STATE_INVENTORY]       = "Pokemon and items",
     [STATE_SETTINGS]        = "Settings",
     [STATE_ERROR]           = "Error",
-    [STATE_FIRST_CONNECT]   = "First connect",
+    [STATE_FIRST_COMMS]     = "First connect",
 };
 
 // TODO: change function sigs
 state_funcs_t const STATE_FUNCS[N_STATES] = {
     [STATE_SCREENSAVER]     = {
         .init=pw_empty_event,
-        .loop=pw_empty_event,
+        .loop=pw_send_to_splash,
         .input=pw_empty_input,
         .draw_init=pw_screen_clear,
         .draw_update=pw_screen_clear,
@@ -42,7 +42,7 @@ state_funcs_t const STATE_FUNCS[N_STATES] = {
     },
     [STATE_SPLASH]          = {
         .init=pw_splash_init,
-        .loop=pw_empty_event,
+        .loop=pw_splash_event_loop,
         .input=pw_splash_handle_input,
         .draw_init=pw_splash_init_display,
         .draw_update=pw_splash_update_display,
@@ -80,7 +80,7 @@ state_funcs_t const STATE_FUNCS[N_STATES] = {
         .draw_update=pw_dowsing_update_display,
         .deinit=pw_empty_event,
     },
-    [STATE_CONNECT]         = {
+    [STATE_COMMS]         = {
         .init=pw_comms_init,
         .loop=pw_comms_event_loop,
         .input=pw_comms_handle_input,
@@ -90,7 +90,7 @@ state_funcs_t const STATE_FUNCS[N_STATES] = {
     },
     [STATE_TRAINER_CARD]    = {
         .init=pw_trainer_card_init,
-        .loop=pw_empty_event,
+        .loop=pw_trainer_card_event_loop,
         .input=pw_trainer_card_handle_input,
         .draw_init=pw_trainer_card_init_display,
         .draw_update=pw_trainer_card_draw_update,
@@ -98,7 +98,7 @@ state_funcs_t const STATE_FUNCS[N_STATES] = {
     },
     [STATE_INVENTORY]       = {
         .init=pw_inventory_init,
-        .loop=pw_empty_event,
+        .loop=pw_inventory_event_loop,
         .input=pw_inventory_handle_input,
         .draw_init=pw_inventory_init_display,
         .draw_update=pw_inventory_update_display,
@@ -106,7 +106,7 @@ state_funcs_t const STATE_FUNCS[N_STATES] = {
     },
     [STATE_SETTINGS]        = {
         .init=pw_empty_event,
-        .loop=pw_empty_event,
+        .loop=pw_send_to_splash,
         .input=pw_empty_input,
         .draw_init=pw_screen_clear,
         .draw_update=pw_empty_event,
@@ -114,13 +114,13 @@ state_funcs_t const STATE_FUNCS[N_STATES] = {
     },
     [STATE_ERROR]           = {
         .init=pw_empty_event,
-        .loop=pw_empty_event,
+        .loop=pw_send_to_splash,
         .input=pw_empty_input,
         .draw_init=pw_error_init_display,
         .draw_update=pw_empty_event,
         .deinit=pw_empty_event,
     },
-    [STATE_FIRST_CONNECT]   = {
+    [STATE_FIRST_COMMS]   = {
         .init=pw_first_comms_init,
         .loop=pw_first_comms_event_loop,
         .input=pw_first_comms_handle_input,
@@ -135,10 +135,13 @@ state_funcs_t const STATE_FUNCS[N_STATES] = {
  *  State functions
  *  ========================================
  */
-void pw_empty_event(pw_state_t *s, screen_flags_t *sf) {}
-void pw_empty_input(pw_state_t *s, screen_flags_t *sf, uint8_t b) {}
+void pw_empty_event(pw_state_t *s, const screen_flags_t *sf) {}
+void pw_empty_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b) {}
+void pw_send_to_splash(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf) {
+    p->sid = STATE_SPLASH;
+}
 
-void pw_error_init_display(pw_state_t *s, screen_flags_t *sf) {
+void pw_error_init_display(pw_state_t *s, const screen_flags_t *sf) {
     pw_img_t sad_pokewalker_img   = {.height=48, .width=48, .data=sad_pokewalker, .size=576};
     pw_screen_draw_img(&sad_pokewalker_img, 0, 0);
 

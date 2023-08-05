@@ -9,10 +9,17 @@
 
 #define TRAINER_CARD_MAX_DAYS   7
 
-void pw_trainer_card_init(state_vars_t *sv);
-void pw_trainer_card_init_display(state_vars_t *sv);
-void pw_trainer_card_handle_input(state_vars_t *sv, uint8_t b);
-void pw_trainer_card_draw_update(state_vars_t *sv);
+enum {
+    TC_NORMAL,
+    TC_GO_TO_SPLASH,
+    TC_GO_TO_MENU,
+};
+
+void pw_trainer_card_init(pw_state_t *s, const screen_flags_t *sf);
+void pw_trainer_card_init_display(pw_state_t *s, const screen_flags_t *sf);
+void pw_trainer_card_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b);
+void pw_trainer_card_draw_update(pw_state_t *s, const screen_flags_t *sf);
+void pw_trainer_card_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf);
 
 
 #endif /* PW_APP_TRAINER_CARD_H */

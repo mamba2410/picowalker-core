@@ -20,12 +20,12 @@ typedef enum {
     STATE_MAIN_MENU,
     STATE_POKE_RADAR,
     STATE_DOWSING,
-    STATE_CONNECT,
+    STATE_COMMS,
     STATE_TRAINER_CARD,
     STATE_INVENTORY,
     STATE_SETTINGS,
     STATE_ERROR,
-    STATE_FIRST_CONNECT,
+    STATE_FIRST_COMMS,
     STATE_BATTLE,
     N_STATES,
 } pw_state_id_t;
@@ -36,6 +36,8 @@ typedef struct {
 
 typedef struct {
     pw_brief_inventory_t inventory;
+    int8_t menu_cursor;
+    uint8_t current_substate;
 } app_splash_t;
 
 /*
@@ -92,8 +94,9 @@ typedef struct {
 } app_connect_t;
 
 typedef struct {
+    uint8_t current_cursor;
+    uint8_t previous_cursor;
     uint8_t current_substate;
-    uint8_t previous_substate;
 } app_trainer_card_t;
 
 typedef struct {
@@ -125,7 +128,7 @@ typedef struct {
         app_screensaver_t screensaver;
         app_splash_t splash;
         app_menu_t menu;
-        app_connect_t connect;
+        app_connect_t comms;
         app_radar_t radar;
         app_dowsing_t dowsing;
         app_trainer_card_t trainer_card;
@@ -169,8 +172,6 @@ typedef struct {
 extern const char* const state_strings[];
 extern const state_funcs_t STATE_FUNCS[];
 
-pw_state_t pw_get_state();
-
 void pw_state_init();
 void pw_state_run_event_loop();
 void pw_state_handle_input(uint8_t b);
@@ -182,9 +183,10 @@ void pw_state_draw_update();
  */
 void pw_empty_event(pw_state_t *s, const screen_flags_t *sf);
 void pw_empty_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b);
+void pw_send_to_splash(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf);
 
 // STATE_ERROR
-void pw_error_init_display(pw_state_t *s, screen_flags_t *sf);
+void pw_error_init_display(pw_state_t *s, const screen_flags_t *sf);
 
 #endif /* PW_STATES_H */
 

@@ -13,33 +13,39 @@
 
 /// @file app_splash.c
 
+enum {
+    SPLASH_NORMAL,
+    SPLASH_GO_TO_MENU,
+};
 
-void pw_splash_init(pw_state_t *s, screen_flags_t *sf) {
-    pw_read_inventory(&(s->splash.inventory));
+void pw_splash_init(pw_state_t *s, const screen_flags_t *sf) {
+    pw_detailed_inventory_t di;
+    pw_read_inventory(&(s->splash.inventory), &di);
+    s->splash.current_substate = SPLASH_NORMAL;
 }
 
-void pw_splash_handle_input(pw_state_t *s, screen_flags_t *sf, uint8_t b) {
+void pw_splash_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b) {
     switch(b) {
     case BUTTON_M: {
-        pw_menu_set_cursor(sv, (MENU_SIZE-1)/2);
+        s->splash.menu_cursor = (MENU_SIZE-1)/2;
+        s->splash.current_substate = SPLASH_GO_TO_MENU;
         break;
     }
     case BUTTON_L: {
-        pw_menu_set_cursor(sv, MENU_SIZE-1);
+        s->splash.menu_cursor = MENU_SIZE-1;
+        s->splash.current_substate = SPLASH_GO_TO_MENU;
         break;
     }
-    case BUTTON_R:
-    default: {
-        pw_menu_set_cursor(sv, 0);
+    case BUTTON_R: {
+        s->splash.menu_cursor = 0;
+        s->splash.current_substate = SPLASH_GO_TO_MENU;
         break;
     }
     }
-    pw_request_state(STATE_MAIN_MENU);
+
 }
 
-void pw_splash_init_display(pw_state_t *s, screen_flags_t *sf) {
-
-
+void pw_splash_init_display(pw_state_t *s, const screen_flags_t *sf) {
     if(s->splash.inventory.caught_pokemon & INV_WALKING_POKEMON) {
         pw_screen_draw_from_eeprom(
             SCREEN_WIDTH-64, 0,
@@ -91,7 +97,7 @@ void pw_splash_init_display(pw_state_t *s, screen_flags_t *sf) {
 
     }
 
-    if( s->splash.inventory.caught_pokemon & INV_EVENT_POKEMON ) {
+    if( s->splash.inventory.caught_pokemon & INV_EXTRA_POKEMON ) {
         pw_screen_draw_from_eeprom(
             0, SCREEN_HEIGHT-16,
             8, 8,
@@ -100,7 +106,7 @@ void pw_splash_init_display(pw_state_t *s, screen_flags_t *sf) {
         );
     }
 
-    if( s->splash.inventory.dowsed_items & INV_FOUND_EVENT_ITEM ) {
+    if( s->splash.inventory.dowsed_items & INV_EXTRA_ITEM ) {
         pw_screen_draw_from_eeprom(
             8, SCREEN_HEIGHT-16,
             8, 8,
@@ -113,7 +119,7 @@ void pw_splash_init_display(pw_state_t *s, screen_flags_t *sf) {
     pw_screen_draw_horiz_line(0, SCREEN_HEIGHT-16, SCREEN_WIDTH, SCREEN_BLACK);
 }
 
-void pw_splash_update_display(pw_state_t *s, screen_flags_t *sf) {
+void pw_splash_update_display(pw_state_t *s, const screen_flags_t *sf) {
 
     uint16_t frame_addr;
     if(sf->frame&ANIM_FRAME_NORMAL_TIME) {
