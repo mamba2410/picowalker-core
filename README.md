@@ -6,6 +6,8 @@
 
 Sister project: [picowalker](https://github.com/mamba2410/picowalker).
 
+Windows/linux port: [picowalker-sdl](https://github.com/mamba2410/picowalker-sdl).
+
 This project aims to recreate a Pokewalker from Pokemon HeartGold/SoulSilver using custom hardware based around the Raspberry Pi Pico.
 People should be able to build their own fully functioning device which can interact with the original HG/SS games as the Pokewalker did.
 We will try to stay faithful to the original use and intent of the Pokewalker, but on a new, relatively easily buildable device, since working, original Pokewalkers are becoming more and more rare.
@@ -24,7 +26,7 @@ What's working (tested with rpi pico):
 - Most of the common IR functionality
 - Button functions (interrupts)
 - Splash screen
-- Apps: battle (including catching), dowsing, IR (including pairing/erasing, walk start/end, peer play), trainer card and inventory.
+- Apps: battle (including catching), dowsing, IR (including pairing/erasing, walk start/end, peer play), trainer card, inventory and settings.
 - EEPROM functions
 - Accelerometer
 
@@ -69,19 +71,22 @@ For things that need doing, see the [todo doc](./docs/TODO.md).
 It should be as easy as
 
 ```sh
-cd build
-cmake -DCMAKE_TOOLCHAIN_FILE="../toolchain-pico.cmake" -DCMAKE_BUILD_TYPE=Debug ..
-cd ..
-make
+cmake -B build/arm-cortexm0plus -DCMAKE_TOOLCHAIN_FILE="../toolchain-pico.cmake" .
+cmake --build build/arm-cortexm0plus
 ```
 
 ### Mac
 
 Should be the same as Linux?
 
-### Windows
+### Windows natively
 
-As long as you have CMake and the right toolchain installed, it should be the same?
+As long as you have CMake and the right toolchain installed, it should be the same.
+
+```sh
+cmake -B build/x86-windows .
+cmake --build build/x86-windows
+```
 
 ## License
 
