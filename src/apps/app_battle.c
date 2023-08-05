@@ -534,7 +534,7 @@ void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
             PW_EEPROM_ADDR_TEXT_POKEMON_NAMES + s->battle.chosen_pokemon*PW_EEPROM_SIZE_TEXT_POKEMON_NAME,
             PW_EEPROM_SIZE_TEXT_POKEMON_NAME
         );
-        pw_screen_draw_text_box(0, SCREEN_HEIGHT-32, SCREEN_WIDTH-1, SCREEN_HEIGHT-1, SCREEN_BLACK);
+        pw_screen_draw_text_box(0, SCREEN_HEIGHT-32, SCREEN_WIDTH, 32, SCREEN_BLACK);
 
         pw_img_t health_bar = {.width=8, .height=8, .data=eeprom_buf, .size=16};
         pw_eeprom_read(PW_EEPROM_ADDR_IMG_RADAR_HP_BLIP, eeprom_buf, PW_EEPROM_SIZE_IMG_RADAR_HP_BLIP);
@@ -611,7 +611,7 @@ void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
             break;
         }
         }
-        pw_screen_draw_text_box(0, SCREEN_HEIGHT-32, SCREEN_WIDTH-1, SCREEN_HEIGHT-1, SCREEN_BLACK);
+        pw_screen_draw_text_box(0, SCREEN_HEIGHT-32, SCREEN_WIDTH, 32, SCREEN_BLACK);
         break;
     }
     case BATTLE_THEIR_ACTION: {
@@ -647,7 +647,7 @@ void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
                 PW_EEPROM_SIZE_TEXT_ATTACKED
             );
         }
-        pw_screen_draw_text_box(0, SCREEN_HEIGHT-32, SCREEN_WIDTH-1, SCREEN_HEIGHT-1, SCREEN_BLACK);
+        pw_screen_draw_text_box(0, SCREEN_HEIGHT-32, SCREEN_WIDTH, 32, SCREEN_BLACK);
         break;
     }
     case BATTLE_THEY_FLED: {
@@ -659,7 +659,7 @@ void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
             PW_EEPROM_SIZE_TEXT_POKEMON_NAME
         );
         pw_screen_draw_message(SCREEN_HEIGHT-16, 33, 16); // "fled..."
-        pw_screen_draw_text_box(0, SCREEN_HEIGHT-32, SCREEN_WIDTH-1, SCREEN_HEIGHT-1, SCREEN_BLACK);
+        pw_screen_draw_text_box(0, SCREEN_HEIGHT-32, SCREEN_WIDTH, 32, SCREEN_BLACK);
         break;
     }
     case BATTLE_WE_LOST: {
@@ -670,17 +670,19 @@ void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
             PW_EEPROM_SIZE_TEXT_POKEMON_NAME
         );
         pw_screen_draw_message(SCREEN_HEIGHT-16, 34, 16); // "was too strong..."
-        pw_screen_draw_text_box(0, SCREEN_HEIGHT-32, SCREEN_WIDTH-1, SCREEN_HEIGHT-1, SCREEN_BLACK);
+        pw_screen_draw_text_box(0, SCREEN_HEIGHT-32, SCREEN_WIDTH, 32, SCREEN_BLACK);
         break;
     }
     case BATTLE_STAREDOWN: {
         pw_screen_clear_area(0, SCREEN_HEIGHT-32, SCREEN_WIDTH, 16);
-        pw_screen_draw_message(SCREEN_HEIGHT-16, 41, 16);
+        pw_screen_draw_message(SCREEN_HEIGHT-16, 41, 16); // "staredown"
+        pw_screen_draw_text_box(0, SCREEN_HEIGHT-16, SCREEN_WIDTH, 16, SCREEN_BLACK);
         break;
     }
     case BATTLE_THREW_BALL: {
         pw_screen_clear_area(0, SCREEN_HEIGHT-32, SCREEN_WIDTH, 16);
         pw_screen_draw_message(SCREEN_HEIGHT-16, 39, 16); // "threw a ball"
+        pw_screen_draw_text_box(0, SCREEN_HEIGHT-16, SCREEN_WIDTH, 16, SCREEN_BLACK);
         break;
     }
     case BATTLE_CLOUD_ANIM: {
@@ -710,6 +712,7 @@ void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
     case BATTLE_ALMOST_HAD_IT: {
         pw_screen_draw_img(&their_sprite, THEIR_NORMAL_X, THEIR_NORMAL_Y);
         pw_screen_draw_message(SCREEN_HEIGHT-16, 40, 16); // "almost had it"
+        pw_screen_draw_text_box(0, SCREEN_HEIGHT-16, SCREEN_WIDTH, 16, SCREEN_BLACK);
         break;
     }
     case BATTLE_CATCH_STARS: {
@@ -724,6 +727,7 @@ void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
             PW_EEPROM_SIZE_TEXT_POKEMON_NAME
         );
         pw_screen_draw_message(SCREEN_HEIGHT-16, 32, 16); // "was caught!"
+        pw_screen_draw_text_box(0, SCREEN_HEIGHT-32, SCREEN_WIDTH, 32, SCREEN_BLACK);
         break;
     }
     case BATTLE_SWITCH: {

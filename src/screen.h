@@ -54,7 +54,7 @@ extern void pw_screen_draw_horiz_line(
 );
 extern void pw_screen_draw_text_box(
     screen_pos_t x1, screen_pos_t y1,
-    screen_pos_t x2, screen_pos_t y2,
+    screen_pos_t w, screen_pos_t h,
     screen_colour_t colour
 );
 extern void pw_screen_clear();

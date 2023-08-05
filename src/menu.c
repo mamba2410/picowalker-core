@@ -222,7 +222,7 @@ void pw_menu_update_display(pw_state_t *s, const screen_flags_t *sf) {
             PW_EEPROM_ADDR_TEXT_NEED_WATTS + PW_EEPROM_SIZE_TEXT_NEED_WATTS*(s->menu.message-1),
             PW_EEPROM_SIZE_TEXT_NEED_WATTS
         );
-        pw_screen_draw_text_box(0, SCREEN_HEIGHT-16, SCREEN_WIDTH-1, SCREEN_HEIGHT-1, SCREEN_BLACK);
+        pw_screen_draw_text_box(0, SCREEN_HEIGHT-16, SCREEN_WIDTH, 16, SCREEN_BLACK);
     }
 
 }

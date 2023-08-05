@@ -77,7 +77,9 @@ void pw_screen_draw_subtime(uint8_t n, size_t x, size_t y, bool draw_colon) {
 
 // always draws at x=0
 void pw_screen_draw_message(screen_pos_t y, uint8_t message_index, screen_pos_t h) {
-    if(h != 16 && h != 32) { return; } // can only do 16 or 32 height messages
+    if(h != 16 && h != 32) {
+        return;    // can only do 16 or 32 height messages
+    }
 
     eeprom_addr_t addr = PW_EEPROM_ADDR_TEXT_CONNECTING + message_index * PW_EEPROM_SIZE_TEXT_CONNECTING;
     size_t sz = PW_EEPROM_SIZE_TEXT_CONNECTING*h/16;
@@ -91,6 +93,5 @@ void pw_screen_draw_message(screen_pos_t y, uint8_t message_index, screen_pos_t 
     };
 
     pw_screen_draw_img(&img, 0, y);
-    pw_screen_draw_text_box(0, y, SCREEN_WIDTH-1, y+h-1, SCREEN_BLACK);
-
 }
+
