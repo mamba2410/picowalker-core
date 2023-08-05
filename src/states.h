@@ -109,7 +109,12 @@ typedef struct {
     uint8_t previous_substate;
 } app_inventory_t;
 
-typedef struct {} pw_settings_t;
+typedef struct {
+    uint8_t current_substate;
+    uint8_t previous_substate;
+    int8_t main_cursor;
+    int8_t sub_cursor;
+} app_settings_t;
 
 typedef struct {
     uint8_t current_substate;
@@ -137,6 +142,7 @@ typedef struct {
         app_trainer_card_t trainer_card;
         app_inventory_t inventory;
         app_battle_t battle;
+        app_settings_t settings;
     };
 } pw_state_t;
 

@@ -15,6 +15,7 @@
 #include "apps/app_poke_radar.h"
 #include "apps/app_battle.h"
 #include "apps/app_first_comms.h"
+#include "apps/app_settings.h"
 
 const char* const state_strings[N_STATES] = {
     [STATE_SCREENSAVER]     = "Screensaver",
@@ -105,11 +106,11 @@ state_funcs_t const STATE_FUNCS[N_STATES] = {
         .deinit=pw_empty_event,
     },
     [STATE_SETTINGS]        = {
-        .init=pw_empty_event,
-        .loop=pw_send_to_splash,
-        .input=pw_empty_input,
-        .draw_init=pw_screen_clear,
-        .draw_update=pw_empty_event,
+        .init=pw_settings_init,
+        .loop=pw_settings_event_loop,
+        .input=pw_settings_handle_input,
+        .draw_init=pw_settings_init_display,
+        .draw_update=pw_settings_update_display,
         .deinit=pw_empty_event,
     },
     [STATE_ERROR]           = {

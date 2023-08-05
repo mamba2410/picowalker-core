@@ -83,6 +83,12 @@ typedef struct {
     /* +0x64 */ uint32_t be_step_count;
 } walker_info_t;
 
+#define SETTINGS_SPECIAL_MAP_OFFSET 0
+#define SETTINGS_SPECIAL_MAP_MASK   (0x1<<SETTINGS_SPECIAL_MAP_OFFSET)
+#define SETTINGS_SOUND_OFFSET       1
+#define SETTINGS_SOUND_MASK         (0x3<<SETTINGS_SOUND_OFFSET)
+#define SETTINGS_SHADE_OFFSET       3
+#define SETTINGS_SHADE_MASK         (0xf<<SETTINGS_SHADE_OFFSET)
 /*
  *  size: 0x18 = 24 bytes
  *  dmitry: struct HealthData
@@ -97,7 +103,7 @@ typedef struct {
     /* +0x12 */ uint8_t  steps_this_watt;
     /* +0x13 */ uint8_t  event_log_index;
     /* +0x14 */ uint8_t  padding[3];
-    /* +0x17 */ uint8_t  settings;
+    /* +0x17 */ uint8_t  settings;              // [0]=special_map, [1..2]=volume, [3..6]=contrast
 } health_data_t;
 
 typedef struct {
