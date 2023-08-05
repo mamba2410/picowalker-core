@@ -169,7 +169,7 @@ void pw_pokemon_index_to_small_sprite(pokemon_index_t idx, uint8_t *buf, uint8_t
 /**
  *
  */
-void pw_pokemon_index_to_name_sprite(pokemon_index_t idx, uint8_t *buf) {
+void pw_pokemon_index_to_name(pokemon_index_t idx, uint8_t *buf) {
     eeprom_addr_t addr;
 
     switch(idx) {

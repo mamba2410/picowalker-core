@@ -100,6 +100,7 @@ void walker_loop() {
         }; // clang-format why
         pending_state->sid = current_state->sid;
 
+        pw_screen_clear();
         STATE_FUNCS[current_state->sid].init(current_state, &screen_flags);
         STATE_FUNCS[current_state->sid].draw_init(current_state, &screen_flags);
     }
@@ -112,6 +113,10 @@ void walker_loop() {
         STATE_FUNCS[current_state->sid].draw_update(current_state, &screen_flags);
         screen_flags.frame = (screen_flags.frame+1)%4;
     }
+}
+
+void pw_state_handle_input(uint8_t b) {
+    STATE_FUNCS[current_state->sid].input(current_state, &screen_flags, b);
 }
 
 

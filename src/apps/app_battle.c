@@ -512,11 +512,9 @@ void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
     pw_img_t our_sprite   = {.width=32, .height=24, .size=192, .data=eeprom_buf};
     pw_img_t their_sprite = {.width=32, .height=24, .size=192, .data=decompression_buf};
 
-    eeprom_addr_t addr = pw_pokemon_index_to_small_sprite(s->battle.chosen_pokemon+1, sf->frame);
-    pw_eeprom_read(addr, their_sprite.data, their_sprite.size);
+    pw_pokemon_index_to_small_sprite(s->battle.chosen_pokemon+1, their_sprite.data, sf->frame);
 
-    addr = pw_pokemon_index_to_small_sprite(PIDX_WALKING, sf->frame);
-    pw_eeprom_read(addr, our_sprite.data, our_sprite.size);
+    pw_pokemon_index_to_small_sprite(PIDX_WALKING, our_sprite.data, sf->frame);
 
     switch(s->battle.current_substate) {
     case BATTLE_OPENING: {
@@ -789,11 +787,9 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
     pw_img_t our_sprite   = {.width=32, .height=24, .size=192, .data=eeprom_buf};
     pw_img_t their_sprite = {.width=32, .height=24, .size=192, .data=decompression_buf};
 
-    eeprom_addr_t addr = pw_pokemon_index_to_small_sprite(s->battle.chosen_pokemon+1, sf->frame);
-    pw_eeprom_read(addr, their_sprite.data, their_sprite.size);
+    pw_pokemon_index_to_small_sprite(s->battle.chosen_pokemon+1, their_sprite.data, sf->frame);
 
-    addr = pw_pokemon_index_to_small_sprite(PIDX_WALKING, sf->frame);
-    pw_eeprom_read(addr, our_sprite.data, our_sprite.size);
+    pw_pokemon_index_to_small_sprite(PIDX_WALKING, our_sprite.data, sf->frame);
 
     switch(s->battle.current_substate) {
     case BATTLE_OPENING: {

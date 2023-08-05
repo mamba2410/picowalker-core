@@ -114,7 +114,7 @@ void pw_comms_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b) {
     switch(b) {
     case BUTTON_M:
         if(pw_ir_get_comm_state() == COMM_STATE_DISCONNECTED) {
-            s->comms.screen_state = CS_SEND_TO_SPLASH;
+            s->comms.screen_state = CSS_GO_TO_SPLASH;
         }
         break;
     case BUTTON_L:

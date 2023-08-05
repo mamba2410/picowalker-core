@@ -143,3 +143,18 @@ void pw_splash_update_display(pw_state_t *s, const screen_flags_t *sf) {
 
 }
 
+void pw_splash_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf) {
+    switch(s->splash.current_substate) {
+    case SPLASH_GO_TO_MENU: {
+        p->sid = STATE_MAIN_MENU;
+        p->menu.cursor = s->splash.menu_cursor;
+        break;
+    }
+    default: {
+        // nothing to do
+        break;
+    }
+    }
+}
+
+

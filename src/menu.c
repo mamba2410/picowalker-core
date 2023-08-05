@@ -15,7 +15,7 @@
 static pw_state_id_t const MENU_ENTRIES[] = {
     STATE_POKE_RADAR,
     STATE_DOWSING,
-    STATE_CONNECT,
+    STATE_COMMS,
     STATE_TRAINER_CARD,
     STATE_INVENTORY,
     STATE_SETTINGS,
@@ -52,6 +52,7 @@ bool pw_menu_move_cursor(pw_state_t *s, int8_t move) {
         return true;
     }
 
+    PW_SET_REQUEST(s->requests, PW_REQUEST_REDRAW);
     return false;
 }
 
@@ -62,8 +63,9 @@ void pw_menu_init(pw_state_t *s, const screen_flags_t *sf) {
 void pw_menu_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf) {
     if(s->menu.transition) {
         if(MENU_ENTRIES[s->menu.cursor] == STATE_INVENTORY) {
-            pw_inventory_t inv;
-            pw_read_inventory(&inv);
+            pw_brief_inventory_t inv;
+            pw_detailed_inventory_t _detailed;
+            pw_read_inventory(&inv, &_detailed);
 
             // no pokemon or items
             if(inv.caught_pokemon == 0 && inv.dowsed_items == 0) {
