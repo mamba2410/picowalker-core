@@ -100,30 +100,45 @@ const uint8_t ACTION_CHANCES[5][3] = {
     {   20,    30,        50},
 };
 
-void pw_battle_switch_substate(state_vars_t *sv, uint8_t s) {
-    sv->substate_2 = sv->current_substate;
-    sv->current_substate = s;
-    pw_request_redraw();
+/**
+ * Lazy way of switching substate, recording the last one and then requesting a redraw
+*/
+static void pw_battle_switch_substate(pw_state_t *s, uint8_t sid) {
+    s->battle.previous_substate = s->battle.current_substate;
+    s->battle.current_substate = sid;
+    PW_SET_REQUEST(s->requests, PW_REQUEST_REDRAW);
 }
 
 /**
- *  Initialises state vars for battle
+ *  Initialises `app_battle_t` struct.
+ *
+ *  @param s Pointer to current state.
+ *  @param sf Pointer to current screen flags.
+ *
  */
-void pw_battle_init(state_vars_t *sv) {
-    sv->current_cursor = 0;
-    sv->cursor_2 = 0;
-    sv->current_substate = BATTLE_OPENING;
-    sv->substate_2 = BATTLE_OPENING;
-    sv->reg_b = 0;
-    sv->reg_c = 4;
-    sv->reg_d = (4<<OUR_HP_OFFSET) | (4<<THEIR_HP_OFFSET);
+void pw_battle_init(pw_state_t *s, const screen_flags_t *sf) {
+    s->battle.current_substate = BATTLE_OPENING;
+    s->battle.previous_substate = BATTLE_OPENING;
+    s->battle.actions = 0;
+    s->battle.anim_frame = 4;
+    s->battle.current_hp = (4<<OUR_HP_OFFSET) | (4<<THEIR_HP_OFFSET);
+    s->battle.switch_cursor = 0;
+    s->battle.prev_switch_cursor = 0;
 }
 
-void pw_battle_event_loop(state_vars_t *sv) {
-    switch(sv->current_substate) {
+/**
+ * Main event loop for battle state.
+ *
+ * @param s Pointer to current state, always interpreted as `app_battle_t`.
+ * @param p Pointer to pending state. Switches to this state if `p->sid != s->sid`.
+ * @param sf Pointer to current screen flags.
+ *
+ */
+void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf) {
+    switch(s->battle.current_substate) {
     case BATTLE_OPENING: {
-        if(sv->reg_c == 0) {
-            pw_battle_switch_substate(sv, BATTLE_APPEARED);
+        if(s->battle.anim_frame <= 0) {
+            pw_battle_switch_substate(s, BATTLE_APPEARED);
         }
         break;
     }
@@ -131,11 +146,11 @@ void pw_battle_event_loop(state_vars_t *sv) {
         break;
     }
     case BATTLE_CHOOSING: {
-        if(sv->current_substate != sv->substate_2) sv->reg_x = 0;
-        if(sv->reg_x == 1) {
-            uint8_t our_action = (sv->reg_b&OUR_ACTION_MASK)>>OUR_ACTION_OFFSET;
-            uint8_t their_action = (sv->reg_b&THEIR_ACTION_MASK)>>THEIR_ACTION_OFFSET;
-            uint8_t choice_index = (sv->reg_b&CHOICE_INDEX_MASK)>>CHOICE_INDEX_OFFSET;
+        if(s->battle.current_substate != s->battle.previous_substate) s->battle.substate_queue_index = 0;
+        if(s->battle.substate_queue_index == 1) {
+            uint8_t our_action   = (s->battle.actions&OUR_ACTION_MASK)>>OUR_ACTION_OFFSET;
+            uint8_t their_action = (s->battle.actions&THEIR_ACTION_MASK)>>THEIR_ACTION_OFFSET;
+            uint8_t choice_index = (s->battle.actions&CHOICE_INDEX_MASK)>>CHOICE_INDEX_OFFSET;
 
             // decide their action
             uint8_t rnd = pw_rand()%100;
@@ -147,11 +162,11 @@ void pw_battle_event_loop(state_vars_t *sv) {
                 their_action = ACTION_ATTACK;
             }
 
-            sv->reg_b &= ~THEIR_ACTION_MASK;
-            sv->reg_b |= (their_action<<THEIR_ACTION_OFFSET)&THEIR_ACTION_MASK;
+            s->battle.actions &= ~THEIR_ACTION_MASK;
+            s->battle.actions |= (their_action<<THEIR_ACTION_OFFSET)&THEIR_ACTION_MASK;
 
-            uint8_t our_hp = (sv->reg_d&OUR_HP_MASK)>>OUR_HP_OFFSET;
-            uint8_t their_hp = (sv->reg_d&THEIR_HP_MASK)>>THEIR_HP_OFFSET;
+            uint8_t our_hp   = (s->battle.current_hp&OUR_HP_MASK)>>OUR_HP_OFFSET;
+            uint8_t their_hp = (s->battle.current_hp&THEIR_HP_MASK)>>THEIR_HP_OFFSET;
 
             /*
              * big matrix on what happens based on both actions
@@ -189,80 +204,80 @@ void pw_battle_event_loop(state_vars_t *sv) {
                 case ACTION_ATTACK: {
                     our_hp -= 1;
                     their_hp -= 1;
-                    sv->reg_b &= ~CHOICE_INDEX_MASK;
-                    sv->reg_b |= 1<<CHOICE_INDEX_OFFSET; // taken from walker
+                    s->battle.actions &= ~CHOICE_INDEX_MASK;
+                    s->battle.actions |= 1<<CHOICE_INDEX_OFFSET; // taken from walker
                     break;
                 }
                 case ACTION_EVADE: {
                     our_hp -= 1;
-                    sv->reg_b &= ~CHOICE_INDEX_MASK;
-                    sv->reg_b |= 3<<CHOICE_INDEX_OFFSET; // taken from walker
+                    s->battle.actions &= ~CHOICE_INDEX_MASK;
+                    s->battle.actions |= 3<<CHOICE_INDEX_OFFSET; // taken from walker
                     break;
                 }
                 case ACTION_SPECIAL: {
                     our_hp -= 1;
                     their_hp -= 2;
-                    sv->reg_b &= ~CHOICE_INDEX_MASK;
-                    sv->reg_b |= 2<<CHOICE_INDEX_OFFSET; // taken from walker
+                    s->battle.actions &= ~CHOICE_INDEX_MASK;
+                    s->battle.actions |= 2<<CHOICE_INDEX_OFFSET; // taken from walker
                     break;
                 }
                 }
             }
 
-            sv->reg_d = our_hp<<OUR_HP_OFFSET | their_hp<<THEIR_HP_OFFSET;
+            s->battle.current_hp = our_hp<<OUR_HP_OFFSET | their_hp<<THEIR_HP_OFFSET;
 
-            pw_battle_switch_substate(sv, substate_queue[sv->reg_x-1]);
-            sv->reg_c = 0;
+            pw_battle_switch_substate(s, substate_queue[s->battle.substate_queue_index-1]);
+            s->battle.anim_frame = 0;
         }
         break;
     }
     case BATTLE_THEIR_ACTION: {
-        if(sv->reg_c == ATTACK_ANIM_LENGTH) {
-            uint8_t our_hp = (sv->reg_d&OUR_HP_MASK)>>OUR_HP_OFFSET;
+        if(s->battle.anim_frame == ATTACK_ANIM_LENGTH) {
+            uint8_t our_hp = (s->battle.current_hp&OUR_HP_MASK)>>OUR_HP_OFFSET;
             if(our_hp == 0 || our_hp > 4) {
-                sv->reg_c = 0;
-                pw_battle_switch_substate(sv, BATTLE_WE_LOST);
+                s->battle.anim_frame = 0;
+                pw_battle_switch_substate(s, BATTLE_WE_LOST);
                 return;
             }
 
-            sv->reg_x++;
-            sv->reg_c = 0;
-            pw_battle_switch_substate(sv, substate_queue[sv->reg_x-1]);
+            s->battle.substate_queue_index++;
+            s->battle.anim_frame = 0;
+            pw_battle_switch_substate(s, substate_queue[s->battle.substate_queue_index-1]);
         }
         break;
     }
     case BATTLE_OUR_ACTION: {
-        if(sv->reg_c == ATTACK_ANIM_LENGTH) {
-            uint8_t their_hp = (sv->reg_d&THEIR_HP_MASK)>>THEIR_HP_OFFSET;
+        if(s->battle.anim_frame == ATTACK_ANIM_LENGTH) {
+            uint8_t their_hp = (s->battle.current_hp&THEIR_HP_MASK)>>THEIR_HP_OFFSET;
             if(their_hp == 0 || their_hp > 4) {
-                sv->reg_c = 0;
-                pw_battle_switch_substate(sv, BATTLE_THEY_FLED);
+                s->battle.anim_frame = 0;
+                pw_battle_switch_substate(s, BATTLE_THEY_FLED);
                 return;
             }
 
-            sv->reg_x++;
-            sv->reg_c = 0;
-            pw_battle_switch_substate(sv, substate_queue[sv->reg_x-1]);
+            s->battle.substate_queue_index++;
+            s->battle.anim_frame = 0;
+            pw_battle_switch_substate(s, substate_queue[s->battle.substate_queue_index-1]);
         }
         break;
     }
     case BATTLE_STAREDOWN: {
-        if(sv->reg_c == STAREDOWN_ANIM_LENGTH) {
-            sv->reg_x++;
-            sv->reg_c = 0;
-            pw_battle_switch_substate(sv, substate_queue[sv->reg_x-1]);
+        if(s->battle.anim_frame == STAREDOWN_ANIM_LENGTH) {
+            s->battle.substate_queue_index++;
+            s->battle.anim_frame = 0;
+            pw_battle_switch_substate(s, substate_queue[s->battle.substate_queue_index-1]);
         }
         break;
     }
     case BATTLE_THEY_FLED: {
-        if(sv->reg_c >= MESSAGE_DISPLAY_ANIM_LENGTH) {
-            pw_request_state(STATE_SPLASH);
+        if(s->battle.anim_frame >= MESSAGE_DISPLAY_ANIM_LENGTH) {
+            p->sid = STATE_SPLASH;
         }
         break;
     }
     case BATTLE_WE_LOST: {
-        if(sv->reg_c >= MESSAGE_DISPLAY_ANIM_LENGTH) {
-            pw_request_state(STATE_SPLASH);
+        if(s->battle.anim_frame >= MESSAGE_DISPLAY_ANIM_LENGTH) {
+            p->sid = STATE_SPLASH;
         }
         break;
     }
@@ -271,11 +286,11 @@ void pw_battle_event_loop(state_vars_t *sv) {
         substate_queue[0] = BATTLE_THREW_BALL;
         substate_queue[1] = BATTLE_CLOUD_ANIM;
 
-        int8_t health = (sv->reg_d&THEIR_HP_MASK) >> THEIR_HP_OFFSET;
+        int8_t health = (s->battle.current_hp&THEIR_HP_MASK) >> THEIR_HP_OFFSET;
         uint8_t wobble_chance = WOBBLE_CHANCES[health-1];
         if(health <= 0) {
             substate_queue[0] = BATTLE_THEY_FLED;
-            sv->reg_y = 1;
+            s->battle.substate_queue_len = 1;
             return;
         }
 
@@ -290,74 +305,74 @@ void pw_battle_event_loop(state_vars_t *sv) {
             }
         }
 
-        sv->reg_b = n_wobbles<<MAX_WOBBLE_OFFSET;  // reuse reg_b for wobble count
+        s->battle.actions = n_wobbles<<MAX_WOBBLE_OFFSET;  // reuse reg_b for wobble count
 
         if(caught) {
             substate_queue[2] = BATTLE_BALL_WOBBLE;
             substate_queue[3] = BATTLE_CLOUD_ANIM;
             substate_queue[4] = BATTLE_ALMOST_HAD_IT;
             substate_queue[5] = BATTLE_THEY_FLED;
-            sv->reg_y = 6;
+            s->battle.substate_queue_len = 6;
         } else {
             substate_queue[2] = BATTLE_BALL_WOBBLE;
             substate_queue[3] = BATTLE_CATCH_STARS;
             substate_queue[4] = BATTLE_POKEMON_CAUGHT;
-            sv->reg_y = 5;
+            s->battle.substate_queue_len = 5;
         }
 
-        sv->reg_x = 1;  // 1-indexed
-        sv->reg_c = 0;  // reset anim frame count
-        pw_battle_switch_substate(sv, substate_queue[sv->reg_x-1]);
+        s->battle.substate_queue_index = 1;  // 1-indexed
+        s->battle.anim_frame = 0;  // reset anim frame count
+        pw_battle_switch_substate(s, substate_queue[s->battle.substate_queue_index-1]);
 
         break;
     }
     case BATTLE_THREW_BALL: {
-        if(sv->reg_c >= THREW_BALL_ANIM_LENGTH) {
-            sv->reg_x++;
-            sv->reg_c = 0;
-            pw_battle_switch_substate(sv, substate_queue[sv->reg_x-1]);
+        if(s->battle.anim_frame >= THREW_BALL_ANIM_LENGTH) {
+            s->battle.substate_queue_index++;
+            s->battle.anim_frame = 0;
+            pw_battle_switch_substate(s, substate_queue[s->battle.substate_queue_index-1]);
         }
         break;
     }
     case BATTLE_CLOUD_ANIM: {
-        if(sv->reg_c >= CLOUD_ANIM_LENGTH) {
-            sv->reg_x++;
-            sv->reg_c = 0;
-            pw_battle_switch_substate(sv, substate_queue[sv->reg_x-1]);
+        if(s->battle.anim_frame >= CLOUD_ANIM_LENGTH) {
+            s->battle.substate_queue_index++;
+            s->battle.anim_frame = 0;
+            pw_battle_switch_substate(s, substate_queue[s->battle.substate_queue_index-1]);
 
         }
         break;
     }
     case BATTLE_BALL_WOBBLE: {
-        if(sv->reg_c >= WOBBLE_ANIM_LENGTH) {
-            uint8_t current_wobble = sv->reg_b & CURRENT_WOBBLE_MASK+1;
-            uint8_t max_wobble = sv->reg_b >> MAX_WOBBLE_OFFSET;
+        if(s->battle.anim_frame >= WOBBLE_ANIM_LENGTH) {
+            uint8_t current_wobble = s->battle.actions & CURRENT_WOBBLE_MASK+1;
+            uint8_t max_wobble = s->battle.actions >> MAX_WOBBLE_OFFSET;
 
             if(current_wobble < max_wobble) {
                 current_wobble++;
-                sv->reg_b &= ~CURRENT_WOBBLE_MASK;
-                sv->reg_b |= current_wobble;
-                sv->reg_c = 0;
+                s->battle.actions &= ~CURRENT_WOBBLE_MASK;
+                s->battle.actions |= current_wobble;
+                s->battle.anim_frame = 0;
             } else {
-                sv->reg_x++;
-                sv->reg_c = 0;
-                pw_battle_switch_substate(sv, substate_queue[sv->reg_x-1]);
+                s->battle.substate_queue_index++;
+                s->battle.anim_frame = 0;
+                pw_battle_switch_substate(s, substate_queue[s->battle.substate_queue_index-1]);
 
             }
         }
         break;
     }
     case BATTLE_ALMOST_HAD_IT: {
-        if(sv->reg_c >= MESSAGE_DISPLAY_ANIM_LENGTH) {
-            sv->reg_x++;
-            sv->reg_c = 0;
-            pw_battle_switch_substate(sv, substate_queue[sv->reg_x-1]);
+        if(s->battle.anim_frame >= MESSAGE_DISPLAY_ANIM_LENGTH) {
+            s->battle.substate_queue_index++;
+            s->battle.anim_frame = 0;
+            pw_battle_switch_substate(s, substate_queue[s->battle.substate_queue_index-1]);
 
         }
         break;
     }
     case BATTLE_POKEMON_CAUGHT: {
-        if(sv->reg_c >= MESSAGE_DISPLAY_ANIM_LENGTH) {
+        if(s->battle.anim_frame >= MESSAGE_DISPLAY_ANIM_LENGTH) {
             /*
              *  TODO:
              *  - check if switch screen needed
@@ -366,548 +381,9 @@ void pw_battle_event_loop(state_vars_t *sv) {
         }
         break;
     }
-    case BATTLE_CATCH_STARS: {
-        if(sv->reg_c >= CATCH_ANIM_LENGTH) {
-            sv->reg_x++;
-            sv->reg_c = 0;
-            pw_battle_switch_substate(sv, substate_queue[sv->reg_x-1]);
-        }
-        break;
-    }
-    case BATTLE_SWITCH: {
-        break;
-    }
-    default: {
-        printf("[ERROR] Unhandled substate init: 0x%02x\n", sv->current_substate);
-        break;
-    }
+    case BATTLE_PROCESS_CAUGHT_POKEMON: {
 
-    }
-}
-
-void pw_battle_init_display(state_vars_t *sv) {
-
-    pw_img_t our_sprite   = {.width=32, .height=24, .size=192, .data=eeprom_buf};
-    pw_img_t their_sprite = {.width=32, .height=24, .size=192, .data=decompression_buf};
-
-    eeprom_addr_t addr = pw_pokemon_index_to_small_sprite(sv->reg_a+1, sv->anim_frame);
-    pw_eeprom_read(addr, their_sprite.data, their_sprite.size);
-
-    addr = pw_pokemon_index_to_small_sprite(PIDX_WALKING, sv->anim_frame);
-    pw_eeprom_read(addr, our_sprite.data, our_sprite.size);
-
-    switch(sv->current_substate) {
-    case BATTLE_OPENING: {
-        pw_screen_fill_area(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_BLACK);
-        break;
-    }
-    case BATTLE_APPEARED: {
-        pw_screen_draw_from_eeprom(
-            0, SCREEN_HEIGHT-16,
-            96, 16,
-            PW_EEPROM_ADDR_TEXT_APPEARED,
-            PW_EEPROM_SIZE_TEXT_APPEARED
-        );
-        pw_screen_draw_from_eeprom(
-            0, SCREEN_HEIGHT-32,
-            80, 16,
-            PW_EEPROM_ADDR_TEXT_POKEMON_NAMES + sv->reg_a*PW_EEPROM_SIZE_TEXT_POKEMON_NAME,
-            PW_EEPROM_SIZE_TEXT_POKEMON_NAME
-        );
-        pw_screen_draw_text_box(0, SCREEN_HEIGHT-32, SCREEN_WIDTH-1, SCREEN_HEIGHT-1, SCREEN_BLACK);
-
-        pw_img_t health_bar = {.width=8, .height=8, .data=eeprom_buf, .size=16};
-        pw_eeprom_read(PW_EEPROM_ADDR_IMG_RADAR_HP_BLIP, eeprom_buf, PW_EEPROM_SIZE_IMG_RADAR_HP_BLIP);
-
-        int8_t health = (sv->reg_d&THEIR_HP_MASK) >> THEIR_HP_OFFSET;
-        for(int8_t i = 0; i < health; i++) {
-            pw_screen_draw_img(&health_bar, 8*(i+1), 24);
-        }
-
-        health = (sv->reg_d&OUR_HP_MASK) >> OUR_HP_OFFSET;
-        for(int8_t i = 0; i < health; i++) {
-            pw_screen_draw_img(&health_bar, SCREEN_WIDTH/2 + 8*(i+1), 0);
-        }
-
-        pw_screen_draw_img(&their_sprite, THEIR_NORMAL_X, THEIR_NORMAL_Y);
-        pw_screen_draw_img(&our_sprite, OUR_NORMAL_X, OUR_NORMAL_Y);
-
-        break;
-    }
-    case BATTLE_CHOOSING: {
-        pw_screen_draw_from_eeprom(
-            0, SCREEN_HEIGHT-32,
-            96, 32,
-            PW_EEPROM_ADDR_TEXT_RADAR_ACTION,
-            PW_EEPROM_SIZE_TEXT_RADAR_ACTION
-        );
-        break;
-    }
-    case BATTLE_OUR_ACTION: {
-        uint8_t our_action = (sv->reg_b&OUR_ACTION_MASK)>>OUR_ACTION_OFFSET;
-        uint8_t their_action = (sv->reg_b&THEIR_ACTION_MASK)>>THEIR_ACTION_OFFSET;
-
-        pw_screen_clear_area(80, SCREEN_HEIGHT-32, SCREEN_WIDTH-80, 16);
-        switch(their_action) {
-        case ACTION_ATTACK: {
-            pw_screen_draw_from_eeprom(
-                0, SCREEN_HEIGHT-32,
-                80, 16,
-                PW_EEPROM_ADDR_TEXT_POKEMON_NAME,
-                PW_EEPROM_SIZE_TEXT_POKEMON_NAME
-            );
-            pw_screen_draw_from_eeprom(
-                0, SCREEN_HEIGHT-16,
-                SCREEN_WIDTH, 16,
-                PW_EEPROM_ADDR_TEXT_ATTACKED,
-                PW_EEPROM_SIZE_TEXT_ATTACKED
-            );
-            break;
-        }
-        case ACTION_EVADE: {
-            pw_screen_draw_from_eeprom(
-                0, SCREEN_HEIGHT-32,
-                80, 16,
-                PW_EEPROM_ADDR_TEXT_POKEMON_NAMES + sv->reg_a*PW_EEPROM_SIZE_TEXT_POKEMON_NAME,
-                PW_EEPROM_SIZE_TEXT_POKEMON_NAME
-            );
-            pw_screen_draw_from_eeprom(
-                0, SCREEN_HEIGHT-16,
-                SCREEN_WIDTH, 16,
-                PW_EEPROM_ADDR_TEXT_EVADED,
-                PW_EEPROM_SIZE_TEXT_EVADED
-            );
-
-            break;
-        }
-        case ACTION_SPECIAL: {
-            pw_screen_draw_from_eeprom(
-                0, SCREEN_HEIGHT-32,
-                SCREEN_WIDTH, 16,
-                PW_EEPROM_ADDR_TEXT_CRITICAL_HIT,
-                PW_EEPROM_SIZE_TEXT_CRITICAL_HIT
-            );
-            pw_screen_clear_area(0, SCREEN_HEIGHT-16, SCREEN_WIDTH, 16);
-            break;
-        }
-        }
-        pw_screen_draw_text_box(0, SCREEN_HEIGHT-32, SCREEN_WIDTH-1, SCREEN_HEIGHT-1, SCREEN_BLACK);
-        break;
-    }
-    case BATTLE_THEIR_ACTION: {
-        uint8_t our_action = (sv->reg_b&OUR_ACTION_MASK)>>OUR_ACTION_OFFSET;
-        uint8_t their_action = (sv->reg_b&THEIR_ACTION_MASK)>>THEIR_ACTION_OFFSET;
-
-        pw_screen_clear_area(80, SCREEN_HEIGHT-32, SCREEN_WIDTH-80, 16);
-        if(our_action == ACTION_EVADE) {
-            pw_screen_draw_from_eeprom(
-                0, SCREEN_HEIGHT-32,
-                80, 16,
-                PW_EEPROM_ADDR_TEXT_POKEMON_NAME,
-                PW_EEPROM_SIZE_TEXT_POKEMON_NAME
-            );
-            pw_screen_draw_from_eeprom(
-                0, SCREEN_HEIGHT-16,
-                SCREEN_WIDTH, 16,
-                PW_EEPROM_ADDR_TEXT_EVADED,
-                PW_EEPROM_SIZE_TEXT_EVADED
-            );
-
-        } else {
-            pw_screen_draw_from_eeprom(
-                0, SCREEN_HEIGHT-32,
-                80, 16,
-                PW_EEPROM_ADDR_TEXT_POKEMON_NAMES + sv->reg_a*PW_EEPROM_SIZE_TEXT_POKEMON_NAME,
-                PW_EEPROM_SIZE_TEXT_POKEMON_NAME
-            );
-            pw_screen_draw_from_eeprom(
-                0, SCREEN_HEIGHT-16,
-                SCREEN_WIDTH, 16,
-                PW_EEPROM_ADDR_TEXT_ATTACKED,
-                PW_EEPROM_SIZE_TEXT_ATTACKED
-            );
-        }
-        pw_screen_draw_text_box(0, SCREEN_HEIGHT-32, SCREEN_WIDTH-1, SCREEN_HEIGHT-1, SCREEN_BLACK);
-        break;
-    }
-    case BATTLE_THEY_FLED: {
-        pw_screen_clear_area(80, SCREEN_HEIGHT-32, SCREEN_WIDTH-80, 16);
-        pw_screen_draw_from_eeprom(
-            0, SCREEN_HEIGHT-32,
-            80, 16,
-            PW_EEPROM_ADDR_TEXT_POKEMON_NAMES + sv->reg_a*PW_EEPROM_SIZE_TEXT_POKEMON_NAME,
-            PW_EEPROM_SIZE_TEXT_POKEMON_NAME
-        );
-        pw_screen_draw_message(SCREEN_HEIGHT-16, 33, 16); // "fled..."
-        pw_screen_draw_text_box(0, SCREEN_HEIGHT-32, SCREEN_WIDTH-1, SCREEN_HEIGHT-1, SCREEN_BLACK);
-        break;
-    }
-    case BATTLE_WE_LOST: {
-        pw_screen_draw_from_eeprom(
-            0, SCREEN_HEIGHT-32,
-            80, 16,
-            PW_EEPROM_ADDR_TEXT_POKEMON_NAMES + sv->reg_a*PW_EEPROM_SIZE_TEXT_POKEMON_NAME,
-            PW_EEPROM_SIZE_TEXT_POKEMON_NAME
-        );
-        pw_screen_draw_message(SCREEN_HEIGHT-16, 34, 16); // "was too strong..."
-        pw_screen_draw_text_box(0, SCREEN_HEIGHT-32, SCREEN_WIDTH-1, SCREEN_HEIGHT-1, SCREEN_BLACK);
-        break;
-    }
-    case BATTLE_STAREDOWN: {
-        pw_screen_clear_area(0, SCREEN_HEIGHT-32, SCREEN_WIDTH, 16);
-        pw_screen_draw_message(SCREEN_HEIGHT-16, 41, 16);
-        break;
-    }
-    case BATTLE_THREW_BALL: {
-        pw_screen_clear_area(0, SCREEN_HEIGHT-32, SCREEN_WIDTH, 16);
-        pw_screen_draw_message(SCREEN_HEIGHT-16, 39, 16); // "threw a ball"
-        break;
-    }
-    case BATTLE_CLOUD_ANIM: {
-        pw_screen_clear_area(0, SCREEN_HEIGHT-32, SCREEN_WIDTH, 16);
-        pw_screen_draw_from_eeprom(
-            THEIR_NORMAL_X, THEIR_NORMAL_Y,
-            32, 24,
-            PW_EEPROM_ADDR_IMG_RADAR_APPEAR_CLOUD,
-            PW_EEPROM_SIZE_IMG_RADAR_APPEAR_CLOUD
-        );
-        break;
-    }
-    case BATTLE_BALL_WOBBLE: {
-        pw_screen_clear_area(0, SCREEN_HEIGHT-32, SCREEN_WIDTH, 16);
-        pw_screen_clear_area(
-            THEIR_NORMAL_X, THEIR_NORMAL_Y,
-            32, 24
-        );
-        pw_screen_draw_from_eeprom(
-            WOBBLE_INITIAL_Y, WOBBLE_INITIAL_Y,
-            8, 8,
-            PW_EEPROM_ADDR_IMG_BALL,
-            PW_EEPROM_SIZE_IMG_BALL
-        );
-        break;
-    }
-    case BATTLE_ALMOST_HAD_IT: {
-        pw_screen_draw_img(&their_sprite, THEIR_NORMAL_X, THEIR_NORMAL_Y);
-        pw_screen_draw_message(SCREEN_HEIGHT-16, 40, 16); // "almost had it"
-        break;
-    }
-    case BATTLE_CATCH_STARS: {
-        pw_screen_clear_area(0, SCREEN_HEIGHT-32, SCREEN_WIDTH, 16);
-        break;
-    }
-    case BATTLE_POKEMON_CAUGHT: {
-        pw_screen_draw_from_eeprom(
-            0, SCREEN_HEIGHT-32,
-            80, 16,
-            PW_EEPROM_ADDR_TEXT_POKEMON_NAMES + sv->reg_a*PW_EEPROM_SIZE_TEXT_POKEMON_NAME,
-            PW_EEPROM_SIZE_TEXT_POKEMON_NAME
-        );
-        pw_screen_draw_message(SCREEN_HEIGHT-16, 32, 16); // "was caught!"
-        break;
-    }
-    case BATTLE_SWITCH: {
-        pw_screen_clear();
-        pw_screen_draw_from_eeprom(
-            0, 0,
-            8, 16,
-            PW_EEPROM_ADDR_IMG_MENU_ARROW_RETURN,
-            PW_EEPROM_SIZE_IMG_MENU_ARROW_RETURN
-        );
-
-        pw_screen_draw_from_eeprom(
-            8, 0,
-            80, 16,
-            PW_EEPROM_ADDR_TEXT_SWITCH,
-            PW_EEPROM_SIZE_TEXT_SWITCH
-        );
-        for(uint8_t i = 0; i < 3; i++) {
-            pw_screen_draw_from_eeprom(
-                20+i*(16+8), SCREEN_HEIGHT-32-8,
-                8, 8,
-                PW_EEPROM_ADDR_IMG_BALL,
-                PW_EEPROM_SIZE_IMG_BALL
-            );
-        }
-
-        pw_screen_draw_from_eeprom(
-            20+sv->current_cursor*(16+8), SCREEN_HEIGHT-32,
-            8, 8,
-            PW_EEPROM_ADDR_IMG_ARROW_UP_NORMAL,
-            PW_EEPROM_SIZE_IMG_ARROW
-        );
-        break;
-    }
-    default: {
-        printf("[ERROR] Unhandled substate draw: 0x%02x\n", sv->current_substate);
-        break;
-    }
-    }
-}
-
-/*
- * coords:
- *   - i attack, they attack: me attack + they hit ("i attacked")-> me hit + they attack ("they attacked")
- *   - i evade, they attack: me evade + they hit ("I evaded")-> me attack + they hit ("I attacked")
- *   - i attack, they evade: me attack + they evade ("they evaded")-> me hit + they attack ("they attacked")
- *   - i evade, they evade: staredown ("staredown")
- *
- *   00 - me -> them
- *   01 - me -> them
- *   10 - them -> me
- *   11 - none - none
- */
-void pw_battle_update_display(state_vars_t *sv) {
-    if(sv->current_substate != sv->substate_2) {
-        sv->substate_2 = sv->current_substate;
-        pw_battle_init_display(sv);
-        return;
-    }
-
-    pw_img_t our_sprite   = {.width=32, .height=24, .size=192, .data=eeprom_buf};
-    pw_img_t their_sprite = {.width=32, .height=24, .size=192, .data=decompression_buf};
-
-    eeprom_addr_t addr = pw_pokemon_index_to_small_sprite(sv->reg_a+1, sv->anim_frame);
-    pw_eeprom_read(addr, their_sprite.data, their_sprite.size);
-
-    addr = pw_pokemon_index_to_small_sprite(PIDX_WALKING, sv->anim_frame);
-    pw_eeprom_read(addr, our_sprite.data, our_sprite.size);
-
-    switch(sv->current_substate) {
-    case BATTLE_OPENING: {
-        if(sv->reg_c > 0) sv->reg_c--;
-        pw_screen_fill_area(0, sv->reg_c*8, SCREEN_WIDTH, (4-sv->reg_c)*16, SCREEN_WHITE);
-        break;
-    }
-    case BATTLE_APPEARED: {
-        pw_screen_draw_img(&their_sprite, 8, 0);
-        pw_screen_draw_img(&our_sprite, SCREEN_WIDTH/2+8, 8);
-        break;
-    }
-    case BATTLE_CHOOSING: {
-        pw_screen_draw_img(&their_sprite, 8, 0);
-        pw_screen_draw_img(&our_sprite, SCREEN_WIDTH/2+8, 8);
-
-        break;
-    }
-    case BATTLE_OUR_ACTION: {
-        uint8_t our_action = (sv->reg_b&OUR_ACTION_MASK)>>OUR_ACTION_OFFSET;
-        uint8_t their_action = (sv->reg_b&THEIR_ACTION_MASK)>>THEIR_ACTION_OFFSET;
-        pw_screen_draw_img(&our_sprite, OUR_ATTACK_XS[0][sv->reg_c], 8);
-        pw_screen_draw_img(&their_sprite, OUR_ATTACK_XS[1][sv->reg_c], 0);
-
-        if(sv->reg_c == (ATTACK_ANIM_LENGTH+1)/2) {
-            if(their_action == ACTION_SPECIAL) {
-                pw_screen_draw_from_eeprom(
-                    (SCREEN_WIDTH-16)/2, 0,
-                    16, 32,
-                    PW_EEPROM_ADDR_IMG_RADAR_CRITICAL_HIT,
-                    PW_EEPROM_SIZE_IMG_RADAR_CRITICAL_HIT
-                );
-            } else if(their_action != ACTION_EVADE) {
-                pw_screen_draw_from_eeprom(
-                    (SCREEN_WIDTH-16)/2, 0,
-                    16, 32,
-                    PW_EEPROM_ADDR_IMG_RADAR_ATTACK_HIT,
-                    PW_EEPROM_SIZE_IMG_RADAR_ATTACK_HIT
-                );
-            }
-
-            uint8_t hp = (sv->reg_d&THEIR_HP_MASK)>>THEIR_HP_OFFSET;
-            pw_screen_clear_area(8*(hp+1), 24, 8*(4-hp), 8);
-        } else {
-            pw_screen_clear_area(
-                (SCREEN_WIDTH-16)/2, 0,
-                16, 32
-            );
-        }
-
-        sv->reg_c++;
-        break;
-    }
-    case BATTLE_THEIR_ACTION: {
-        uint8_t our_action = (sv->reg_b&OUR_ACTION_MASK)>>OUR_ACTION_OFFSET;
-        uint8_t their_action = (sv->reg_b&THEIR_ACTION_MASK)>>THEIR_ACTION_OFFSET;
-        pw_screen_draw_img(&our_sprite,   THEIR_ATTACK_XS[0][sv->reg_c], 8);
-        pw_screen_draw_img(&their_sprite, THEIR_ATTACK_XS[1][sv->reg_c], 0);
-
-        if(sv->reg_c == (ATTACK_ANIM_LENGTH+1)/2) {
-            if(our_action != ACTION_EVADE) {
-                pw_screen_draw_from_eeprom(
-                    (SCREEN_WIDTH-16)/2, 0,
-                    16, 32,
-                    PW_EEPROM_ADDR_IMG_RADAR_ATTACK_HIT,
-                    PW_EEPROM_SIZE_IMG_RADAR_ATTACK_HIT
-                );
-            }
-
-            uint8_t hp = (sv->reg_d&OUR_HP_MASK)>>OUR_HP_OFFSET;
-            pw_screen_clear_area(SCREEN_WIDTH/2+8*(hp+1), 0, 8*(4-hp), 8);
-
-        } else {
-            pw_screen_clear_area(
-                (SCREEN_WIDTH-16)/2, 0,
-                16, 32
-            );
-        }
-
-        sv->reg_c++;
-        break;
-    }
-    case BATTLE_WE_LOST: {
-        break;
-    }
-    case BATTLE_THEY_FLED: {
-        // TODO: animation
-        break;
-    }
-    case BATTLE_STAREDOWN: {
-        pw_screen_draw_img(&our_sprite,   THEIR_ATTACK_XS[0][0], 8);
-        pw_screen_draw_img(&their_sprite, THEIR_ATTACK_XS[1][0], 0);
-        sv->reg_c++;
-        break;
-    }
-    case BATTLE_THREW_BALL: {
-        if(sv->reg_c > 0) {
-            pw_screen_clear_area(
-                POKEBALL_THROW_XS[sv->reg_c-1], POKEBALL_THROW_YS[sv->reg_c-1],
-                8, 8
-            );
-        }
-        pw_screen_draw_from_eeprom(
-            POKEBALL_THROW_XS[sv->reg_c], POKEBALL_THROW_YS[sv->reg_c],
-            8, 8,
-            PW_EEPROM_ADDR_IMG_BALL,
-            PW_EEPROM_SIZE_IMG_BALL
-        );
-        sv->reg_c++;
-        break;
-    }
-    case BATTLE_CLOUD_ANIM: {
-        sv->reg_c++;
-        break;
-    }
-    case BATTLE_BALL_WOBBLE: {
-
-        screen_pos_t middle = THEIR_NORMAL_X+8;
-        screen_pos_t left   = middle-2;
-        screen_pos_t right  = middle+2;
-
-        screen_pos_t x = middle;
-        switch(sv->reg_c%4) {
-        case 0:
-        case 2: {
-            x=middle;
-            break;
-        }
-        case 1: {
-            x=left;
-            break;
-        }
-        case 3: {
-            x=right;
-            break;
-        }
-        }
-
-        pw_screen_clear_area(left, 16, right-left+8, 8);
-        pw_screen_draw_from_eeprom(
-            x, 16,
-            8, 8,
-            PW_EEPROM_ADDR_IMG_BALL,
-            PW_EEPROM_SIZE_IMG_BALL
-        );
-        sv->reg_c++;
-        break;
-    }
-    case BATTLE_ALMOST_HAD_IT: {
-        pw_screen_draw_img(&their_sprite, THEIR_NORMAL_X, THEIR_NORMAL_Y);
-        sv->reg_c++;
-        break;
-    }
-    case BATTLE_CATCH_STARS: {
-        pw_screen_draw_from_eeprom(
-            THEIR_NORMAL_X, THEIR_NORMAL_Y+8-sv->reg_c,
-            8, 8,
-            PW_EEPROM_ADDR_IMG_RADAR_CATCH_EFFECT,
-            PW_EEPROM_SIZE_IMG_RADAR_CATCH_EFFECT
-        );
-        sv->reg_c++;
-        break;
-    }
-    case BATTLE_POKEMON_CAUGHT: {
-        break;
-    }
-    case BATTLE_SWITCH: {
-        for(uint8_t i = 0; i < 3; i++) {
-            pw_screen_clear_area(20+i*(8+16), SCREEN_HEIGHT-32, 8, 8);
-        }
-        if(sv->anim_frame) {
-            pw_screen_draw_from_eeprom(
-                20+sv->current_cursor*(8+16), SCREEN_HEIGHT-32,
-                8, 8,
-                PW_EEPROM_ADDR_IMG_ARROW_UP_NORMAL,
-                PW_EEPROM_SIZE_IMG_ARROW
-            );
-        } else {
-            pw_screen_draw_from_eeprom(
-                20+sv->current_cursor*(8+16), SCREEN_HEIGHT-32,
-                8, 8,
-                PW_EEPROM_ADDR_IMG_ARROW_UP_OFFSET,
-                PW_EEPROM_SIZE_IMG_ARROW
-            );
-        }
-
-        if(sv->current_cursor != sv->cursor_2) {
-            pw_screen_draw_from_eeprom(
-                0, SCREEN_HEIGHT-16,
-                80, 16,
-                PW_EEPROM_ADDR_TEXT_POKEMON_NAMES + sv->reg_a*PW_EEPROM_SIZE_TEXT_POKEMON_NAME,
-                PW_EEPROM_SIZE_TEXT_POKEMON_NAME
-            );
-            sv->cursor_2 = sv->current_cursor;
-        }
-
-        break;
-    }
-    default: {
-        printf("[ERROR] Unhandled substate draw update: 0x%02x\n", sv->current_substate);
-        break;
-    }
-
-    }
-
-}
-
-void pw_battle_handle_input(state_vars_t *sv, uint8_t b) {
-    switch(sv->current_substate) {
-    case BATTLE_APPEARED: {
-        pw_battle_switch_substate(sv, BATTLE_CHOOSING);
-        break;
-    }
-    case BATTLE_CHOOSING: {
-        switch(b) {
-        case BUTTON_L: {
-            sv->reg_b &= ~OUR_ACTION_MASK;
-            sv->reg_b |= ACTION_ATTACK << OUR_ACTION_OFFSET;
-            sv->reg_x = 1;
-            break;
-        }
-        case BUTTON_R: {
-            sv->reg_b &= ~OUR_ACTION_MASK;
-            sv->reg_b |= ACTION_EVADE << OUR_ACTION_OFFSET;
-            sv->reg_x = 1;
-            break;
-        }
-        case BUTTON_M: {
-            pw_battle_switch_substate(sv, BATTLE_CATCH_SETUP);
-            break;
-        }
-        }
-        break;
-    }
-    case BATTLE_POKEMON_CAUGHT: {
-        if(sv->reg_a >= 3) {
+        if(s->battle.chosen_pokemon >= 3) {
             // event mon
             pokemon_summary_t *caught_poke = (pokemon_summary_t*)eeprom_buf;
             pw_eeprom_read(
@@ -966,10 +442,10 @@ void pw_battle_handle_input(state_vars_t *sv, uint8_t b) {
                 );
 
 
-                pw_request_state(STATE_SPLASH);
+                p->sid = STATE_SPLASH;
             } else {
                 // TODO: idk? silently overwrite?
-                pw_request_state(STATE_SPLASH);
+                p->sid = STATE_SPLASH;
             }
 
         } else {
@@ -988,8 +464,8 @@ void pw_battle_handle_input(state_vars_t *sv, uint8_t b) {
 
             if(i == 3) {
                 // no space
-                sv->cursor_2 = 0xff;
-                pw_battle_switch_substate(sv, BATTLE_SWITCH);
+                s->battle.prev_switch_cursor = 0xff;
+                pw_battle_switch_substate(s, BATTLE_SWITCH);
             } else {
                 route_info_t ri;
                 pw_eeprom_read(
@@ -997,34 +473,586 @@ void pw_battle_handle_input(state_vars_t *sv, uint8_t b) {
                     (uint8_t*)(&ri),
                     sizeof(ri)
                 );
-                caught_pokes[i] = ri.route_pokemon[sv->reg_a];
+                caught_pokes[i] = ri.route_pokemon[s->battle.chosen_pokemon];
                 pw_eeprom_write(
                     PW_EEPROM_ADDR_CAUGHT_POKEMON_SUMMARY,
                     (uint8_t*)caught_pokes,
                     sizeof(caught_pokes)
                 );
-                pw_request_state(STATE_SPLASH);
+                p->sid = STATE_SPLASH;
             }
         }
         break;
     }
+    case BATTLE_CATCH_STARS: {
+        if(s->battle.anim_frame >= CATCH_ANIM_LENGTH) {
+            s->battle.substate_queue_index++;
+            s->battle.anim_frame = 0;
+            pw_battle_switch_substate(s, substate_queue[s->battle.substate_queue_index-1]);
+        }
+        break;
+    }
+    case BATTLE_SWITCH: {
+        break;
+    }
+    case BATTLE_GO_TO_SPLASH: {
+        p->sid = STATE_SPLASH;
+        break;
+    }
+    default: {
+        //printf("[ERROR] Unhandled substate init: 0x%02x\n", s->battle.current_substate);
+        break;
+    }
+
+    }
+}
+
+void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
+
+    pw_img_t our_sprite   = {.width=32, .height=24, .size=192, .data=eeprom_buf};
+    pw_img_t their_sprite = {.width=32, .height=24, .size=192, .data=decompression_buf};
+
+    eeprom_addr_t addr = pw_pokemon_index_to_small_sprite(s->battle.chosen_pokemon+1, sf->frame);
+    pw_eeprom_read(addr, their_sprite.data, their_sprite.size);
+
+    addr = pw_pokemon_index_to_small_sprite(PIDX_WALKING, sf->frame);
+    pw_eeprom_read(addr, our_sprite.data, our_sprite.size);
+
+    switch(s->battle.current_substate) {
+    case BATTLE_OPENING: {
+        pw_screen_fill_area(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_BLACK);
+        break;
+    }
+    case BATTLE_APPEARED: {
+        pw_screen_draw_from_eeprom(
+            0, SCREEN_HEIGHT-16,
+            96, 16,
+            PW_EEPROM_ADDR_TEXT_APPEARED,
+            PW_EEPROM_SIZE_TEXT_APPEARED
+        );
+        pw_screen_draw_from_eeprom(
+            0, SCREEN_HEIGHT-32,
+            80, 16,
+            PW_EEPROM_ADDR_TEXT_POKEMON_NAMES + s->battle.chosen_pokemon*PW_EEPROM_SIZE_TEXT_POKEMON_NAME,
+            PW_EEPROM_SIZE_TEXT_POKEMON_NAME
+        );
+        pw_screen_draw_text_box(0, SCREEN_HEIGHT-32, SCREEN_WIDTH-1, SCREEN_HEIGHT-1, SCREEN_BLACK);
+
+        pw_img_t health_bar = {.width=8, .height=8, .data=eeprom_buf, .size=16};
+        pw_eeprom_read(PW_EEPROM_ADDR_IMG_RADAR_HP_BLIP, eeprom_buf, PW_EEPROM_SIZE_IMG_RADAR_HP_BLIP);
+
+        int8_t health = (s->battle.current_hp&THEIR_HP_MASK) >> THEIR_HP_OFFSET;
+        for(int8_t i = 0; i < health; i++) {
+            pw_screen_draw_img(&health_bar, 8*(i+1), 24);
+        }
+
+        health = (s->battle.current_hp&OUR_HP_MASK) >> OUR_HP_OFFSET;
+        for(int8_t i = 0; i < health; i++) {
+            pw_screen_draw_img(&health_bar, SCREEN_WIDTH/2 + 8*(i+1), 0);
+        }
+
+        pw_screen_draw_img(&their_sprite, THEIR_NORMAL_X, THEIR_NORMAL_Y);
+        pw_screen_draw_img(&our_sprite, OUR_NORMAL_X, OUR_NORMAL_Y);
+
+        break;
+    }
+    case BATTLE_CHOOSING: {
+        pw_screen_draw_from_eeprom(
+            0, SCREEN_HEIGHT-32,
+            96, 32,
+            PW_EEPROM_ADDR_TEXT_RADAR_ACTION,
+            PW_EEPROM_SIZE_TEXT_RADAR_ACTION
+        );
+        break;
+    }
+    case BATTLE_OUR_ACTION: {
+        uint8_t our_action = (s->battle.actions&OUR_ACTION_MASK)>>OUR_ACTION_OFFSET;
+        uint8_t their_action = (s->battle.actions&THEIR_ACTION_MASK)>>THEIR_ACTION_OFFSET;
+
+        pw_screen_clear_area(80, SCREEN_HEIGHT-32, SCREEN_WIDTH-80, 16);
+        switch(their_action) {
+        case ACTION_ATTACK: {
+            pw_screen_draw_from_eeprom(
+                0, SCREEN_HEIGHT-32,
+                80, 16,
+                PW_EEPROM_ADDR_TEXT_POKEMON_NAME,
+                PW_EEPROM_SIZE_TEXT_POKEMON_NAME
+            );
+            pw_screen_draw_from_eeprom(
+                0, SCREEN_HEIGHT-16,
+                SCREEN_WIDTH, 16,
+                PW_EEPROM_ADDR_TEXT_ATTACKED,
+                PW_EEPROM_SIZE_TEXT_ATTACKED
+            );
+            break;
+        }
+        case ACTION_EVADE: {
+            pw_screen_draw_from_eeprom(
+                0, SCREEN_HEIGHT-32,
+                80, 16,
+                PW_EEPROM_ADDR_TEXT_POKEMON_NAMES + s->battle.chosen_pokemon*PW_EEPROM_SIZE_TEXT_POKEMON_NAME,
+                PW_EEPROM_SIZE_TEXT_POKEMON_NAME
+            );
+            pw_screen_draw_from_eeprom(
+                0, SCREEN_HEIGHT-16,
+                SCREEN_WIDTH, 16,
+                PW_EEPROM_ADDR_TEXT_EVADED,
+                PW_EEPROM_SIZE_TEXT_EVADED
+            );
+
+            break;
+        }
+        case ACTION_SPECIAL: {
+            pw_screen_draw_from_eeprom(
+                0, SCREEN_HEIGHT-32,
+                SCREEN_WIDTH, 16,
+                PW_EEPROM_ADDR_TEXT_CRITICAL_HIT,
+                PW_EEPROM_SIZE_TEXT_CRITICAL_HIT
+            );
+            pw_screen_clear_area(0, SCREEN_HEIGHT-16, SCREEN_WIDTH, 16);
+            break;
+        }
+        }
+        pw_screen_draw_text_box(0, SCREEN_HEIGHT-32, SCREEN_WIDTH-1, SCREEN_HEIGHT-1, SCREEN_BLACK);
+        break;
+    }
+    case BATTLE_THEIR_ACTION: {
+        uint8_t our_action = (s->battle.actions&OUR_ACTION_MASK)>>OUR_ACTION_OFFSET;
+        uint8_t their_action = (s->battle.actions&THEIR_ACTION_MASK)>>THEIR_ACTION_OFFSET;
+
+        pw_screen_clear_area(80, SCREEN_HEIGHT-32, SCREEN_WIDTH-80, 16);
+        if(our_action == ACTION_EVADE) {
+            pw_screen_draw_from_eeprom(
+                0, SCREEN_HEIGHT-32,
+                80, 16,
+                PW_EEPROM_ADDR_TEXT_POKEMON_NAME,
+                PW_EEPROM_SIZE_TEXT_POKEMON_NAME
+            );
+            pw_screen_draw_from_eeprom(
+                0, SCREEN_HEIGHT-16,
+                SCREEN_WIDTH, 16,
+                PW_EEPROM_ADDR_TEXT_EVADED,
+                PW_EEPROM_SIZE_TEXT_EVADED
+            );
+
+        } else {
+            pw_screen_draw_from_eeprom(
+                0, SCREEN_HEIGHT-32,
+                80, 16,
+                PW_EEPROM_ADDR_TEXT_POKEMON_NAMES + s->battle.chosen_pokemon*PW_EEPROM_SIZE_TEXT_POKEMON_NAME,
+                PW_EEPROM_SIZE_TEXT_POKEMON_NAME
+            );
+            pw_screen_draw_from_eeprom(
+                0, SCREEN_HEIGHT-16,
+                SCREEN_WIDTH, 16,
+                PW_EEPROM_ADDR_TEXT_ATTACKED,
+                PW_EEPROM_SIZE_TEXT_ATTACKED
+            );
+        }
+        pw_screen_draw_text_box(0, SCREEN_HEIGHT-32, SCREEN_WIDTH-1, SCREEN_HEIGHT-1, SCREEN_BLACK);
+        break;
+    }
+    case BATTLE_THEY_FLED: {
+        pw_screen_clear_area(80, SCREEN_HEIGHT-32, SCREEN_WIDTH-80, 16);
+        pw_screen_draw_from_eeprom(
+            0, SCREEN_HEIGHT-32,
+            80, 16,
+            PW_EEPROM_ADDR_TEXT_POKEMON_NAMES + s->battle.chosen_pokemon*PW_EEPROM_SIZE_TEXT_POKEMON_NAME,
+            PW_EEPROM_SIZE_TEXT_POKEMON_NAME
+        );
+        pw_screen_draw_message(SCREEN_HEIGHT-16, 33, 16); // "fled..."
+        pw_screen_draw_text_box(0, SCREEN_HEIGHT-32, SCREEN_WIDTH-1, SCREEN_HEIGHT-1, SCREEN_BLACK);
+        break;
+    }
+    case BATTLE_WE_LOST: {
+        pw_screen_draw_from_eeprom(
+            0, SCREEN_HEIGHT-32,
+            80, 16,
+            PW_EEPROM_ADDR_TEXT_POKEMON_NAMES + s->battle.chosen_pokemon*PW_EEPROM_SIZE_TEXT_POKEMON_NAME,
+            PW_EEPROM_SIZE_TEXT_POKEMON_NAME
+        );
+        pw_screen_draw_message(SCREEN_HEIGHT-16, 34, 16); // "was too strong..."
+        pw_screen_draw_text_box(0, SCREEN_HEIGHT-32, SCREEN_WIDTH-1, SCREEN_HEIGHT-1, SCREEN_BLACK);
+        break;
+    }
+    case BATTLE_STAREDOWN: {
+        pw_screen_clear_area(0, SCREEN_HEIGHT-32, SCREEN_WIDTH, 16);
+        pw_screen_draw_message(SCREEN_HEIGHT-16, 41, 16);
+        break;
+    }
+    case BATTLE_THREW_BALL: {
+        pw_screen_clear_area(0, SCREEN_HEIGHT-32, SCREEN_WIDTH, 16);
+        pw_screen_draw_message(SCREEN_HEIGHT-16, 39, 16); // "threw a ball"
+        break;
+    }
+    case BATTLE_CLOUD_ANIM: {
+        pw_screen_clear_area(0, SCREEN_HEIGHT-32, SCREEN_WIDTH, 16);
+        pw_screen_draw_from_eeprom(
+            THEIR_NORMAL_X, THEIR_NORMAL_Y,
+            32, 24,
+            PW_EEPROM_ADDR_IMG_RADAR_APPEAR_CLOUD,
+            PW_EEPROM_SIZE_IMG_RADAR_APPEAR_CLOUD
+        );
+        break;
+    }
+    case BATTLE_BALL_WOBBLE: {
+        pw_screen_clear_area(0, SCREEN_HEIGHT-32, SCREEN_WIDTH, 16);
+        pw_screen_clear_area(
+            THEIR_NORMAL_X, THEIR_NORMAL_Y,
+            32, 24
+        );
+        pw_screen_draw_from_eeprom(
+            WOBBLE_INITIAL_Y, WOBBLE_INITIAL_Y,
+            8, 8,
+            PW_EEPROM_ADDR_IMG_BALL,
+            PW_EEPROM_SIZE_IMG_BALL
+        );
+        break;
+    }
+    case BATTLE_ALMOST_HAD_IT: {
+        pw_screen_draw_img(&their_sprite, THEIR_NORMAL_X, THEIR_NORMAL_Y);
+        pw_screen_draw_message(SCREEN_HEIGHT-16, 40, 16); // "almost had it"
+        break;
+    }
+    case BATTLE_CATCH_STARS: {
+        pw_screen_clear_area(0, SCREEN_HEIGHT-32, SCREEN_WIDTH, 16);
+        break;
+    }
+    case BATTLE_POKEMON_CAUGHT: {
+        pw_screen_draw_from_eeprom(
+            0, SCREEN_HEIGHT-32,
+            80, 16,
+            PW_EEPROM_ADDR_TEXT_POKEMON_NAMES + s->battle.chosen_pokemon*PW_EEPROM_SIZE_TEXT_POKEMON_NAME,
+            PW_EEPROM_SIZE_TEXT_POKEMON_NAME
+        );
+        pw_screen_draw_message(SCREEN_HEIGHT-16, 32, 16); // "was caught!"
+        break;
+    }
+    case BATTLE_SWITCH: {
+        pw_screen_clear();
+        pw_screen_draw_from_eeprom(
+            0, 0,
+            8, 16,
+            PW_EEPROM_ADDR_IMG_MENU_ARROW_RETURN,
+            PW_EEPROM_SIZE_IMG_MENU_ARROW_RETURN
+        );
+
+        pw_screen_draw_from_eeprom(
+            8, 0,
+            80, 16,
+            PW_EEPROM_ADDR_TEXT_SWITCH,
+            PW_EEPROM_SIZE_TEXT_SWITCH
+        );
+        for(uint8_t i = 0; i < 3; i++) {
+            pw_screen_draw_from_eeprom(
+                20+i*(16+8), SCREEN_HEIGHT-32-8,
+                8, 8,
+                PW_EEPROM_ADDR_IMG_BALL,
+                PW_EEPROM_SIZE_IMG_BALL
+            );
+        }
+
+        pw_screen_draw_from_eeprom(
+            20+s->battle.switch_cursor*(16+8), SCREEN_HEIGHT-32,
+            8, 8,
+            PW_EEPROM_ADDR_IMG_ARROW_UP_NORMAL,
+            PW_EEPROM_SIZE_IMG_ARROW
+        );
+        break;
+    }
+    default: {
+        //printf("[ERROR] Unhandled substate draw: 0x%02x\n", s->battle.current_substate);
+        break;
+    }
+    }
+}
+
+/*
+ * coords:
+ *   - i attack, they attack: me attack + they hit ("i attacked")-> me hit + they attack ("they attacked")
+ *   - i evade, they attack: me evade + they hit ("I evaded")-> me attack + they hit ("I attacked")
+ *   - i attack, they evade: me attack + they evade ("they evaded")-> me hit + they attack ("they attacked")
+ *   - i evade, they evade: staredown ("staredown")
+ *
+ *   00 - me -> them
+ *   01 - me -> them
+ *   10 - them -> me
+ *   11 - none - none
+ */
+void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
+    if(s->battle.current_substate != s->battle.previous_substate) {
+        s->battle.previous_substate = s->battle.current_substate;
+        pw_battle_init_display(s, sf);
+        return;
+    }
+
+    pw_img_t our_sprite   = {.width=32, .height=24, .size=192, .data=eeprom_buf};
+    pw_img_t their_sprite = {.width=32, .height=24, .size=192, .data=decompression_buf};
+
+    eeprom_addr_t addr = pw_pokemon_index_to_small_sprite(s->battle.chosen_pokemon+1, sf->frame);
+    pw_eeprom_read(addr, their_sprite.data, their_sprite.size);
+
+    addr = pw_pokemon_index_to_small_sprite(PIDX_WALKING, sf->frame);
+    pw_eeprom_read(addr, our_sprite.data, our_sprite.size);
+
+    switch(s->battle.current_substate) {
+    case BATTLE_OPENING: {
+        if(s->battle.anim_frame > 0) s->battle.anim_frame--;
+        pw_screen_fill_area(0, s->battle.anim_frame*8, SCREEN_WIDTH, (4-s->battle.anim_frame)*16, SCREEN_WHITE);
+        break;
+    }
+    case BATTLE_APPEARED: {
+        pw_screen_draw_img(&their_sprite, 8, 0);
+        pw_screen_draw_img(&our_sprite, SCREEN_WIDTH/2+8, 8);
+        break;
+    }
+    case BATTLE_CHOOSING: {
+        pw_screen_draw_img(&their_sprite, 8, 0);
+        pw_screen_draw_img(&our_sprite, SCREEN_WIDTH/2+8, 8);
+
+        break;
+    }
+    case BATTLE_OUR_ACTION: {
+        uint8_t our_action = (s->battle.actions&OUR_ACTION_MASK)>>OUR_ACTION_OFFSET;
+        uint8_t their_action = (s->battle.actions&THEIR_ACTION_MASK)>>THEIR_ACTION_OFFSET;
+        pw_screen_draw_img(&our_sprite, OUR_ATTACK_XS[0][s->battle.anim_frame], 8);
+        pw_screen_draw_img(&their_sprite, OUR_ATTACK_XS[1][s->battle.anim_frame], 0);
+
+        if(s->battle.anim_frame == (ATTACK_ANIM_LENGTH+1)/2) {
+            if(their_action == ACTION_SPECIAL) {
+                pw_screen_draw_from_eeprom(
+                    (SCREEN_WIDTH-16)/2, 0,
+                    16, 32,
+                    PW_EEPROM_ADDR_IMG_RADAR_CRITICAL_HIT,
+                    PW_EEPROM_SIZE_IMG_RADAR_CRITICAL_HIT
+                );
+            } else if(their_action != ACTION_EVADE) {
+                pw_screen_draw_from_eeprom(
+                    (SCREEN_WIDTH-16)/2, 0,
+                    16, 32,
+                    PW_EEPROM_ADDR_IMG_RADAR_ATTACK_HIT,
+                    PW_EEPROM_SIZE_IMG_RADAR_ATTACK_HIT
+                );
+            }
+
+            uint8_t hp = (s->battle.current_hp&THEIR_HP_MASK)>>THEIR_HP_OFFSET;
+            pw_screen_clear_area(8*(hp+1), 24, 8*(4-hp), 8);
+        } else {
+            pw_screen_clear_area(
+                (SCREEN_WIDTH-16)/2, 0,
+                16, 32
+            );
+        }
+
+        s->battle.anim_frame++;
+        break;
+    }
+    case BATTLE_THEIR_ACTION: {
+        uint8_t our_action = (s->battle.actions&OUR_ACTION_MASK)>>OUR_ACTION_OFFSET;
+        uint8_t their_action = (s->battle.actions&THEIR_ACTION_MASK)>>THEIR_ACTION_OFFSET;
+        pw_screen_draw_img(&our_sprite,   THEIR_ATTACK_XS[0][s->battle.anim_frame], 8);
+        pw_screen_draw_img(&their_sprite, THEIR_ATTACK_XS[1][s->battle.anim_frame], 0);
+
+        if(s->battle.anim_frame == (ATTACK_ANIM_LENGTH+1)/2) {
+            if(our_action != ACTION_EVADE) {
+                pw_screen_draw_from_eeprom(
+                    (SCREEN_WIDTH-16)/2, 0,
+                    16, 32,
+                    PW_EEPROM_ADDR_IMG_RADAR_ATTACK_HIT,
+                    PW_EEPROM_SIZE_IMG_RADAR_ATTACK_HIT
+                );
+            }
+
+            uint8_t hp = (s->battle.current_hp&OUR_HP_MASK)>>OUR_HP_OFFSET;
+            pw_screen_clear_area(SCREEN_WIDTH/2+8*(hp+1), 0, 8*(4-hp), 8);
+
+        } else {
+            pw_screen_clear_area(
+                (SCREEN_WIDTH-16)/2, 0,
+                16, 32
+            );
+        }
+
+        s->battle.anim_frame++;
+        break;
+    }
+    case BATTLE_WE_LOST: {
+        break;
+    }
+    case BATTLE_THEY_FLED: {
+        // TODO: animation
+        break;
+    }
+    case BATTLE_STAREDOWN: {
+        pw_screen_draw_img(&our_sprite,   THEIR_ATTACK_XS[0][0], 8);
+        pw_screen_draw_img(&their_sprite, THEIR_ATTACK_XS[1][0], 0);
+        s->battle.anim_frame++;
+        break;
+    }
+    case BATTLE_THREW_BALL: {
+        if(s->battle.anim_frame > 0) {
+            pw_screen_clear_area(
+                POKEBALL_THROW_XS[s->battle.anim_frame-1], POKEBALL_THROW_YS[s->battle.anim_frame-1],
+                8, 8
+            );
+        }
+        pw_screen_draw_from_eeprom(
+            POKEBALL_THROW_XS[s->battle.anim_frame], POKEBALL_THROW_YS[s->battle.anim_frame],
+            8, 8,
+            PW_EEPROM_ADDR_IMG_BALL,
+            PW_EEPROM_SIZE_IMG_BALL
+        );
+        s->battle.anim_frame++;
+        break;
+    }
+    case BATTLE_CLOUD_ANIM: {
+        s->battle.anim_frame++;
+        break;
+    }
+    case BATTLE_BALL_WOBBLE: {
+
+        screen_pos_t middle = THEIR_NORMAL_X+8;
+        screen_pos_t left   = middle-2;
+        screen_pos_t right  = middle+2;
+
+        screen_pos_t x = middle;
+        switch(s->battle.anim_frame%4) {
+        case 0:
+        case 2: {
+            x=middle;
+            break;
+        }
+        case 1: {
+            x=left;
+            break;
+        }
+        case 3: {
+            x=right;
+            break;
+        }
+        }
+
+        pw_screen_clear_area(left, 16, right-left+8, 8);
+        pw_screen_draw_from_eeprom(
+            x, 16,
+            8, 8,
+            PW_EEPROM_ADDR_IMG_BALL,
+            PW_EEPROM_SIZE_IMG_BALL
+        );
+        s->battle.anim_frame++;
+        break;
+    }
+    case BATTLE_ALMOST_HAD_IT: {
+        pw_screen_draw_img(&their_sprite, THEIR_NORMAL_X, THEIR_NORMAL_Y);
+        s->battle.anim_frame++;
+        break;
+    }
+    case BATTLE_CATCH_STARS: {
+        pw_screen_draw_from_eeprom(
+            THEIR_NORMAL_X, THEIR_NORMAL_Y+8-s->battle.anim_frame,
+            8, 8,
+            PW_EEPROM_ADDR_IMG_RADAR_CATCH_EFFECT,
+            PW_EEPROM_SIZE_IMG_RADAR_CATCH_EFFECT
+        );
+        s->battle.anim_frame++;
+        break;
+    }
+    case BATTLE_POKEMON_CAUGHT: {
+        break;
+    }
+    case BATTLE_SWITCH: {
+        for(uint8_t i = 0; i < 3; i++) {
+            pw_screen_clear_area(20+i*(8+16), SCREEN_HEIGHT-32, 8, 8);
+        }
+        if(sf->frame) {
+            pw_screen_draw_from_eeprom(
+                20+s->battle.switch_cursor*(8+16), SCREEN_HEIGHT-32,
+                8, 8,
+                PW_EEPROM_ADDR_IMG_ARROW_UP_NORMAL,
+                PW_EEPROM_SIZE_IMG_ARROW
+            );
+        } else {
+            pw_screen_draw_from_eeprom(
+                20+s->battle.switch_cursor*(8+16), SCREEN_HEIGHT-32,
+                8, 8,
+                PW_EEPROM_ADDR_IMG_ARROW_UP_OFFSET,
+                PW_EEPROM_SIZE_IMG_ARROW
+            );
+        }
+
+        if(s->battle.switch_cursor != s->battle.prev_switch_cursor) {
+            pw_screen_draw_from_eeprom(
+                0, SCREEN_HEIGHT-16,
+                80, 16,
+                PW_EEPROM_ADDR_TEXT_POKEMON_NAMES + s->battle.chosen_pokemon*PW_EEPROM_SIZE_TEXT_POKEMON_NAME,
+                PW_EEPROM_SIZE_TEXT_POKEMON_NAME
+            );
+            s->battle.prev_switch_cursor = s->battle.switch_cursor;
+        }
+
+        break;
+    }
+    default: {
+        //printf("[ERROR] Unhandled substate draw update: 0x%02x\n", s->battle.current_substate);
+        break;
+    }
+
+    }
+
+}
+
+/**
+ * Battle state input handler
+ *
+ */
+void pw_battle_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b) {
+    switch(s->battle.current_substate) {
+    case BATTLE_APPEARED: {
+        pw_battle_switch_substate(s, BATTLE_CHOOSING);
+        break;
+    }
+    case BATTLE_CHOOSING: {
+        switch(b) {
+        case BUTTON_L: {
+            s->battle.actions &= ~OUR_ACTION_MASK;
+            s->battle.actions |= ACTION_ATTACK << OUR_ACTION_OFFSET;
+            s->battle.substate_queue_index = 1;
+            break;
+        }
+        case BUTTON_R: {
+            s->battle.actions &= ~OUR_ACTION_MASK;
+            s->battle.actions |= ACTION_EVADE << OUR_ACTION_OFFSET;
+            s->battle.substate_queue_index = 1;
+            break;
+        }
+        case BUTTON_M: {
+            pw_battle_switch_substate(s, BATTLE_CATCH_SETUP);
+            break;
+        }
+        }
+        break;
+    }
+    case BATTLE_POKEMON_CAUGHT: {
+        pw_battle_switch_substate(s, BATTLE_PROCESS_CAUGHT_POKEMON);
+        break;
+    }
     case BATTLE_THEY_FLED:
     case BATTLE_WE_LOST: {
-        pw_request_state(STATE_SPLASH);
+        s->battle.current_substate = BATTLE_GO_TO_SPLASH;
         break;
     }
     case BATTLE_SWITCH: {
         switch(b) {
         case BUTTON_L: {
-            if(sv->current_cursor == 0) {
-                pw_request_state(STATE_SPLASH);
+            if(s->battle.switch_cursor == 0) {
+                s->battle.current_substate = BATTLE_GO_TO_SPLASH;
             }
-            sv->current_cursor = (sv->current_cursor-1)%3;
+            s->battle.switch_cursor = (s->battle.switch_cursor-1)%3;
             break;
         }
         case BUTTON_R: {
-            if(sv->current_cursor >= 2) break;
-            sv->current_cursor = (sv->current_cursor+1)%3;
+            if(s->battle.switch_cursor >= 2) break;
+            s->battle.switch_cursor = (s->battle.switch_cursor+1)%3;
             break;
         }
         case BUTTON_M: {
@@ -1035,13 +1063,13 @@ void pw_battle_handle_input(state_vars_t *sv, uint8_t b) {
                 (uint8_t*)(&ri),
                 sizeof(ri)
             );
-            poke = ri.route_pokemon[sv->reg_a];
+            poke = ri.route_pokemon[s->battle.chosen_pokemon];
             pw_eeprom_write(
                 PW_EEPROM_ADDR_CAUGHT_POKEMON_SUMMARY,
                 (uint8_t*)(&poke),
                 sizeof(poke)
             );
-            pw_request_state(STATE_SPLASH);
+            s->battle.current_substate = BATTLE_GO_TO_SPLASH;
             break;
         }
         }

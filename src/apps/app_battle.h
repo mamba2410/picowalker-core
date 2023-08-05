@@ -25,13 +25,15 @@ enum battle_state {
     BATTLE_CATCH_STARS,
     BATTLE_POKEMON_CAUGHT,
     BATTLE_SWITCH,
+    BATTLE_PROCESS_CAUGHT_POKEMON,
+    BATTLE_GO_TO_SPLASH,
     N_BATTLE_STATES,
 };
 
-void pw_battle_init(state_vars_t *sv);
-void pw_battle_init_display(state_vars_t *sv);
-void pw_battle_update_display(state_vars_t *sv);
-void pw_battle_handle_input(state_vars_t *sv, uint8_t b);
-void pw_battle_event_loop(state_vars_t *sv);
+void pw_battle_init(pw_state_t *s, const screen_flags_t *sf);
+void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf);
+void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf);
+void pw_battle_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b);
+void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf);
 
 #endif /* PW_APP_BATTLE_H */
