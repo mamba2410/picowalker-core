@@ -8,7 +8,7 @@
 
 /// @file utils.h
 
-#define INV_WALKING_POKEMON     (1<<0) 
+#define INV_WALKING_POKEMON     (1<<0)
 #define INV_CAUGHT_POKEMON_1    (1<<1)
 #define INV_CAUGHT_POKEMON_2    (1<<2)
 #define INV_CAUGHT_POKEMON_3    (1<<3)

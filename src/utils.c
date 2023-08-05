@@ -17,18 +17,19 @@ extern uint32_t swap_bytes_u32(uint32_t x);
  * reg_b = [1..3]=found_items, [4]=event_item
  * reg_c = [0..3]=stamps
  */
-void pw_read_inventory(state_vars_t *sv) {
-    sv->reg_a = 0;
-    sv->reg_b = 0;
-    sv->reg_c = 0;
+void pw_read_inventory(pw_inventory_t *inv) {
+    *inv = (pw_inventory_t) {
+        0
+    };
 
     pokemon_summary_t caught_pokemon[3];
     pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO, (uint8_t*)(caught_pokemon), sizeof(pokemon_summary_t));
 
-    if(caught_pokemon[0].le_species != 0 && caught_pokemon[0].le_species != 0xff) {
-        sv->reg_a |= INV_WALKING_POKEMON;
+    if(caught_pokemon[0].le_species != 0 && caught_pokemon[0].le_species != 0xffff) {
+        inv->caught_pokemon |= INV_WALKING_POKEMON;
     }
 
+    // normal caught pokemon
     pw_eeprom_read(
         PW_EEPROM_ADDR_CAUGHT_POKEMON_SUMMARY,
         (uint8_t*)caught_pokemon,
@@ -37,24 +38,27 @@ void pw_read_inventory(state_vars_t *sv) {
 
     for(uint8_t i = 0; i < 3; i++) {
         if(caught_pokemon[i].le_species != 0 && caught_pokemon[i].le_species != 0xffff) {
-            sv->reg_a |= (1<<(i+1));
+            inv->caught_pokemon |= (1<<(i+1));
         }
     }
 
+    // event pokemon
     pw_eeprom_read(
         PW_EEPROM_ADDR_EVENT_POKEMON_BASIC_DATA,
         (uint8_t*)(caught_pokemon),
         sizeof(pokemon_summary_t)
     );
     if(caught_pokemon[0].le_species != 0 && caught_pokemon[0].le_species != 0xffff) {
-        sv->reg_a |= INV_EVENT_POKEMON;
+        inv->caught_pokemon |= INV_EVENT_POKEMON;
     }
 
 
     struct {
         uint16_t le_item;
         uint16_t pad;
-    } items[3];
+    } items[10];
+
+    // normal dowsing items
     pw_eeprom_read(
         PW_EEPROM_ADDR_OBTAINED_ITEMS,
         (uint8_t*)(items),
@@ -63,10 +67,11 @@ void pw_read_inventory(state_vars_t *sv) {
 
     for(uint8_t i = 0; i < 3; i++) {
         if(items[i].le_item != 0 && items[i].le_item != 0xffff) {
-            sv->reg_b |= (1<<(i+1));
+            inv->dowsed_items |= (1<<(i+1));
         }
     }
 
+    // event dowsing item
     pw_eeprom_read(
         PW_EEPROM_ADDR_EVENT_ITEM+6,    // ignore first 6 bytes of zeroes
         (uint8_t*)items,
@@ -74,15 +79,30 @@ void pw_read_inventory(state_vars_t *sv) {
     );
 
     if(items[0].le_item != 0 && items[0].le_item != 0xffff) {
-        sv->reg_b |= INV_FOUND_EVENT_ITEM;
+        inv->dowsed_items |= INV_FOUND_EVENT_ITEM;
     }
 
+    // special inventory (stamps, etc)
     uint8_t special_inventory;
     pw_eeprom_read(
         PW_EEPROM_ADDR_RECEIVED_BITFIELD,
-        &(sv->reg_c),
+        &(inv->received_bitfield),
         1
     );
+
+    // gifted items from peer play
+    pw_eeprom_read(
+        PW_EEPROM_ADDR_PEER_PLAY_ITEMS,
+        (uint8_t*)items,
+        PW_EEPROM_SIZE_PEER_PLAY_ITEMS
+    );
+
+    for(size_t i = 0; i < 10; i++) {
+        if(items[i].le_item != 0 && items[i].le_item != 0xffff) {
+            inv->gifted_items |= 1<<i;
+        }
+    }
+
 }
 
 eeprom_addr_t pw_pokemon_index_to_small_sprite(pokemon_index_t idx, uint8_t anim_frame) {
