@@ -77,7 +77,12 @@ typedef struct {
     uint16_t chosen_item;
     uint8_t chosen_item_index;
     uint8_t bush_shakes;
-    uint8_t user_input;
+    bool user_input;
+    uint8_t current_substate;
+    uint8_t previous_substate;
+    uint8_t next_substate;
+    int8_t current_cursor;
+    int8_t previous_cursor;
 } app_dowsing_t;
 
 typedef struct {
@@ -174,8 +179,8 @@ void pw_state_draw_update();
 /*
  *  State functions
  */
-void pw_empty_event(pw_state_t *s, screen_flags_t *sf);
-void pw_empty_input(pw_state_t *s, screen_flags_t *sf, uint8_t b);
+void pw_empty_event(pw_state_t *s, const screen_flags_t *sf);
+void pw_empty_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b);
 
 // STATE_ERROR
 void pw_error_init_display(pw_state_t *s, screen_flags_t *sf);

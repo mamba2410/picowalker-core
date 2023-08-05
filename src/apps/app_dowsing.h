@@ -21,10 +21,10 @@ enum dowsing_state {
     N_DOWSING_STATES
 };
 
-void pw_dowsing_update_display(state_vars_t *sv);
-void pw_dowsing_handle_input(state_vars_t *sv, uint8_t b);
-void pw_dowsing_event_loop(state_vars_t *sv);
-void pw_dowsing_init(state_vars_t *sv);
-void pw_dowsing_init_display(state_vars_t *sv);
+void pw_dowsing_update_display(pw_state_t *s, const screen_flags_t *sf);
+void pw_dowsing_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b);
+void pw_dowsing_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf);
+void pw_dowsing_init(pw_state_t *s, const screen_flags_t *sf);
+void pw_dowsing_init_display(pw_state_t *s, const screen_flags_t *sf);
 
 #endif /* PW_APP_DOWSING_H */
