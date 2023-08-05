@@ -20,20 +20,20 @@
 #define OPTION_C        2
 #define OPTION_EVENT    3
 
-enum {
+typedef enum {
     RADAR_CHOOSING,
     RADAR_BUSH_OK,
     RADAR_FAILED,
     RADAR_START_BATTLE,
     N_RADAR_STATES,
-};
+} radar_state_id_t;
 
-void pw_poke_radar_init(state_vars_t *sv);
-void pw_poke_radar_init_display(state_vars_t *sv);
-void pw_poke_radar_update_display(state_vars_t *sv);
-void pw_poke_radar_handle_input(state_vars_t *sv, uint8_t b);
-void pw_poke_radar_event_loop(state_vars_t *sv);
+void pw_poke_radar_init(pw_state_t *s, const screen_flags_t *sf);
+void pw_poke_radar_init_display(pw_state_t *s, const screen_flags_t *sf);
+void pw_poke_radar_update_display(pw_state_t *s, const screen_flags_t *sf);
+void pw_poke_radar_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b);
+void pw_poke_radar_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf);
 
-void pw_poke_radar_choose_pokemon(state_vars_t *sv, route_info_t *ri, health_data_t *hd);
+void pw_poke_radar_choose_pokemon(app_radar_t *radar, route_info_t *ri, health_data_t *hd);
 
 #endif /* PW_APP_POKE_RADAR_H */

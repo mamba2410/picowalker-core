@@ -66,6 +66,8 @@ typedef struct {
     uint8_t current_level;
     int8_t active_timer;
     int8_t invisible_timer;
+    int8_t begin_timer;
+    bool input_accepted;
 } app_radar_t;
 
 typedef struct {
