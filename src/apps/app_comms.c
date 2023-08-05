@@ -19,16 +19,20 @@
  * ```
  */
 
+enum {
+    CSS_NORMAL,
+    CSS_GO_TO_SPLASH,
+};
 
-void pw_comms_init(state_vars_t *sv) {
+void pw_comms_init(pw_state_t *s, const screen_flags_t *sf) {
 
-    sv->current_substate = COMM_SUBSTATE_FINDING_PEER;
-    sv->reg_b = 0;  // TODO: screen states
-    sv->reg_c = 0;  // advertising attempts
+    s->comms.current_substate = COMM_SUBSTATE_FINDING_PEER;
+    s->comms.screen_state = CSS_GO_TO_SPLASH;
+    s->comms.advertising_attempts = 0;  // advertising attempts
     pw_ir_set_comm_state(COMM_STATE_AWAITING);
 }
 
-void pw_comms_event_loop(state_vars_t *sv) {
+void pw_comms_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf) {
 
     comm_state_t cs = pw_ir_get_comm_state();
     ir_err_t err = IR_ERR_UNHANDLED_ERROR;
@@ -36,7 +40,7 @@ void pw_comms_event_loop(state_vars_t *sv) {
 
     switch(cs) {
     case COMM_STATE_AWAITING: {
-        err = pw_action_try_find_peer(sv, &packet_buf, PACKET_BUF_SIZE);
+        err = pw_action_try_find_peer(&s->comms, &packet_buf, PACKET_BUF_SIZE);
         break;
     }
     case COMM_STATE_SLAVE: {
@@ -47,9 +51,9 @@ void pw_comms_event_loop(state_vars_t *sv) {
         break;
     }
     case COMM_STATE_MASTER: {
-        if(sv->current_substate == COMM_SUBSTATE_AWAITING_SLAVE_ACK)
-            sv->current_substate = COMM_SUBSTATE_START_PEER_PLAY;
-        err = pw_action_peer_play(sv, &packet_buf, PACKET_BUF_SIZE);
+        if(s->comms.current_substate == COMM_SUBSTATE_AWAITING_SLAVE_ACK)
+            s->comms.current_substate = COMM_SUBSTATE_START_PEER_PLAY;
+        err = pw_action_peer_play(&s->comms, &packet_buf, PACKET_BUF_SIZE);
         break;
     }
     case COMM_STATE_DISCONNECTED: {
@@ -61,16 +65,28 @@ void pw_comms_event_loop(state_vars_t *sv) {
         printf("\tError code: %02x: %s\n\tState: %d\n\tSubstate %d\n",
                err, PW_IR_ERR_NAMES[err],
                pw_ir_get_comm_state(),
-               sv->current_substate
+               s->comms.current_substate
               );
 
         pw_ir_set_comm_state(COMM_STATE_DISCONNECTED);
         return;
     }
 
+    switch(s->comms.screen_state) {
+    case CSS_GO_TO_SPLASH: {
+        p->sid = STATE_SPLASH;
+        break;
+    }
+    default: {
+        // do nothing
+        // TODO: gift items/walk join/walk end/etc.
+        break;
+    }
+    }
+
 }
 
-void pw_comms_init_display(state_vars_t *sv) {
+void pw_comms_init_display(pw_state_t *s, const screen_flags_t *sf) {
 
     pw_screen_draw_from_eeprom(
         (SCREEN_WIDTH-32)/2, SCREEN_HEIGHT-32-16,
@@ -93,12 +109,12 @@ void pw_comms_init_display(state_vars_t *sv) {
 
 }
 
-void pw_comms_handle_input(state_vars_t *sv, uint8_t b) {
+void pw_comms_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b) {
 
     switch(b) {
     case BUTTON_M:
         if(pw_ir_get_comm_state() == COMM_STATE_DISCONNECTED) {
-            pw_request_state(STATE_SPLASH);
+            s->comms.screen_state = CS_SEND_TO_SPLASH;
         }
         break;
     case BUTTON_L:
@@ -109,9 +125,9 @@ void pw_comms_handle_input(state_vars_t *sv, uint8_t b) {
 
 }
 
-void pw_comms_draw_update(state_vars_t *sv) {
+void pw_comms_draw_update(pw_state_t *s, const screen_flags_t *sf) {
 
-    if(sv->anim_frame) {
+    if(sf->frame & ANIM_FRAME_NORMAL_TIME) {
         pw_screen_draw_from_eeprom(
             (SCREEN_WIDTH-8)/2, 0,
             8, 16,

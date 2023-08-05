@@ -12,6 +12,7 @@
 #include "actions.h"
 #include "compression.h"
 #include "../globals.h"
+#include "../states.h"
 
 #define ACTION_DELAY_MS 1
 
@@ -46,21 +47,21 @@ ir_err_t pw_action_listen_and_advertise(pw_packet_t *rx, size_t *pn_read, uint8_
  *  We should be in COMM_STATE_AWAITING
  *  Do one action per call, called in the main event loop
  */
-ir_err_t pw_action_try_find_peer(state_vars_t *sv, pw_packet_t *packet, size_t packet_max) {
+ir_err_t pw_action_try_find_peer(app_comms_t *comms, pw_packet_t *packet, size_t packet_max) {
 
     ir_err_t err = IR_ERR_UNHANDLED_ERROR;
     size_t n_read = 0;
 
-    switch(sv->current_substate) {
+    switch(comms->current_substate) {
     case COMM_SUBSTATE_FINDING_PEER: {
 
-        err = pw_action_listen_and_advertise(packet, &n_read, &(sv->reg_c));
+        err = pw_action_listen_and_advertise(packet, &n_read, &(comms->advertising_attempts));
 
         switch(err) {
         case IR_ERR_SIZE_MISMATCH:  // also ok since we might recv 0xfc
         case IR_OK:
             // we got a valid packet back, now check if master or slave on next iteration
-            sv->current_substate = COMM_SUBSTATE_DETERMINE_ROLE;
+            comms->current_substate = COMM_SUBSTATE_DETERMINE_ROLE;
             break;
         case IR_ERR_TIMEOUT:
             err = IR_OK;
@@ -83,7 +84,7 @@ ir_err_t pw_action_try_find_peer(state_vars_t *sv, pw_packet_t *packet, size_t p
             packet->extra = EXTRA_BYTE_FROM_WALKER;
             err = pw_ir_send_packet(packet, 8, &n_read);
 
-            sv->current_substate = COMM_SUBSTATE_AWAITING_SLAVE_ACK;
+            comms->current_substate = COMM_SUBSTATE_AWAITING_SLAVE_ACK;
             break;
         case CMD_ASSERT_MASTER: // peer found us, peer requests master
             packet->cmd = CMD_SLAVE_ACK;
@@ -280,11 +281,11 @@ ir_err_t pw_action_slave_perform_request(pw_packet_t *packet, size_t len) {
  *  display animation
  *  calculate gift
  */
-ir_err_t pw_action_peer_play(state_vars_t *sv, pw_packet_t *packet, size_t max_len) {
+ir_err_t pw_action_peer_play(app_comms_t *comms, pw_packet_t *packet, size_t max_len) {
     ir_err_t err = IR_ERR_UNHANDLED_ERROR;
     size_t n_read;
 
-    switch(sv->current_substate) {
+    switch(comms->current_substate) {
     case COMM_SUBSTATE_START_PEER_PLAY: {
 
         packet->cmd = CMD_PEER_PLAY_START;
@@ -299,7 +300,7 @@ ir_err_t pw_action_peer_play(state_vars_t *sv, pw_packet_t *packet, size_t max_l
         err = pw_ir_send_packet(packet, 8+PW_EEPROM_SIZE_IDENTITY_DATA_1, &n_read);
         if(err != IR_OK) return err;
 
-        sv->current_substate = COMM_SUBSTATE_PEER_PLAY_ACK;
+        comms->current_substate = COMM_SUBSTATE_PEER_PLAY_ACK;
         break;
     }
     case COMM_SUBSTATE_PEER_PLAY_ACK: {
@@ -315,62 +316,62 @@ ir_err_t pw_action_peer_play(state_vars_t *sv, pw_packet_t *packet, size_t max_l
         }
         if(err != IR_OK) return err;
 
-        sv->current_substate = COMM_SUBSTATE_SEND_MASTER_SPRITES;
-        sv->reg_c = 0; // reset loop counter
+        comms->current_substate = COMM_SUBSTATE_SEND_MASTER_SPRITES;
+        comms->advertising_attempts = 0; // reset loop counter
         break;
     }
     case COMM_SUBSTATE_SEND_MASTER_SPRITES: {
 
         size_t write_size = 128;    // should always be 128-bytes
-        size_t cur_write_size   = (size_t)(sv->reg_c) * write_size;
+        size_t cur_write_size   = (size_t)(comms->advertising_attempts) * write_size;
 
         err = pw_action_send_large_raw_data_from_eeprom(
                   PW_EEPROM_ADDR_IMG_POKEMON_SMALL_ANIMATED,              // src
                   PW_EEPROM_ADDR_IMG_CURRENT_PEER_POKEMON_ANIMATED_SMALL, // dst
                   PW_EEPROM_SIZE_IMG_POKEMON_SMALL_ANIMATED,              // size
-                  write_size, &(sv->reg_c), packet, max_len
+                  write_size, &(comms->advertising_attempts), packet, max_len
               );
         if(err != IR_OK) return err;
 
         if(cur_write_size >= PW_EEPROM_SIZE_IMG_POKEMON_SMALL_ANIMATED) {
-            sv->reg_c = 0;  // reset loop counter
-            sv->current_substate = COMM_SUBSTATE_SEND_MASTER_NAME_IMAGE;
+            comms->advertising_attempts = 0;  // reset loop counter
+            comms->current_substate = COMM_SUBSTATE_SEND_MASTER_NAME_IMAGE;
         }
         break;
     }
     case COMM_SUBSTATE_SEND_MASTER_NAME_IMAGE: {
 
         size_t write_size = 128;
-        size_t cur_write_size   = (size_t)(sv->reg_c) * write_size;
+        size_t cur_write_size   = (size_t)(comms->advertising_attempts) * write_size;
 
         err = pw_action_send_large_raw_data_from_eeprom(
                   PW_EEPROM_ADDR_TEXT_POKEMON_NAME,               // src
                   PW_EEPROM_ADDR_TEXT_CURRENT_PEER_POKEMON_NAME,  // dst
                   PW_EEPROM_SIZE_TEXT_POKEMON_NAME,               // size
-                  write_size, &(sv->reg_c), packet, max_len
+                  write_size, &(comms->advertising_attempts), packet, max_len
               );
 
         if(cur_write_size >= PW_EEPROM_SIZE_TEXT_POKEMON_NAME) {
-            sv->reg_c = 0; // reset loop counter
-            sv->current_substate = COMM_SUBSTATE_SEND_MASTER_TEAMDATA;
+            comms->advertising_attempts = 0; // reset loop counter
+            comms->current_substate = COMM_SUBSTATE_SEND_MASTER_TEAMDATA;
         }
         break;
     }
     case COMM_SUBSTATE_SEND_MASTER_TEAMDATA: {
 
         size_t write_size = 128;
-        size_t cur_write_size   = (size_t)(sv->reg_c) * write_size;
+        size_t cur_write_size   = (size_t)(comms->advertising_attempts) * write_size;
 
         err = pw_action_send_large_raw_data_from_eeprom(
                   PW_EEPROM_ADDR_TEAM_DATA_STRUCT,            // src
                   PW_EEPROM_ADDR_CURRENT_PEER_TEAM_DATA,      // dst
                   PW_EEPROM_SIZE_TEAM_DATA_STRUCT,            // size
-                  write_size, &(sv->reg_c), packet, max_len
+                  write_size, &(comms->advertising_attempts), packet, max_len
               );
 
         if(cur_write_size >= PW_EEPROM_SIZE_TEAM_DATA_STRUCT) {
-            sv->reg_c = 0; // reset loop counter
-            sv->current_substate = COMM_SUBSTATE_READ_SLAVE_SPRITES;
+            comms->advertising_attempts = 0; // reset loop counter
+            comms->current_substate = COMM_SUBSTATE_READ_SLAVE_SPRITES;
         }
         break;
     }
@@ -382,14 +383,14 @@ ir_err_t pw_action_peer_play(state_vars_t *sv, pw_packet_t *packet, size_t max_l
                   PW_EEPROM_ADDR_IMG_POKEMON_SMALL_ANIMATED,              // src
                   PW_EEPROM_ADDR_IMG_CURRENT_PEER_POKEMON_ANIMATED_SMALL, // dst
                   PW_EEPROM_SIZE_IMG_POKEMON_SMALL_ANIMATED,              // size
-                  read_size, &(sv->reg_c), packet, max_len
+                  read_size, &(comms->advertising_attempts), packet, max_len
               );
 
-        size_t cur_read_size   = (size_t)(sv->reg_c) * read_size;
+        size_t cur_read_size   = (size_t)(comms->advertising_attempts) * read_size;
 
         if(cur_read_size >= PW_EEPROM_SIZE_IMG_POKEMON_SMALL_ANIMATED) {
-            sv->reg_c = 0;  // reset loop counter
-            sv->current_substate = COMM_SUBSTATE_READ_SLAVE_NAME_IMAGE;
+            comms->advertising_attempts = 0;  // reset loop counter
+            comms->current_substate = COMM_SUBSTATE_READ_SLAVE_NAME_IMAGE;
         }
         break;
     }
@@ -400,14 +401,14 @@ ir_err_t pw_action_peer_play(state_vars_t *sv, pw_packet_t *packet, size_t max_l
                   PW_EEPROM_ADDR_TEXT_POKEMON_NAME,               // src
                   PW_EEPROM_ADDR_TEXT_CURRENT_PEER_POKEMON_NAME,  // dst
                   PW_EEPROM_SIZE_TEXT_POKEMON_NAME,               // size
-                  read_size, &(sv->reg_c), packet, max_len
+                  read_size, &(comms->advertising_attempts), packet, max_len
               );
 
-        size_t cur_read_size   = (size_t)(sv->reg_c) * read_size;
+        size_t cur_read_size   = (size_t)(comms->advertising_attempts) * read_size;
 
         if(cur_read_size >= PW_EEPROM_SIZE_IMG_POKEMON_SMALL_ANIMATED) {
-            sv->reg_c = 0;  // reset loop counter
-            sv->current_substate = COMM_SUBSTATE_READ_SLAVE_TEAMDATA;
+            comms->advertising_attempts = 0;  // reset loop counter
+            comms->current_substate = COMM_SUBSTATE_READ_SLAVE_TEAMDATA;
         }
         break;
     }
@@ -418,14 +419,14 @@ ir_err_t pw_action_peer_play(state_vars_t *sv, pw_packet_t *packet, size_t max_l
                   PW_EEPROM_ADDR_IMG_POKEMON_SMALL_ANIMATED,              // src
                   PW_EEPROM_ADDR_IMG_CURRENT_PEER_POKEMON_ANIMATED_SMALL, // dst
                   PW_EEPROM_SIZE_IMG_POKEMON_SMALL_ANIMATED,              // size
-                  read_size, &(sv->reg_c), packet, max_len
+                  read_size, &(comms->advertising_attempts), packet, max_len
               );
 
-        size_t cur_read_size   = (size_t)(sv->reg_c) * read_size;
+        size_t cur_read_size   = (size_t)(comms->advertising_attempts) * read_size;
 
         if(cur_read_size >= PW_EEPROM_SIZE_IMG_POKEMON_SMALL_ANIMATED) {
-            sv->reg_c = 0;  // reset loop counter
-            sv->current_substate = COMM_SUBSTATE_SEND_PEER_PLAY_DX;
+            comms->advertising_attempts = 0;  // reset loop counter
+            comms->current_substate = COMM_SUBSTATE_SEND_PEER_PLAY_DX;
         }
         break;
     }
@@ -463,7 +464,7 @@ ir_err_t pw_action_peer_play(state_vars_t *sv, pw_packet_t *packet, size_t max_l
         err = pw_ir_send_packet(packet, 0x40, &n_read);;
         if(err != IR_OK) return err;
 
-        sv->current_substate = COMM_SUBSTATE_RECV_PEER_PLAY_DX;
+        comms->current_substate = COMM_SUBSTATE_RECV_PEER_PLAY_DX;
         break;
     }
     case COMM_SUBSTATE_RECV_PEER_PLAY_DX: {
@@ -472,7 +473,7 @@ ir_err_t pw_action_peer_play(state_vars_t *sv, pw_packet_t *packet, size_t max_l
 
         pw_eeprom_write(PW_EEPROM_ADDR_CURRENT_PEER_DATA, packet->payload, PW_EEPROM_SIZE_CURRENT_PEER_DATA);
 
-        sv->current_substate = COMM_SUBSTATE_SEND_PEER_PLAY_END;
+        comms->current_substate = COMM_SUBSTATE_SEND_PEER_PLAY_END;
         break;
     }
     case COMM_SUBSTATE_SEND_PEER_PLAY_END: {
@@ -480,14 +481,14 @@ ir_err_t pw_action_peer_play(state_vars_t *sv, pw_packet_t *packet, size_t max_l
         packet->extra = EXTRA_BYTE_TO_WALKER;
         err = pw_ir_send_packet(packet, 8, &n_read);
 
-        sv->current_substate = COMM_SUBSTATE_RECV_PEER_PLAY_END;
+        comms->current_substate = COMM_SUBSTATE_RECV_PEER_PLAY_END;
         break;
     }
     case COMM_SUBSTATE_RECV_PEER_PLAY_END: {
         err = pw_ir_recv_packet(packet, 8, &n_read);
         if(err != IR_OK) return err;
         if(packet->cmd != CMD_PEER_PLAY_END) return IR_ERR_UNEXPECTED_PACKET;
-        sv->current_substate = COMM_SUBSTATE_DISPLAY_PEER_PLAY_ANIMATION;
+        comms->current_substate = COMM_SUBSTATE_DISPLAY_PEER_PLAY_ANIMATION;
         break;
     }
     case COMM_SUBSTATE_DISPLAY_PEER_PLAY_ANIMATION: {

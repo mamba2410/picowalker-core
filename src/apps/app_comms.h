@@ -8,11 +8,11 @@
 
 /// @file app_comms.h
 
-void pw_comms_init(state_vars_t *sv);
-void pw_comms_event_loop(state_vars_t *sv);
-void pw_comms_init_display(state_vars_t *sv);
-void pw_comms_handle_input(state_vars_t *sv, uint8_t b);
-void pw_comms_draw_update(state_vars_t *sv);
+void pw_comms_init(pw_state_t *s, const screen_flags_t *sf);
+void pw_comms_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf);
+void pw_comms_init_display(pw_state_t *s, const screen_flags_t *sf);
+void pw_comms_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b);
+void pw_comms_draw_update(pw_state_t *s, const screen_flags_t *sf);
 
 
 #endif /* PW_APP_COMMS_H */

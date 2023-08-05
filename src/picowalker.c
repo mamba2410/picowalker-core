@@ -23,6 +23,9 @@ struct {
     uint64_t prev_accel_check;
 } walker_timings;
 
+pw_state_t a1, a2;
+pw_state_t *current_state = &a1, *pending_state = &a2;
+screen_flags_t screen_flags;
 
 void walker_setup() {
     // Setup IR uart and rx interrupts
@@ -59,9 +62,9 @@ void walker_setup() {
     health_data_cache.current_watts = swap_bytes_u16(health_data_cache.current_watts);
 
     if(walker_info_cache.flags & WALKER_INFO_FLAG_INIT) {
-        pw_set_state(STATE_SPLASH);
+        current_state->sid = STATE_SPLASH;
     } else {
-        pw_set_state(STATE_FIRST_CONNECT);
+        current_state->sid = STATE_FIRST_COMMS;
     }
 
     walker_timings.now = pw_now_us();
@@ -69,9 +72,6 @@ void walker_setup() {
 
 }
 
-pw_state_t a1, a2;
-pw_state_t *current_state = &a1, *pending_state = &a2;
-screen_flags_t screen_flags;
 
 void walker_loop() {
     uint64_t td;

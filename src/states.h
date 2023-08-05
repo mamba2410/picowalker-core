@@ -91,7 +91,10 @@ typedef struct {
     uint8_t current_substate;
     uint8_t advertising_attempts;
     uint8_t screen_state;
-} app_connect_t;
+    uint8_t loop_counter;
+    uint16_t timer;
+    uint8_t previous_screen_state;
+} app_comms_t;
 
 typedef struct {
     uint8_t current_cursor;
@@ -128,7 +131,7 @@ typedef struct {
         app_screensaver_t screensaver;
         app_splash_t splash;
         app_menu_t menu;
-        app_connect_t comms;
+        app_comms_t comms;
         app_radar_t radar;
         app_dowsing_t dowsing;
         app_trainer_card_t trainer_card;

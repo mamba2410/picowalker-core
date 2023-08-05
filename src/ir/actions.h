@@ -35,8 +35,8 @@ typedef enum {
 
 
 ir_err_t pw_action_listen_and_advertise(pw_packet_t *rx, size_t *pn_read, uint8_t *padvertising_attempts);
-ir_err_t pw_action_try_find_peer(state_vars_t *sv, pw_packet_t *packet, size_t packet_max);
-ir_err_t pw_action_peer_play(state_vars_t *sv, pw_packet_t *packet, size_t max_len);
+ir_err_t pw_action_try_find_peer(app_comms_t *comms, pw_packet_t *packet, size_t packet_max);
+ir_err_t pw_action_peer_play(app_comms_t *comms, pw_packet_t *packet, size_t max_len);
 ir_err_t pw_action_slave_perform_request(pw_packet_t *packet, size_t len);
 
 ir_err_t pw_action_send_large_raw_data_from_eeprom(uint16_t src, uint16_t dst, size_t final_write_size,
