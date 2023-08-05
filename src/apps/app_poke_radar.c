@@ -87,6 +87,7 @@ void pw_poke_radar_init_display(pw_state_t *s, const screen_flags_t *sf) {
             pw_screen_draw_img(&bush, bush_xs[i], bush_ys[i]);
 
         pw_screen_draw_message(SCREEN_HEIGHT-16, 28, 16); // "find a pokemon!"
+        pw_screen_draw_text_box(0, SCREEN_HEIGHT-16, SCREEN_WIDTH, 16, SCREEN_BLACK);
 
         break;
     }
@@ -101,6 +102,7 @@ void pw_poke_radar_init_display(pw_state_t *s, const screen_flags_t *sf) {
     }
     case RADAR_FAILED: {
         pw_screen_draw_message(SCREEN_HEIGHT-16, 30, 16); // "it got away"
+        pw_screen_draw_text_box(0, SCREEN_HEIGHT-16, SCREEN_WIDTH, 16, SCREEN_BLACK);
         break;
     }
     case RADAR_START_BATTLE: {
