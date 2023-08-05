@@ -89,6 +89,8 @@ void pw_read_inventory(pw_brief_inventory_t *brief, pw_detailed_inventory_t *det
 void pw_pokemon_index_to_small_sprite(pokemon_index_t idx, uint8_t *buf, uint8_t frame);
 void pw_pokemon_index_to_name(pokemon_index_t idx, uint8_t *buf);
 void pw_item_index_to_name(uint8_t idx, uint8_t *buf);
+pokemon_index_t pw_pokemon_id_to_pokemon_index(uint16_t id);
+uint8_t pw_item_id_to_item_index(uint16_t id);
 
 //int nintendo_to_ascii(uint8_t *str, char* buf, size_t len);
 

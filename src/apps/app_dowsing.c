@@ -138,6 +138,7 @@ void pw_dowsing_init(pw_state_t *s, const screen_flags_t *sf) {
     pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO, (uint8_t*)(&ri), sizeof(ri));
 
     s->dowsing.chosen_item = get_item(&(s->dowsing), &ri, &health_data_cache);
+    printf("chosen item index: 0x%04x\n", s->dowsing.chosen_item);
 
     //s->dowsing.item_position = 0; // choose position
     s->dowsing.item_position = pw_rand()%6;
@@ -269,7 +270,6 @@ static void replace_item_draw_update(pw_state_t *s, const screen_flags_t *sf) {
         );
     }
 
-
     struct {
         uint16_t le_item;
         uint16_t pad;
@@ -283,26 +283,12 @@ static void replace_item_draw_update(pw_state_t *s, const screen_flags_t *sf) {
 
     uint16_t le_item = inv[s->dowsing.current_cursor].le_item;
 
-    uint8_t idx = 0;
-
-    struct {
-        uint16_t le_item;
-    } items[10];
-
-    pw_eeprom_read(
-        PW_EEPROM_ADDR_ROUTE_INFO+0x8c,
-        (uint8_t*)(items),
-        sizeof(items)
-    );
-
-    for(idx = 0; idx < 10; idx++) {
-        if(items[idx].le_item == le_item) break;
-    }
+    uint8_t cursor_item_index = pw_item_id_to_item_index(le_item);
 
     pw_screen_draw_from_eeprom(
         0, SCREEN_HEIGHT-16,
         96, 16,
-        PW_EEPROM_ADDR_TEXT_ITEM_NAMES + idx*PW_EEPROM_SIZE_TEXT_ITEM_NAME_SINGLE,
+        PW_EEPROM_ADDR_TEXT_ITEM_NAMES + cursor_item_index*PW_EEPROM_SIZE_TEXT_ITEM_NAME_SINGLE,
         PW_EEPROM_SIZE_TEXT_ITEM_NAME_SINGLE
     );
     pw_screen_draw_text_box(0, SCREEN_HEIGHT-16, SCREEN_WIDTH, 16, 0x3);
@@ -388,6 +374,7 @@ void pw_dowsing_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b)
                 PW_EEPROM_SIZE_OBTAINED_ITEMS
             );
 
+            printf("replacing index %d with 0x%04x\n", s->dowsing.current_cursor, s->dowsing.chosen_item);
             inv[s->dowsing.current_cursor].le_item = s->dowsing.chosen_item;
             pw_eeprom_write(
                 PW_EEPROM_ADDR_OBTAINED_ITEMS,
@@ -512,10 +499,12 @@ void pw_dowsing_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *s
             PW_EEPROM_SIZE_TEXT_FOUND
         );
 
+        uint8_t chosen_item_index = pw_item_id_to_item_index(s->dowsing.chosen_item);
+
         pw_screen_draw_from_eeprom(
             0, SCREEN_HEIGHT-32,
             96, 16,
-            PW_EEPROM_ADDR_TEXT_ITEM_NAMES + PW_EEPROM_SIZE_TEXT_ITEM_NAME_SINGLE*s->dowsing.chosen_item_index,
+            PW_EEPROM_ADDR_TEXT_ITEM_NAMES + PW_EEPROM_SIZE_TEXT_ITEM_NAME_SINGLE*chosen_item_index,
             PW_EEPROM_SIZE_TEXT_ITEM_NAME_SINGLE
         );
         pw_screen_draw_text_box(0, SCREEN_HEIGHT-32, SCREEN_WIDTH, 32, 0x3);

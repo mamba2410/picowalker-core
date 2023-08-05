@@ -8,6 +8,7 @@
 #include "../buttons.h"
 #include "../globals.h"
 #include "../types.h"
+#include "../utils.h"
 
 /// @file app_inventory.c
 
@@ -35,8 +36,6 @@ static void pw_inventory_update_screen1(pw_state_t *s, const screen_flags_t *sf)
 static void pw_inventory_update_screen2(pw_state_t *s, const screen_flags_t *sf);
 
 static void pw_inventory_move_cursor(pw_state_t *s, int8_t m);
-static pokemon_index_t pw_pokemon_id_to_pokemon_index(uint16_t id);
-static uint8_t pw_item_id_to_item_index(uint16_t id);
 
 state_void_func_t const draw_funcs[N_SUBSCREENS] = {
     [SUBSCREEN_FOUND]       = pw_inventory_draw_screen1,
@@ -423,70 +422,5 @@ void pw_inventory_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t 
     default:
         break;
     }
-}
-
-/**
- *  Convert a Pokemon species id into a `pokemon_index_t` enum.
- *  For use with getting sprites and data.
- *
- *  @param id Pokemon species ID.
- *
- *  @return `pokemon_index_t` containing which route pokemon slot it is
- */
-static pokemon_index_t pw_pokemon_id_to_pokemon_index(uint16_t id) {
-    pokemon_summary_t pokes[N_PIDX];
-
-    pw_eeprom_read(
-        PW_EEPROM_ADDR_ROUTE_INFO+0x0000, // offset 0 = current pokemon
-        (uint8_t*)(&pokes[0]),
-        sizeof(pokemon_summary_t)
-    );
-
-    pw_eeprom_read(
-        PW_EEPROM_ADDR_ROUTE_POKEMON,
-        (uint8_t*)(&pokes[1]),
-        3*sizeof(pokemon_summary_t)
-    );
-
-    pw_eeprom_read(
-        PW_EEPROM_ADDR_EVENT_POKEMON_BASIC_DATA, // in inventory so look here for both gifted and special pokemon
-        (uint8_t*)(&pokes[4]),
-        sizeof(pokemon_summary_t)
-    );
-
-    for(size_t i = 0; i < N_PIDX; i++) {
-        if(pokes[i].le_species == id) return (pokemon_index_t)i;
-    }
-
-    // unreachable, hopefully
-    return (pokemon_index_t)0;
-}
-
-
-/**
- * Convert item id into index of route-available items
- */
-static uint8_t pw_item_id_to_item_index(uint16_t id) {
-
-    uint16_t items[11];
-
-    pw_eeprom_read(
-        PW_EEPROM_ADDR_ROUTE_ITEMS,
-        (uint8_t*)items,
-        PW_EEPROM_SIZE_ROUTE_ITEMS
-    );
-
-    pw_eeprom_read(
-        PW_EEPROM_ADDR_EVENT_ITEM+0x0006, // in inventory, so look here for gifted and special item.
-        (uint8_t*)(&items[10]),
-        2
-    );
-
-    for(size_t i = 0; i < 11; i++) {
-        if(items[i] == id) return (uint8_t)i;
-    }
-
-    // unreachable, hopefully
-    return 0;
 }
 
