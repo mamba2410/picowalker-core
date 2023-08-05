@@ -55,7 +55,7 @@ typedef struct {
     int8_t cursor;
     pw_menu_message_id_t message;
     bool redraw_message;
-    bool transition;
+    uint8_t substate;
 } app_menu_t;
 
 typedef struct {

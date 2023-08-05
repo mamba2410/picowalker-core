@@ -125,7 +125,7 @@ static void pw_inventory_move_cursor(pw_state_t *s, int8_t m) {
         // move cursor by `m` until it hits a nonzero bit, cursor<0 or cursor>=10
         do {
             s->inventory.current_cursor += m;
-            is_filled = gbrief.packed & s->inventory.current_cursor;
+            is_filled = gbrief.packed & (1<<s->inventory.current_cursor);
         } while( (!is_filled) && (s->inventory.current_cursor>=0) && (s->inventory.current_cursor<=9) );
 
         if(s->inventory.current_cursor < 0) {
@@ -209,9 +209,9 @@ static void draw_animated_sprite(pw_state_t *s, const screen_flags_t *sf) {
         pw_pokemon_index_to_small_sprite(pokemon_index, buf, (sf->frame&ANIM_FRAME_NORMAL_TIME)>>ANIM_FRAME_NORMAL_TIME_OFFSET);
     } else {
         pw_eeprom_read(
-            PW_EEPROM_ADDR_IMG_ITEM,
+            PW_EEPROM_ADDR_IMG_TREASURE_LARGE,
             buf,
-            PW_EEPROM_SIZE_IMG_ITEM
+            PW_EEPROM_SIZE_IMG_TREASURE_LARGE
         );
     }
 
@@ -292,9 +292,9 @@ static void pw_inventory_draw_screen1(pw_state_t *s, const screen_flags_t *sf) {
     uint8_t xs[] = {8, 24, 32, 40, 48};
     const uint8_t yp = 24, yi = 40;
 
-    // draw normal pokeballs
-    for(uint8_t i = 0; i < 3; i++) {
-        if(gbrief.caught_pokemon & (1<<(i+1))) {
+    // draw normal pokeballs (walking and caught)
+    for(uint8_t i = 0; i < 4; i++) {
+        if(gbrief.caught_pokemon & (1<<i)) {
             pw_screen_draw_img(&pokeball, xs[i], yp);
         }
     }
@@ -302,7 +302,7 @@ static void pw_inventory_draw_screen1(pw_state_t *s, const screen_flags_t *sf) {
     // draw normal items
     for(uint8_t i = 0; i < 3; i++) {
         if(gbrief.dowsed_items & (1<<(i+1))) {
-            pw_screen_draw_img(&item, xs[i], yi);
+            pw_screen_draw_img(&item, xs[i+1], yi);
         }
     }
 

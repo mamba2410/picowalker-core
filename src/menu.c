@@ -40,6 +40,12 @@ static uint16_t const MENU_ICONS[] = {
     PW_EEPROM_ADDR_IMG_MENU_ICON_SETTINGS,
 };
 
+enum {
+    MS_NORMAL,
+    MS_CLICKED,
+    MS_SPLASH,
+};
+
 
 // + = right
 // - = left
@@ -49,6 +55,7 @@ bool pw_menu_move_cursor(pw_state_t *s, int8_t move) {
 
     if( s->menu.cursor < 0 || s->menu.cursor >= MENU_SIZE ) {
         s->menu.cursor = 0;
+        s->menu.substate = MS_SPLASH;
         return true;
     }
 
@@ -61,7 +68,13 @@ void pw_menu_init(pw_state_t *s, const screen_flags_t *sf) {
 }
 
 void pw_menu_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf) {
-    if(s->menu.transition) {
+    switch(s->menu.substate) {
+
+    case MS_NORMAL: {
+        break;    // nothing to do
+    }
+    case MS_CLICKED: {
+
         if(MENU_ENTRIES[s->menu.cursor] == STATE_INVENTORY) {
             pw_brief_inventory_t inv;
             pw_detailed_inventory_t _detailed;
@@ -75,7 +88,11 @@ void pw_menu_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf) 
         }
 
         p->sid = MENU_ENTRIES[s->menu.cursor];
-        s->menu.transition = false;
+        break;
+    }
+    case MS_SPLASH: {
+        p->sid = STATE_SPLASH;
+    }
     }
 }
 
@@ -147,9 +164,7 @@ void pw_menu_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b) {
         break;
     };
     case BUTTON_M: {
-        // TODO: send to transition substate and do this check in the main loop?
-        s->menu.transition = true;
-
+        s->menu.substate = MS_CLICKED;
         break;
     };
     case BUTTON_R: {

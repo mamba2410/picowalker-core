@@ -108,10 +108,12 @@ void walker_loop() {
     // Update screen since (presumably) we aren't doing anything time-critical
     walker_timings.now = pw_now_us();
     td = (walker_timings.prev_screen_redraw>walker_timings.now)?(walker_timings.prev_screen_redraw-walker_timings.now):(walker_timings.now-walker_timings.prev_screen_redraw);
+
     if(td > SCREEN_REDRAW_DELAY_US || PW_GET_REQUEST(current_state->requests, PW_REQUEST_REDRAW)) {
         walker_timings.prev_screen_redraw = walker_timings.now;
         STATE_FUNCS[current_state->sid].draw_update(current_state, &screen_flags);
         screen_flags.frame = (screen_flags.frame+1)%4;
+        PW_CLR_REQUEST(current_state->requests, PW_REQUEST_REDRAW);
     }
 }
 

@@ -32,18 +32,19 @@ static uint8_t active_timers[4] = {20, 15, 10, 7};
  * @param sf Pointer to current screen flags.
  *
  */
-static void draw_cursor_update(app_radar_t *radar, const screen_flags_t *sf) {
+static void draw_cursor_update(pw_state_t *s, const screen_flags_t *sf) {
     pw_screen_draw_from_eeprom(
-        bush_xs[radar->user_cursor]-8, bush_ys[radar->user_cursor]+8,
+        bush_xs[s->radar.user_cursor]-8, bush_ys[s->radar.user_cursor]+8,
         8, 8,
         (sf->frame&ANIM_FRAME_NORMAL_TIME)? PW_EEPROM_ADDR_IMG_ARROW_RIGHT_NORMAL:PW_EEPROM_ADDR_IMG_ARROW_RIGHT_OFFSET,
         PW_EEPROM_SIZE_IMG_ARROW
     );
 
     for(uint8_t i = 0; i < 4; i++) {
-        if(i == radar->user_cursor) continue;
+        if(i == s->radar.user_cursor) continue;
         pw_screen_clear_area(bush_xs[i]-8, bush_ys[i]+8, 8, 8);
     }
+
 }
 
 /**
@@ -176,6 +177,7 @@ void pw_poke_radar_update_display(pw_state_t *s, const screen_flags_t *sf) {
 void pw_poke_radar_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b) {
     switch(s->radar.current_substate) {
     case RADAR_CHOOSING: {
+        PW_SET_REQUEST(s->requests, PW_REQUEST_REDRAW);
         switch(b) {
         case BUTTON_L: {
             s->radar.user_cursor = (s->radar.user_cursor-1+4)%4; // in mod 4, +3 == -1

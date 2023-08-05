@@ -178,14 +178,13 @@ void pw_pokemon_index_to_name(pokemon_index_t idx, uint8_t *buf) {
         break;
     }
     case PIDX_EXTRA: {
-        addr = PW_EEPROM_ADDR_TEXT_SPECIAL_POKEMON_NAME;
+        addr = PW_EEPROM_ADDR_TEXT_EVENT_POKEMON_NAME;
         break;
     }
     case PIDX_OPTION_A:
     case PIDX_OPTION_B:
     case PIDX_OPTION_C: {
-        uint8_t offs = 2*(idx-1);
-        addr = PW_EEPROM_ADDR_TEXT_POKEMON_NAMES + offs*(PW_EEPROM_SIZE_TEXT_POKEMON_NAME);
+        addr = PW_EEPROM_ADDR_TEXT_POKEMON_NAMES + (idx-1)*(PW_EEPROM_SIZE_TEXT_POKEMON_NAME);
         break;
     }
     default: {
