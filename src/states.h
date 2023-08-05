@@ -35,7 +35,7 @@ typedef struct {
 } app_screensaver_t;
 
 typedef struct {
-    pw_inventory_t inventory;
+    pw_brief_inventory_t inventory;
 } app_splash_t;
 
 /*
@@ -97,7 +97,8 @@ typedef struct {
 } app_trainer_card_t;
 
 typedef struct {
-    int8_t cursor;
+    int8_t current_cursor;
+    int8_t previous_cursor;
     uint8_t current_substate;
     uint8_t previous_substate;
 } app_inventory_t;

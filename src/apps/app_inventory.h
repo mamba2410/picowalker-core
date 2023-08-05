@@ -7,11 +7,11 @@
 
 /// @file app_inventory.h
 
-void pw_inventory_init(state_vars_t *sv);
-void pw_inventory_init_display(state_vars_t *sv);
-void pw_inventory_update_display(state_vars_t *sv);
-void pw_inventory_handle_input(state_vars_t *sv, uint8_t b);
-//void pw_inventory_event_loop();
+void pw_inventory_init(pw_state_t *s, const screen_flags_t *sf);
+void pw_inventory_init_display(pw_state_t *s, const screen_flags_t *sf);
+void pw_inventory_update_display(pw_state_t *s, const screen_flags_t *sf);
+void pw_inventory_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b);
+void pw_inventory_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf);
 
 
 #endif /* PW_APP_INVENTORY_H */
