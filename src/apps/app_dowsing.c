@@ -138,7 +138,6 @@ void pw_dowsing_init(pw_state_t *s, const screen_flags_t *sf) {
     pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO, (uint8_t*)(&ri), sizeof(ri));
 
     s->dowsing.chosen_item = get_item(&(s->dowsing), &ri, &health_data_cache);
-    printf("chosen item index: 0x%04x\n", s->dowsing.chosen_item);
 
     //s->dowsing.item_position = 0; // choose position
     s->dowsing.item_position = pw_rand()%6;
@@ -374,7 +373,6 @@ void pw_dowsing_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b)
                 PW_EEPROM_SIZE_OBTAINED_ITEMS
             );
 
-            printf("replacing index %d with 0x%04x\n", s->dowsing.current_cursor, s->dowsing.chosen_item);
             inv[s->dowsing.current_cursor].le_item = s->dowsing.chosen_item;
             pw_eeprom_write(
                 PW_EEPROM_ADDR_OBTAINED_ITEMS,

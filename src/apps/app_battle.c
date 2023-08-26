@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 
 #include "app_battle.h"
 #include "../states.h"
@@ -63,7 +64,7 @@ static const uint8_t HP_MATRIX[3][3] = {
     /* cur crit   */ {         1,         1,         2},
 };
 
-static const uint8_t WOBBLE_CHANCES[4] = { 97, 79, 66, 56 };
+static const uint8_t CATCH_CHANCES[4] = { 97, 79, 66, 56 };
 
 /*
  *  Note: same animations for attack and evade
@@ -124,6 +125,7 @@ void pw_battle_init(pw_state_t *s, const screen_flags_t *sf) {
     s->battle.current_hp = (4<<OUR_HP_OFFSET) | (4<<THEIR_HP_OFFSET);
     s->battle.switch_cursor = 0;
     s->battle.prev_switch_cursor = 0;
+    s->battle.wobbles = 0;
 }
 
 /**
@@ -287,7 +289,7 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
         substate_queue[1] = BATTLE_CLOUD_ANIM;
 
         int8_t health = (s->battle.current_hp&THEIR_HP_MASK) >> THEIR_HP_OFFSET;
-        uint8_t wobble_chance = WOBBLE_CHANCES[health-1];
+        uint8_t catch_chance = CATCH_CHANCES[health-1];
         if(health <= 0) {
             substate_queue[0] = BATTLE_THEY_FLED;
             s->battle.substate_queue_len = 1;
@@ -297,17 +299,21 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
         // 1-3 wobbles, can flee at three wobbles
         bool caught = true;
         uint8_t n_wobbles = 0;
-        while(n_wobbles < 3 && caught) {
+        while((n_wobbles < 3) && caught) {
             n_wobbles++;
             uint8_t pct = pw_rand()%100;
-            if(pct >= wobble_chance) {
+            printf("pct: %d\n", pct);
+            if(pct >= catch_chance) {
                 caught = false;
             }
         }
 
-        s->battle.actions = n_wobbles<<MAX_WOBBLE_OFFSET;  // reuse reg_b for wobble count
+        s->battle.wobbles = n_wobbles<<MAX_WOBBLE_OFFSET;
+        printf("catch chance: %d ", catch_chance);
+        if(caught)  printf("(caught)\n");
+        else        printf("(not caught)\n");
 
-        if(caught) {
+        if(!caught) {
             substate_queue[2] = BATTLE_BALL_WOBBLE;
             substate_queue[3] = BATTLE_CLOUD_ANIM;
             substate_queue[4] = BATTLE_ALMOST_HAD_IT;
@@ -345,13 +351,14 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
     }
     case BATTLE_BALL_WOBBLE: {
         if(s->battle.anim_frame >= WOBBLE_ANIM_LENGTH) {
-            uint8_t current_wobble = s->battle.actions & CURRENT_WOBBLE_MASK+1;
-            uint8_t max_wobble = s->battle.actions >> MAX_WOBBLE_OFFSET;
+            uint8_t current_wobble = (s->battle.wobbles & CURRENT_WOBBLE_MASK);
+            uint8_t max_wobble = s->battle.wobbles >> MAX_WOBBLE_OFFSET;
+            printf("wobble byte: %02x\n", s->battle.wobbles);
 
-            if(current_wobble < max_wobble) {
+            if(current_wobble+1 < max_wobble) {
                 current_wobble++;
-                s->battle.actions &= ~CURRENT_WOBBLE_MASK;
-                s->battle.actions |= current_wobble;
+                s->battle.wobbles &= ~CURRENT_WOBBLE_MASK;
+                s->battle.wobbles |= current_wobble;
                 s->battle.anim_frame = 0;
             } else {
                 s->battle.substate_queue_index++;
