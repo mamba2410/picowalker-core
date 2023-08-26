@@ -10,6 +10,7 @@
 #include "../utils.h"
 #include "../types.h"
 #include "../globals.h"
+#include "app_switch.h"
 
 /** @file app_dowsing.c
  *
@@ -22,7 +23,6 @@
 static uint8_t img_buf[128];
 static void check_guess_draw_init(pw_state_t *s, const screen_flags_t *sf);
 static void replace_item_draw_update(pw_state_t *s, const screen_flags_t *sf);
-static void replace_item_draw_init(pw_state_t *s, const screen_flags_t *sf);
 static void selected_draw_update(pw_state_t *s, const screen_flags_t *sf);
 static void choosing_draw_update(pw_state_t *s, const screen_flags_t *sf);
 static void choosing_draw_init(pw_state_t *s, const screen_flags_t *sf);
@@ -38,10 +38,10 @@ state_void_func_t const draw_init_funcs[N_DOWSING_STATES] = {
     [DOWSING_INTERMEDIATE]  = match_substate_2,
     [DOWSING_CHECK_GUESS]   = check_guess_draw_init,
     [DOWSING_GIVE_ITEM]     = match_substate_2,
-    [DOWSING_REPLACE_ITEM]  = replace_item_draw_init,
     [DOWSING_QUITTING]      = match_substate_2,
     [DOWSING_AWAIT_INPUT]   = pw_empty_event,
     [DOWSING_REVEAL_ITEM]   = match_substate_2,
+    [DOWSING_GO_TO_SWITCH]  = pw_empty_event,
 };
 
 state_void_func_t const draw_update_funcs[N_DOWSING_STATES] = {
@@ -51,10 +51,10 @@ state_void_func_t const draw_update_funcs[N_DOWSING_STATES] = {
     [DOWSING_INTERMEDIATE]  = pw_empty_event,
     [DOWSING_CHECK_GUESS]   = pw_empty_event,
     [DOWSING_GIVE_ITEM]     = pw_empty_event,
-    [DOWSING_REPLACE_ITEM]  = replace_item_draw_update,
     [DOWSING_QUITTING]      = pw_empty_event,
     [DOWSING_AWAIT_INPUT]   = pw_empty_event,
     [DOWSING_REVEAL_ITEM]   = pw_empty_event,
+    [DOWSING_GO_TO_SWITCH]  = pw_empty_event,
 
 };
 
@@ -105,32 +105,6 @@ static uint16_t get_item(app_dowsing_t *dowsing, route_info_t *ri, health_data_t
     return ri->le_route_items[9];
 }
 
-static void replace_item_draw_init(pw_state_t *s, const screen_flags_t *sf) {
-    pw_screen_clear();
-    pw_screen_draw_from_eeprom(
-        0, 0,
-        8, 16,
-        PW_EEPROM_ADDR_IMG_MENU_ARROW_RETURN,
-        PW_EEPROM_SIZE_IMG_MENU_ARROW_RETURN
-    );
-
-    pw_screen_draw_from_eeprom(
-        8, 0,
-        80, 16,
-        PW_EEPROM_ADDR_TEXT_SWITCH,
-        PW_EEPROM_SIZE_TEXT_SWITCH
-    );
-
-    for(uint8_t i = 0; i < 3; i++) {
-        pw_screen_draw_from_eeprom(
-            20+i*(16+8), SCREEN_HEIGHT-32-8,
-            8, 8,
-            PW_EEPROM_ADDR_IMG_ITEM,
-            PW_EEPROM_SIZE_IMG_ITEM
-        );
-    }
-    s->dowsing.previous_substate = s->dowsing.current_substate;
-}
 
 
 void pw_dowsing_init(pw_state_t *s, const screen_flags_t *sf) {
@@ -345,49 +319,6 @@ void pw_dowsing_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b)
         }
         break;
     }
-    case DOWSING_REPLACE_ITEM: {
-        switch(b) {
-        case BUTTON_R: {
-            s->dowsing.current_cursor++;
-            if(s->dowsing.current_cursor > 2)
-                s->dowsing.current_cursor = 2;
-            PW_SET_REQUEST(s->requests, PW_REQUEST_REDRAW);
-            break;
-        }
-        case BUTTON_L: {
-            s->dowsing.current_cursor--;
-            if(s->dowsing.current_cursor < 0)
-                switch_substate(s, DOWSING_QUITTING);
-            PW_SET_REQUEST(s->requests, PW_REQUEST_REDRAW);
-            break;
-        }
-        case BUTTON_M: {
-            struct {
-                uint16_t le_item;
-                uint16_t pad;
-            } inv[3];
-
-            pw_eeprom_read(
-                PW_EEPROM_ADDR_OBTAINED_ITEMS,
-                (uint8_t*)inv,
-                PW_EEPROM_SIZE_OBTAINED_ITEMS
-            );
-
-            inv[s->dowsing.current_cursor].le_item = s->dowsing.chosen_item;
-            pw_eeprom_write(
-                PW_EEPROM_ADDR_OBTAINED_ITEMS,
-                (uint8_t*)inv,
-                PW_EEPROM_SIZE_OBTAINED_ITEMS
-            );
-
-            switch_substate(s, DOWSING_QUITTING);
-            PW_SET_REQUEST(s->requests, PW_REQUEST_REDRAW);
-            break;
-        }
-        }
-        break;
-    }
-
     case DOWSING_AWAIT_INPUT: {
         s->dowsing.user_input = true;
         break;
@@ -512,7 +443,7 @@ void pw_dowsing_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *s
 
             s->dowsing.user_input = false;
             s->dowsing.current_substate = DOWSING_AWAIT_INPUT;
-            s->dowsing.next_substate = DOWSING_REPLACE_ITEM;
+            s->dowsing.next_substate = DOWSING_GO_TO_SWITCH;
         } else {
 
             inv[avail].le_item = s->dowsing.chosen_item;
@@ -549,6 +480,13 @@ void pw_dowsing_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *s
     case DOWSING_QUITTING: {
         p->sid = STATE_MAIN_MENU;
         p->menu.cursor = 1;
+        break;
+    }
+    case DOWSING_GO_TO_SWITCH: {
+
+        p->sid = STATE_SWITCHES;
+        p->switches.switch_type = SWITCH_TYPE_ITEM;
+        p->switches.switch_id = s->dowsing.chosen_item;
         break;
     }
     default:

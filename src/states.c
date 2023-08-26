@@ -16,6 +16,7 @@
 #include "apps/app_battle.h"
 #include "apps/app_first_comms.h"
 #include "apps/app_settings.h"
+#include "apps/app_switch.h"
 
 const char* const state_strings[N_STATES] = {
     [STATE_SCREENSAVER]     = "Screensaver",
@@ -29,6 +30,7 @@ const char* const state_strings[N_STATES] = {
     [STATE_SETTINGS]        = "Settings",
     [STATE_ERROR]           = "Error",
     [STATE_FIRST_COMMS]     = "First connect",
+    [STATE_SWITCHES]        = "Switch?"
 };
 
 // TODO: change function sigs
@@ -128,6 +130,15 @@ state_funcs_t const STATE_FUNCS[N_STATES] = {
         .draw_init=pw_first_comms_init_display,
         .draw_update=pw_first_comms_draw_update,
         .deinit=pw_empty_event,
+    },
+    [STATE_SWITCHES] = {
+        .init=pw_switch_init,
+        .loop=pw_switch_event_loop,
+        .input=pw_switch_handle_input,
+        .draw_init=pw_switch_init_display,
+        .draw_update=pw_switch_update_display,
+        .deinit=pw_empty_event,
+
     },
 };
 

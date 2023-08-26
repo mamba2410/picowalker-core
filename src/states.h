@@ -27,6 +27,7 @@ typedef enum {
     STATE_ERROR,
     STATE_FIRST_COMMS,
     STATE_BATTLE,
+    STATE_SWITCHES,
     N_STATES,
 } pw_state_id_t;
 
@@ -125,9 +126,19 @@ typedef struct {
     uint8_t actions;
     uint8_t substate_queue_index;
     uint8_t substate_queue_len;
-    int8_t  switch_cursor;
-    int8_t  prev_switch_cursor;
+    uint8_t wobbles;
 } app_battle_t;
+
+typedef struct {
+    uint8_t  switch_type;   // item/pokemon
+    uint8_t  current_substate;
+    int8_t   cursor;
+    int8_t   prev_cursor;
+    uint16_t switch_id;     // id of item to switch in
+    uint8_t  switch_index;
+    uint16_t inv_ids[3];    // full id of item/pokemon
+    uint8_t  inv_indices[3];// index of item/pokemon in route list
+} app_switch_t;
 
 typedef struct {
     uint8_t sid;
@@ -143,6 +154,7 @@ typedef struct {
         app_inventory_t inventory;
         app_battle_t battle;
         app_settings_t settings;
+        app_switch_t switches;
     };
 } pw_state_t;
 

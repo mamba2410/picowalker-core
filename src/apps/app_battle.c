@@ -3,6 +3,8 @@
 #include <stdbool.h>
 
 #include "app_battle.h"
+#include "app_switch.h"
+
 #include "../states.h"
 #include "../screen.h"
 #include "../eeprom_map.h"
@@ -123,8 +125,6 @@ void pw_battle_init(pw_state_t *s, const screen_flags_t *sf) {
     s->battle.actions = 0;
     s->battle.anim_frame = 4;
     s->battle.current_hp = (4<<OUR_HP_OFFSET) | (4<<THEIR_HP_OFFSET);
-    s->battle.switch_cursor = 0;
-    s->battle.prev_switch_cursor = 0;
     s->battle.wobbles = 0;
 }
 
@@ -302,16 +302,12 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
         while((n_wobbles < 3) && caught) {
             n_wobbles++;
             uint8_t pct = pw_rand()%100;
-            printf("pct: %d\n", pct);
             if(pct >= catch_chance) {
                 caught = false;
             }
         }
 
         s->battle.wobbles = n_wobbles<<MAX_WOBBLE_OFFSET;
-        printf("catch chance: %d ", catch_chance);
-        if(caught)  printf("(caught)\n");
-        else        printf("(not caught)\n");
 
         if(!caught) {
             substate_queue[2] = BATTLE_BALL_WOBBLE;
@@ -353,7 +349,6 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
         if(s->battle.anim_frame >= WOBBLE_ANIM_LENGTH) {
             uint8_t current_wobble = (s->battle.wobbles & CURRENT_WOBBLE_MASK);
             uint8_t max_wobble = s->battle.wobbles >> MAX_WOBBLE_OFFSET;
-            printf("wobble byte: %02x\n", s->battle.wobbles);
 
             if(current_wobble+1 < max_wobble) {
                 current_wobble++;
@@ -471,8 +466,10 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
 
             if(i == 3) {
                 // no space
-                s->battle.prev_switch_cursor = 0xff;
-                pw_battle_switch_substate(s, BATTLE_SWITCH);
+                p->sid = STATE_SWITCHES;
+                p->switches.switch_type = SWITCH_TYPE_POKEMON;
+                p->switches.switch_id = s->battle.chosen_pokemon;
+                return;
             } else {
                 route_info_t ri;
                 pw_eeprom_read(
@@ -497,9 +494,6 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
             s->battle.anim_frame = 0;
             pw_battle_switch_substate(s, substate_queue[s->battle.substate_queue_index-1]);
         }
-        break;
-    }
-    case BATTLE_SWITCH: {
         break;
     }
     case BATTLE_GO_TO_SPLASH: {
@@ -737,38 +731,6 @@ void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
         pw_screen_draw_text_box(0, SCREEN_HEIGHT-32, SCREEN_WIDTH, 32, SCREEN_BLACK);
         break;
     }
-    case BATTLE_SWITCH: {
-        pw_screen_clear();
-        pw_screen_draw_from_eeprom(
-            0, 0,
-            8, 16,
-            PW_EEPROM_ADDR_IMG_MENU_ARROW_RETURN,
-            PW_EEPROM_SIZE_IMG_MENU_ARROW_RETURN
-        );
-
-        pw_screen_draw_from_eeprom(
-            8, 0,
-            80, 16,
-            PW_EEPROM_ADDR_TEXT_SWITCH,
-            PW_EEPROM_SIZE_TEXT_SWITCH
-        );
-        for(uint8_t i = 0; i < 3; i++) {
-            pw_screen_draw_from_eeprom(
-                20+i*(16+8), SCREEN_HEIGHT-32-8,
-                8, 8,
-                PW_EEPROM_ADDR_IMG_BALL,
-                PW_EEPROM_SIZE_IMG_BALL
-            );
-        }
-
-        pw_screen_draw_from_eeprom(
-            20+s->battle.switch_cursor*(16+8), SCREEN_HEIGHT-32,
-            8, 8,
-            PW_EEPROM_ADDR_IMG_ARROW_UP_NORMAL,
-            PW_EEPROM_SIZE_IMG_ARROW
-        );
-        break;
-    }
     default: {
         //printf("[ERROR] Unhandled substate draw: 0x%02x\n", s->battle.current_substate);
         break;
@@ -967,38 +929,6 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
     case BATTLE_POKEMON_CAUGHT: {
         break;
     }
-    case BATTLE_SWITCH: {
-        for(uint8_t i = 0; i < 3; i++) {
-            pw_screen_clear_area(20+i*(8+16), SCREEN_HEIGHT-32, 8, 8);
-        }
-        if(sf->frame&ANIM_FRAME_DOUBLE_TIME) {
-            pw_screen_draw_from_eeprom(
-                20+s->battle.switch_cursor*(8+16), SCREEN_HEIGHT-32,
-                8, 8,
-                PW_EEPROM_ADDR_IMG_ARROW_UP_NORMAL,
-                PW_EEPROM_SIZE_IMG_ARROW
-            );
-        } else {
-            pw_screen_draw_from_eeprom(
-                20+s->battle.switch_cursor*(8+16), SCREEN_HEIGHT-32,
-                8, 8,
-                PW_EEPROM_ADDR_IMG_ARROW_UP_OFFSET,
-                PW_EEPROM_SIZE_IMG_ARROW
-            );
-        }
-
-        if(s->battle.switch_cursor != s->battle.prev_switch_cursor) {
-            pw_screen_draw_from_eeprom(
-                0, SCREEN_HEIGHT-16,
-                80, 16,
-                PW_EEPROM_ADDR_TEXT_POKEMON_NAMES + s->battle.chosen_pokemon*PW_EEPROM_SIZE_TEXT_POKEMON_NAME,
-                PW_EEPROM_SIZE_TEXT_POKEMON_NAME
-            );
-            s->battle.prev_switch_cursor = s->battle.switch_cursor;
-        }
-
-        break;
-    }
     default: {
         //printf("[ERROR] Unhandled substate draw update: 0x%02x\n", s->battle.current_substate);
         break;
@@ -1047,39 +977,6 @@ void pw_battle_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b) 
     case BATTLE_WE_LOST: {
         s->battle.current_substate = BATTLE_GO_TO_SPLASH;
         break;
-    }
-    case BATTLE_SWITCH: {
-        switch(b) {
-        case BUTTON_L: {
-            if(s->battle.switch_cursor == 0) {
-                s->battle.current_substate = BATTLE_GO_TO_SPLASH;
-            }
-            s->battle.switch_cursor = (s->battle.switch_cursor-1)%3;
-            break;
-        }
-        case BUTTON_R: {
-            if(s->battle.switch_cursor >= 2) break;
-            s->battle.switch_cursor = (s->battle.switch_cursor+1)%3;
-            break;
-        }
-        case BUTTON_M: {
-            pokemon_summary_t poke;
-            route_info_t ri;
-            pw_eeprom_read(
-                PW_EEPROM_ADDR_ROUTE_INFO,
-                (uint8_t*)(&ri),
-                sizeof(ri)
-            );
-            poke = ri.route_pokemon[s->battle.chosen_pokemon];
-            pw_eeprom_write(
-                PW_EEPROM_ADDR_CAUGHT_POKEMON_SUMMARY,
-                (uint8_t*)(&poke),
-                sizeof(poke)
-            );
-            s->battle.current_substate = BATTLE_GO_TO_SPLASH;
-            break;
-        }
-        }
     }
     default:
         break;
