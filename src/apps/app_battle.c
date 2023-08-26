@@ -523,6 +523,9 @@ void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
         break;
     }
     case BATTLE_APPEARED: {
+        pw_screen_draw_img(&their_sprite, THEIR_NORMAL_X, THEIR_NORMAL_Y);
+        pw_screen_draw_img(&our_sprite, OUR_NORMAL_X, OUR_NORMAL_Y);
+
         pw_screen_draw_from_eeprom(
             0, SCREEN_HEIGHT-16,
             96, 16,
@@ -550,8 +553,6 @@ void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
             pw_screen_draw_img(&health_bar, SCREEN_WIDTH/2 + 8*(i+1), 0);
         }
 
-        pw_screen_draw_img(&their_sprite, THEIR_NORMAL_X, THEIR_NORMAL_Y);
-        pw_screen_draw_img(&our_sprite, OUR_NORMAL_X, OUR_NORMAL_Y);
 
         break;
     }
@@ -784,6 +785,9 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
     case BATTLE_OUR_ACTION: {
         uint8_t our_action = (s->battle.actions&OUR_ACTION_MASK)>>OUR_ACTION_OFFSET;
         uint8_t their_action = (s->battle.actions&THEIR_ACTION_MASK)>>THEIR_ACTION_OFFSET;
+
+        pw_screen_clear_area(0, 0, SCREEN_WIDTH/2+8, 24); // clear artefacts
+        pw_screen_clear_area(SCREEN_WIDTH/2-8, 8, SCREEN_WIDTH/2+8, 24);
         pw_screen_draw_img(&our_sprite, OUR_ATTACK_XS[0][s->battle.anim_frame], 8);
         pw_screen_draw_img(&their_sprite, OUR_ATTACK_XS[1][s->battle.anim_frame], 0);
 
@@ -806,11 +810,6 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
 
             uint8_t hp = (s->battle.current_hp&THEIR_HP_MASK)>>THEIR_HP_OFFSET;
             pw_screen_clear_area(8*(hp+1), 24, 8*(4-hp), 8);
-        } else {
-            pw_screen_clear_area(
-                (SCREEN_WIDTH-16)/2, 0,
-                16, 32
-            );
         }
 
         s->battle.anim_frame++;
@@ -819,6 +818,9 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
     case BATTLE_THEIR_ACTION: {
         uint8_t our_action = (s->battle.actions&OUR_ACTION_MASK)>>OUR_ACTION_OFFSET;
         uint8_t their_action = (s->battle.actions&THEIR_ACTION_MASK)>>THEIR_ACTION_OFFSET;
+
+        pw_screen_clear_area(0, 0, SCREEN_WIDTH/2+8, 24); // clear artefacts
+        pw_screen_clear_area(SCREEN_WIDTH/2-8, 8, SCREEN_WIDTH/2+8, 24);
         pw_screen_draw_img(&our_sprite,   THEIR_ATTACK_XS[0][s->battle.anim_frame], 8);
         pw_screen_draw_img(&their_sprite, THEIR_ATTACK_XS[1][s->battle.anim_frame], 0);
 
@@ -835,11 +837,6 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
             uint8_t hp = (s->battle.current_hp&OUR_HP_MASK)>>OUR_HP_OFFSET;
             pw_screen_clear_area(SCREEN_WIDTH/2+8*(hp+1), 0, 8*(4-hp), 8);
 
-        } else {
-            pw_screen_clear_area(
-                (SCREEN_WIDTH-16)/2, 0,
-                16, 32
-            );
         }
 
         s->battle.anim_frame++;
