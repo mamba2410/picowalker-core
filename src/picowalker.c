@@ -37,39 +37,29 @@ void walker_setup() {
     pw_srand(0x12345678);
 
     if(!pw_eeprom_check_for_nintendo()) {
+        printf("No nintendo found!\n");
         pw_eeprom_reset(true, true);
     }
 
-    pw_eeprom_reliable_read(
-        PW_EEPROM_ADDR_IDENTITY_DATA_1,
-        PW_EEPROM_ADDR_IDENTITY_DATA_2,
-        (uint8_t*)&walker_info_cache,
-        sizeof(walker_info_cache)
-    );
-
-    pw_eeprom_reliable_read(
-        PW_EEPROM_ADDR_HEALTH_DATA_1,
-        PW_EEPROM_ADDR_HEALTH_DATA_2,
-        (uint8_t*)&health_data_cache,
-        sizeof(health_data_cache)
-    );
-
-    // swap BE in eeprom to LE in host
-    health_data_cache.today_steps   = swap_bytes_u32(health_data_cache.today_steps);
-    health_data_cache.total_steps   = swap_bytes_u32(health_data_cache.total_steps);
-    health_data_cache.last_sync     = swap_bytes_u32(health_data_cache.last_sync);
-    health_data_cache.total_days    = swap_bytes_u16(health_data_cache.total_days);
-    health_data_cache.current_watts = swap_bytes_u16(health_data_cache.current_watts);
+    int read_res;
+    read_res = pw_eeprom_read_walker_info(&walker_info_cache);
+    read_res = pw_eeprom_read_health_data(&health_data_cache);
 
     if(walker_info_cache.flags & WALKER_INFO_FLAG_INIT) {
         current_state->sid = STATE_SPLASH;
+        pending_state->sid = STATE_SPLASH;
     } else {
         current_state->sid = STATE_FIRST_COMMS;
+        pending_state->sid = STATE_FIRST_COMMS;
     }
 
     walker_timings.now = pw_now_us();
     walker_timings.prev_accel_check = 0;
 
+    // Initialise the first states
+    pw_screen_clear();
+    STATE_FUNCS[current_state->sid].init(current_state, &screen_flags);
+    STATE_FUNCS[current_state->sid].draw_init(current_state, &screen_flags);
 }
 
 

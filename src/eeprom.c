@@ -5,6 +5,7 @@
 #include "eeprom.h"
 #include "eeprom_map.h"
 #include "globals.h"
+#include "types.h"
 #include "utils.h"
 
 static const char const NINTENDO_STRING[] = "nintendo";
@@ -91,12 +92,7 @@ void pw_eeprom_reset(bool clear_events, bool clear_steps) {
     //health_data_cache.be_current_watts = 0;
     //walker_info_cache.status_flags &= ~3;
 
-    pw_eeprom_reliable_read(
-        PW_EEPROM_ADDR_IDENTITY_DATA_1,
-        PW_EEPROM_ADDR_IDENTITY_DATA_2,
-        (uint8_t*)(&walker_info_cache),
-        sizeof(walker_info_cache)
-    );
+    pw_eeprom_read_walker_info(&walker_info_cache);
 
     walker_info_cache.le_unk0 = 0;
     walker_info_cache.le_unk1 = 0;
@@ -134,12 +130,7 @@ void pw_eeprom_reset(bool clear_events, bool clear_steps) {
     }
 
 
-    pw_eeprom_reliable_write(
-        PW_EEPROM_ADDR_IDENTITY_DATA_1,
-        PW_EEPROM_ADDR_IDENTITY_DATA_2,
-        (uint8_t*)(&walker_info_cache),
-        sizeof(walker_info_cache)
-    );
+    pw_eeprom_write_walker_info(&walker_info_cache);
 
     pw_eeprom_initialise_health_data(clear_steps);
 
@@ -175,12 +166,7 @@ void pw_eeprom_initialise_health_data(bool clear_time) {
     health_data_cache.settings |= 0x24;
     health_data_cache.event_log_index = 0;
 
-    pw_eeprom_reliable_write(
-        PW_EEPROM_ADDR_HEALTH_DATA_1,
-        PW_EEPROM_ADDR_HEALTH_DATA_2,
-        (uint8_t*)(&health_data_cache),
-        sizeof(health_data_t)
-    );
+    pw_eeprom_write_health_data(&health_data_cache);
 }
 
 
@@ -194,5 +180,78 @@ bool pw_eeprom_check_for_nintendo() {
     }
 
     return i == PW_EEPROM_SIZE_NINTENDO;
+}
+
+
+void pw_eeprom_write_health_data(health_data_t *hd_orig) {
+
+    // make a copy so we don't swap bytes in ram
+    health_data_t hd = *hd_orig;
+
+    // swap LE in host to BE in eeprom
+    hd.today_steps   = swap_bytes_u32(hd.today_steps);
+    hd.total_steps   = swap_bytes_u32(hd.total_steps);
+    hd.last_sync     = swap_bytes_u32(hd.last_sync);
+    hd.total_days    = swap_bytes_u16(hd.total_days);
+    hd.current_watts = swap_bytes_u16(hd.current_watts);
+
+    pw_eeprom_reliable_write(
+        PW_EEPROM_ADDR_HEALTH_DATA_1,
+        PW_EEPROM_ADDR_HEALTH_DATA_2,
+        (uint8_t*)(&hd),
+        sizeof(health_data_t)
+    );
+}
+
+int pw_eeprom_read_health_data(health_data_t *hd) {
+
+    int res = pw_eeprom_reliable_read(
+                  PW_EEPROM_ADDR_HEALTH_DATA_1,
+                  PW_EEPROM_ADDR_HEALTH_DATA_2,
+                  (uint8_t*)hd,
+                  sizeof(health_data_t)
+              );
+
+    // swap BE from eeprom to LE in host
+    hd->today_steps   = swap_bytes_u32(hd->today_steps);
+    hd->total_steps   = swap_bytes_u32(hd->total_steps);
+    hd->last_sync     = swap_bytes_u32(hd->last_sync);
+    hd->total_days    = swap_bytes_u16(hd->total_days);
+    hd->current_watts = swap_bytes_u16(hd->current_watts);
+
+    return res;
+}
+
+
+void pw_eeprom_write_walker_info(walker_info_t *wi_orig) {
+
+    // make a copy so we don't swap bytes in ram
+    walker_info_t wi = *wi_orig;
+
+    // swap LE in host to BE in eeprom
+    // nothing to do
+
+    pw_eeprom_reliable_write(
+        PW_EEPROM_ADDR_IDENTITY_DATA_1,
+        PW_EEPROM_ADDR_IDENTITY_DATA_2,
+        (uint8_t*)(&wi),
+        sizeof(walker_info_t)
+    );
+}
+
+
+int pw_eeprom_read_walker_info(walker_info_t *wi) {
+
+    int res = pw_eeprom_reliable_read(
+                  PW_EEPROM_ADDR_IDENTITY_DATA_1,
+                  PW_EEPROM_ADDR_IDENTITY_DATA_2,
+                  (uint8_t*)wi,
+                  sizeof(walker_info_t)
+              );
+
+    // swap LE in host to BE in eeprom
+    // nothing to do
+
+    return res;
 }
 

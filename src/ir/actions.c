@@ -145,12 +145,7 @@ ir_err_t pw_action_slave_perform_request(pw_packet_t *packet, size_t len) {
         packet->cmd = CMD_IDENTITY_RSP;
         packet->extra = EXTRA_BYTE_FROM_WALKER;
 
-        int r = pw_eeprom_reliable_read(
-                    PW_EEPROM_ADDR_IDENTITY_DATA_1,
-                    PW_EEPROM_ADDR_IDENTITY_DATA_2,
-                    packet->payload,
-                    PW_EEPROM_SIZE_IDENTITY_DATA_1
-                );
+        int r = pw_eeprom_read_walker_info((walker_info_t*)packet->payload);
 
         if(r < 0) {
             return IR_ERR_BAD_DATA;
@@ -158,7 +153,7 @@ ir_err_t pw_action_slave_perform_request(pw_packet_t *packet, size_t len) {
 
         pw_ir_delay_ms(ACTION_DELAY_MS);
 
-        err = pw_ir_send_packet(packet, 8+PW_EEPROM_SIZE_IDENTITY_DATA_1, &n_rw);
+        err = pw_ir_send_packet(packet, 8+sizeof(walker_info_t), &n_rw);
 
         break;
     }
@@ -290,14 +285,13 @@ ir_err_t pw_action_peer_play(app_comms_t *comms, pw_packet_t *packet, size_t max
 
         packet->cmd = CMD_PEER_PLAY_START;
         packet->extra = EXTRA_BYTE_FROM_WALKER;
-        pw_eeprom_reliable_read(PW_EEPROM_ADDR_IDENTITY_DATA_1, PW_EEPROM_ADDR_IDENTITY_DATA_2,
-                                packet->payload, PW_EEPROM_SIZE_IDENTITY_DATA_1);
-        //pw_eeprom_read(PW_EEPROM_ADDR_IDENTITY_DATA_1,
-        //        packet+8, PW_EEPROM_SIZE_IDENTITY_DATA_1);
+
+        pw_eeprom_read_walker_info((walker_info_t*)packet->payload);
+
         packet->bytes[0x18] = (uint8_t)(pw_rand()&0xff);  // Hack to change UID each time
         // to prevent "already connected" error
         // TODO: remove this in proper code
-        err = pw_ir_send_packet(packet, 8+PW_EEPROM_SIZE_IDENTITY_DATA_1, &n_read);
+        err = pw_ir_send_packet(packet, 8+sizeof(walker_info_t), &n_read);
         if(err != IR_OK) return err;
 
         comms->current_substate = COMM_SUBSTATE_PEER_PLAY_ACK;
@@ -305,7 +299,7 @@ ir_err_t pw_action_peer_play(app_comms_t *comms, pw_packet_t *packet, size_t max
     }
     case COMM_SUBSTATE_PEER_PLAY_ACK: {
 
-        err = pw_ir_recv_packet(packet, 8+PW_EEPROM_SIZE_IDENTITY_DATA_1, &n_read);
+        err = pw_ir_recv_packet(packet, 8+sizeof(walker_info_t), &n_read);
         switch(packet->cmd) {
         case CMD_PEER_PLAY_RSP:
             break;
@@ -668,24 +662,15 @@ void pw_ir_end_walk() {
 
     walker_info_t info;
 
-    pw_eeprom_reliable_read(
-        PW_EEPROM_ADDR_IDENTITY_DATA_1,
-        PW_EEPROM_ADDR_IDENTITY_DATA_2,
-        (uint8_t*)(&info),
-        PW_EEPROM_SIZE_IDENTITY_DATA_1
-    );
+    int res = pw_eeprom_read_walker_info(&info);
 
     info.le_unk1 = 0;
     info.le_unk3 = 0;
     info.flags &= ~WALKER_INFO_FLAG_HAS_POKEMON;
 
-    pw_eeprom_reliable_write(
-        PW_EEPROM_ADDR_IDENTITY_DATA_1,
-        PW_EEPROM_ADDR_IDENTITY_DATA_2,
-        (uint8_t*)(&info),
-        PW_EEPROM_SIZE_IDENTITY_DATA_1
-    );
+    pw_eeprom_write_walker_info(&info);
 
+    walker_info_cache = info;
 
     pw_eeprom_set_area(PW_EEPROM_ADDR_CAUGHT_POKEMON_SUMMARY, 0, 0x64);
     pw_eeprom_set_area(PW_EEPROM_ADDR_EVENT_LOG, 0, PW_EEPROM_SIZE_EVENT_LOG);
@@ -740,12 +725,7 @@ void pw_ir_start_walk() {
     health_data_cache.event_log_index = 0;
     health_data_cache.current_watts = 0;
 
-    n = pw_eeprom_reliable_write(
-            PW_EEPROM_ADDR_HEALTH_DATA_1,
-            PW_EEPROM_ADDR_HEALTH_DATA_2,
-            (uint8_t*)&health_data_cache,
-            sizeof(health_data_cache)
-        );
+    pw_eeprom_write_health_data(&health_data_cache);
 
     // this always reads ok, so the write must have been fine
     route_info_t *route_info = (route_info_t*)buf;
@@ -760,13 +740,10 @@ void pw_ir_start_walk() {
     //walker_info_t *info = (walker_info_t*)buf;
     walker_info_t *info = &walker_info_cache;
 
-    pw_eeprom_reliable_read(
-        PW_EEPROM_ADDR_IDENTITY_DATA_1,
-        PW_EEPROM_ADDR_IDENTITY_DATA_2,
-        (uint8_t*)(info),
-        PW_EEPROM_SIZE_IDENTITY_DATA_1
-    );
-
+    int res = pw_eeprom_read_walker_info(info);
+    if(res != 0) {
+        printf("Error: Reading walker info failed in walk start (%d)\n", res);
+    }
 
     info->le_unk0 = peer_info_cache.le_unk0;
     info->le_unk1 = info->le_unk0;
@@ -785,17 +762,13 @@ void pw_ir_start_walk() {
 
     info->identity_data = peer_info_cache.identity_data;
 
-    info->protocol_ver = peer_info_cache.protocol_ver;
+    //info->protocol_ver = peer_info_cache.protocol_ver;
+    info->protocol_ver = 0x02;
     info->protocol_subver = peer_info_cache.protocol_subver;
     info->unk5 = peer_info_cache.unk5;
     info->unk8 = 0x02;
 
-    pw_eeprom_reliable_write(
-        PW_EEPROM_ADDR_IDENTITY_DATA_1,
-        PW_EEPROM_ADDR_IDENTITY_DATA_2,
-        (uint8_t*)(info),
-        PW_EEPROM_SIZE_IDENTITY_DATA_1
-    );
+    pw_eeprom_write_walker_info(info);
     info = 0;
 
 
@@ -857,6 +830,7 @@ ir_err_t pw_ir_identity_ack(pw_packet_t *packet) {
     packet->extra = EXTRA_BYTE_TO_WALKER;
 
     //TODO: set the rtc, that's it
+    walker_info_cache.be_last_sync = peer_info_cache.be_last_sync;
 
     pw_ir_delay_ms(ACTION_DELAY_MS);
 

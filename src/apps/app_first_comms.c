@@ -92,6 +92,8 @@ void pw_first_comms_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_
 
 void pw_first_comms_init_display(pw_state_t *s, const screen_flags_t *sf) {
 
+    pw_screen_clear();
+
     pw_img_t img = {.height=32, .width=32, .size=256, .data=eeprom_buf};
     pw_flash_read(FLASH_IMG_POKEWALKER, img.data);
     pw_screen_draw_img(&img, (SCREEN_WIDTH-32)/2, (SCREEN_HEIGHT-32)/2);

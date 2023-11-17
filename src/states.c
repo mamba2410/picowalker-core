@@ -89,7 +89,7 @@ state_funcs_t const STATE_FUNCS[N_STATES] = {
         .input=pw_comms_handle_input,
         .draw_init=pw_comms_init_display,
         .draw_update=pw_comms_draw_update,
-        .deinit=pw_empty_event,
+        .deinit=pw_comms_deinit,
     },
     [STATE_TRAINER_CARD]    = {
         .init=pw_trainer_card_init,

@@ -25,64 +25,64 @@ enum {
 };
 
 void pw_comms_init(pw_state_t *s, const screen_flags_t *sf) {
+    //pw_eeprom_write_health_data(&health_data_cache);
+    //pw_eeprom_write_walker_info(&walker_info_cache);
 
     s->comms.current_substate = COMM_SUBSTATE_FINDING_PEER;
-    s->comms.screen_state = CSS_GO_TO_SPLASH;
+    s->comms.screen_state = CSS_NORMAL;
     s->comms.advertising_attempts = 0;  // advertising attempts
     pw_ir_set_comm_state(COMM_STATE_AWAITING);
 }
 
 void pw_comms_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf) {
 
-    comm_state_t cs = pw_ir_get_comm_state();
-    ir_err_t err = IR_ERR_UNHANDLED_ERROR;
-    size_t n_rw;
-
-    switch(cs) {
-    case COMM_STATE_AWAITING: {
-        err = pw_action_try_find_peer(&s->comms, &packet_buf, PACKET_BUF_SIZE);
-        break;
-    }
-    case COMM_STATE_SLAVE: {
-        err = pw_ir_recv_packet(&packet_buf, PACKET_BUF_SIZE, &n_rw);
-        if(err == IR_OK || err == IR_ERR_SIZE_MISMATCH) {
-            err = pw_action_slave_perform_request(&packet_buf, n_rw);
-        }
-        break;
-    }
-    case COMM_STATE_MASTER: {
-        if(s->comms.current_substate == COMM_SUBSTATE_AWAITING_SLAVE_ACK)
-            s->comms.current_substate = COMM_SUBSTATE_START_PEER_PLAY;
-        err = pw_action_peer_play(&s->comms, &packet_buf, PACKET_BUF_SIZE);
-        break;
-    }
-    case COMM_STATE_DISCONNECTED: {
-        return;
-    }
-    } // switch(cs)
-
-    if(err != IR_OK) {
-        printf("\tError code: %02x: %s\n\tState: %d\n\tSubstate %d\n",
-               err, PW_IR_ERR_NAMES[err],
-               pw_ir_get_comm_state(),
-               s->comms.current_substate
-              );
-
-        pw_ir_set_comm_state(COMM_STATE_DISCONNECTED);
-        return;
-    }
-
     switch(s->comms.screen_state) {
+    case CSS_NORMAL: {
+        comm_state_t cs = pw_ir_get_comm_state();
+        ir_err_t err = IR_ERR_UNHANDLED_ERROR;
+        size_t n_rw;
+
+        switch(cs) {
+        case COMM_STATE_AWAITING: {
+            err = pw_action_try_find_peer(&s->comms, &packet_buf, PACKET_BUF_SIZE);
+            break;
+        }
+        case COMM_STATE_SLAVE: {
+            err = pw_ir_recv_packet(&packet_buf, PACKET_BUF_SIZE, &n_rw);
+            if(err == IR_OK || err == IR_ERR_SIZE_MISMATCH) {
+                err = pw_action_slave_perform_request(&packet_buf, n_rw);
+            }
+            break;
+        }
+        case COMM_STATE_MASTER: {
+            if(s->comms.current_substate == COMM_SUBSTATE_AWAITING_SLAVE_ACK)
+                s->comms.current_substate = COMM_SUBSTATE_START_PEER_PLAY;
+            err = pw_action_peer_play(&s->comms, &packet_buf, PACKET_BUF_SIZE);
+            break;
+        }
+        case COMM_STATE_DISCONNECTED: {
+            err = IR_OK;
+            break;
+        }
+        } // switch(cs)
+
+        if(err != IR_OK) {
+            printf("\tError code: %02x: %s\n\tState: %d\n\tSubstate %d\n",
+                   err, PW_IR_ERR_NAMES[err],
+                   pw_ir_get_comm_state(),
+                   s->comms.current_substate
+                  );
+
+            pw_ir_set_comm_state(COMM_STATE_DISCONNECTED);
+        }
+
+        break;
+    }
     case CSS_GO_TO_SPLASH: {
         p->sid = STATE_SPLASH;
         break;
     }
-    default: {
-        // do nothing
-        // TODO: gift items/walk join/walk end/etc.
-        break;
-    }
-    }
+    } // screen_state
 
 }
 
@@ -140,3 +140,8 @@ void pw_comms_draw_update(pw_state_t *s, const screen_flags_t *sf) {
 }
 
 
+void pw_comms_deinit(pw_state_t *s, const screen_flags_t *sf) {
+    //int res;
+    //res = pw_eeprom_read_walker_info(&walker_info_cache);
+    //res = pw_eeprom_read_health_data(&health_data_cache);
+}

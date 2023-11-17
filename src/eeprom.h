@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#include "types.h"
+
 /// @file eeprom.h
 
 typedef uint16_t eeprom_addr_t;
@@ -26,5 +28,11 @@ uint8_t pw_eeprom_checksum(uint8_t *buf, size_t len);
 bool pw_eeprom_check_for_nintendo();
 void pw_eeprom_reset(bool clear_events, bool clear_steps);
 void pw_eeprom_initialise_health_data(bool clear_time);
+
+
+void pw_eeprom_write_health_data(health_data_t *hd_orig);
+int pw_eeprom_read_health_data(health_data_t *hd);
+void pw_eeprom_write_walker_info(walker_info_t *wi_orig);
+int pw_eeprom_read_walker_info(walker_info_t *wi);
 
 #endif /* PW_EEPROM_H */
