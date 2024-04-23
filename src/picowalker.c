@@ -9,6 +9,7 @@
 #include "picowalker-defs.h"
 #include "buttons.h"
 #include "screen.h"
+#include "audio.h"
 #include "states.h"
 #include "rand.h"
 #include "states.h"
@@ -44,6 +45,7 @@ void walker_setup() {
     pw_ir_init();
     pw_button_init();
     pw_screen_init();
+    pw_audio_init();
     pw_srand(0x12345678);
 
     printf("[Info ] Peripherals initialised!\n");
@@ -56,6 +58,8 @@ void walker_setup() {
     int read_res;
     read_res = pw_eeprom_read_walker_info(&walker_info_cache);
     read_res = pw_eeprom_read_health_data(&health_data_cache);
+
+    pw_audio_volume = (health_data_cache.settings&SETTINGS_SOUND_MASK)>>SETTINGS_SOUND_OFFSET;
 
     if(walker_info_cache.flags & WALKER_INFO_FLAG_INIT) {
         current_state->sid = STATE_SPLASH;

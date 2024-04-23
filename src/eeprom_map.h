@@ -356,10 +356,10 @@
 #define PW_EEPROM_SIZE_TEXT_SWITCH 320
 //#define PW_EEPROM_ADDR_0x8c70 0x8c70  // ???
 //#define PW_EEPROM_SIZE_0x8c70 64
-#define PW_EEPROM_ADDR_RANDOM_CHECKSUM_INFO 0x8cb0  // random checksum area descriptor addrs	(see 	0x36f2:randomeepromchecksumcheck	, struct struct randomcheckinfo)
-#define PW_EEPROM_SIZE_RANDOM_CHECKSUM_INFO 48
-#define PW_EEPROM_ADDR_RANDOM_CHECKSUM_AREA 0x8cf0  // random garbage data that is checksummed by randomeepromchecksumcheck()
-#define PW_EEPROM_SIZE_RANDOM_CHECKSUM_AREA 528
+#define PW_EEPROM_ADDR_SOUND_OFFSET 0x8cb0  // offsets into SOUND_DATA that contain the sound's data
+#define PW_EEPROM_SIZE_SOUND_OFFSET 64
+#define PW_EEPROM_ADDR_SOUND_DATA 0x8cf0  // sound data
+#define PW_EEPROM_SIZE_SOUND_DATA 528
 #define PW_EEPROM_ADDR_ROUTE_INFO 0x8f00  // struct routeinfo - current route data
 #define PW_EEPROM_SIZE_ROUTE_INFO 190
 #define PW_EEPROM_ADDR_ROUTE_POKEMON (PW_EEPROM_ADDR_ROUTE_INFO+0x52)

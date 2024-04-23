@@ -5,6 +5,7 @@
 #include "../states.h"
 #include "../buttons.h"
 #include "../screen.h"
+#include "../audio.h"
 #include "../utils.h"
 #include "../eeprom_map.h"
 #include "../eeprom.h"
@@ -176,17 +177,21 @@ void pw_trainer_card_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8
     case BUTTON_L: {
         if(s->trainer_card.current_cursor <= 0) {
             s->trainer_card.current_substate = TC_GO_TO_MENU;
+	    pw_audio_play_sound(SOUND_NAVIGATE_BACK);
         } else {
             pw_trainer_card_move_cursor(s, -1);
+	    pw_audio_play_sound(SOUND_CURSOR_MOVE);
         }
         break;
     }
     case BUTTON_M: {
         s->trainer_card.current_substate = TC_GO_TO_SPLASH;
+	pw_audio_play_sound(SOUND_NAVIGATE_MENU);
         break;
     }
     case BUTTON_R: {
         pw_trainer_card_move_cursor(s, +1);
+	pw_audio_play_sound(SOUND_CURSOR_MOVE);
         break;
     }
     }

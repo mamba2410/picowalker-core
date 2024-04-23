@@ -6,6 +6,7 @@
 #include "states.h"
 #include "buttons.h"
 #include "screen.h"
+#include "audio.h"
 #include "utils.h"
 #include "types.h"
 #include "eeprom_map.h"
@@ -63,7 +64,12 @@ void pw_menu_move_cursor(pw_state_t *s, int8_t move) {
     if( s->menu.cursor < 0 || s->menu.cursor >= MENU_SIZE ) {
         s->menu.cursor = 0;
         s->menu.substate = MS_SPLASH;
+        pw_audio_play_sound(SOUND_NAVIGATE_BACK);
+        return;
     }
+
+    pw_audio_play_sound(SOUND_CURSOR_MOVE);
+    PW_SET_REQUEST(s->requests, PW_REQUEST_REDRAW);
 }
 
 void pw_menu_init(pw_state_t *s, const screen_flags_t *sf) {
@@ -137,6 +143,7 @@ void pw_menu_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b) {
             };
             case BUTTON_M: {
                 s->menu.substate = MS_CLICKED;
+                pw_audio_play_sound(SOUND_NAVIGATE_MENU);
                 break;
             };
             case BUTTON_R: {

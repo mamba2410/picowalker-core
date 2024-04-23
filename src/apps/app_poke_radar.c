@@ -7,6 +7,7 @@
 #include "../types.h"
 #include "../globals.h"
 #include "../screen.h"
+#include "../audio.h"
 #include "../utils.h"
 #include "../eeprom.h"
 #include "../eeprom_map.h"
@@ -180,18 +181,22 @@ void pw_poke_radar_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t
         switch(b) {
         case BUTTON_L: {
             s->radar.user_cursor = (s->radar.user_cursor-1+4)%4; // in mod 4, +3 == -1
+	    pw_audio_play_sound(SOUND_CURSOR_MOVE);
             break;
         }
         case BUTTON_R: {
             s->radar.user_cursor = (s->radar.user_cursor+1)%4;
+	    pw_audio_play_sound(SOUND_CURSOR_MOVE);
             break;
         }
         case BUTTON_M: {
             if(s->radar.user_cursor == s->radar.active_bush) {
                 s->radar.current_substate = RADAR_BUSH_OK;
                 s->radar.invisible_timer = s->radar.active_timer = 3;
+	        pw_audio_play_sound(SOUND_POKERADAR_FOUND_STH);
             } else {
                 s->radar.current_substate = RADAR_FAILED;
+	        pw_audio_play_sound(SOUND_SELECTION_MISS);
             }
             break;
         }
@@ -222,6 +227,7 @@ void pw_poke_radar_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t
     case RADAR_CHOOSING: {
         if(s->radar.invisible_timer <= 0 && s->radar.active_timer <= 0) {
             s->radar.current_substate = RADAR_FAILED;
+	    pw_audio_play_sound(SOUND_MINIGAME_FAIL);
             PW_SET_REQUEST(s->requests, PW_REQUEST_REDRAW);
         }
         break;

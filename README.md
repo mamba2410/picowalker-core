@@ -32,7 +32,7 @@ What's working (tested with rpi pico):
 Still to do:
 
 - Battery monitoring for reporting the level and safely shutting down.
-- Sound.
+- Play the correct sound in all occasions
 - Pokewalker event logging (for walk summary when returned from a walk).
 - Random events (eg smiley faces, random watts, pokemon joined etc).
 - More obscure IR functions like adding stamps.

@@ -5,6 +5,7 @@
 #include "app_settings.h"
 #include "../eeprom_map.h"
 #include "../screen.h"
+#include "../audio.h"
 #include "../buttons.h"
 #include "../globals.h"
 #include "../eeprom.h"
@@ -221,12 +222,15 @@ void pw_settings_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b
         case BUTTON_L: {
             if(s->settings.main_cursor == 0) {
                 s->settings.current_substate = SETTINGS_GO_TO_MENU;
+		pw_audio_play_sound(SOUND_NAVIGATE_BACK);
                 break;
             }
+	    pw_audio_play_sound(SOUND_CURSOR_MOVE);
             // fall through otherwise
         }
         case BUTTON_R: {
             s->settings.main_cursor = (s->settings.main_cursor+1)%2;
+	    pw_audio_play_sound(SOUND_CURSOR_MOVE);
             break;
         }
         case BUTTON_M: {
@@ -250,6 +254,8 @@ void pw_settings_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b
             s->settings.sub_cursor = (s->settings.sub_cursor-1+N_SOUND_OPTIONS)%N_SOUND_OPTIONS;
             health_data_cache.settings &= ~SETTINGS_SOUND_MASK;
             health_data_cache.settings |= s->settings.sub_cursor<<SETTINGS_SOUND_OFFSET;
+	    pw_audio_volume = s->settings.sub_cursor;
+	    pw_audio_play_sound(SOUND_CURSOR_MOVE);
             break;
         }
         case BUTTON_R: {
@@ -257,10 +263,13 @@ void pw_settings_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b
             s->settings.sub_cursor = (s->settings.sub_cursor+1)%N_SOUND_OPTIONS;
             health_data_cache.settings &= ~SETTINGS_SOUND_MASK;
             health_data_cache.settings |= s->settings.sub_cursor<<SETTINGS_SOUND_OFFSET;
+	    pw_audio_volume = s->settings.sub_cursor;
+	    pw_audio_play_sound(SOUND_CURSOR_MOVE);
             break;
         }
         case BUTTON_M: {
             s->settings.current_substate = SETTINGS_GO_TO_SPLASH;
+	    pw_audio_play_sound(SOUND_NAVIGATE_MENU);
             break;
         }
         }
@@ -272,16 +281,19 @@ void pw_settings_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b
             s->settings.sub_cursor = (s->settings.sub_cursor-1+N_SHADE_OPTIONS)%N_SHADE_OPTIONS;
             health_data_cache.settings &= ~SETTINGS_SHADE_MASK;
             health_data_cache.settings |= s->settings.sub_cursor<<SETTINGS_SHADE_OFFSET;
+	    pw_audio_play_sound(SOUND_CURSOR_MOVE);
             break;
         }
         case BUTTON_R: {
             s->settings.sub_cursor = (s->settings.sub_cursor+1)%N_SHADE_OPTIONS;
             health_data_cache.settings &= ~SETTINGS_SHADE_MASK;
             health_data_cache.settings |= s->settings.sub_cursor<<SETTINGS_SHADE_OFFSET;
+	    pw_audio_play_sound(SOUND_CURSOR_MOVE);
             break;
         }
         case BUTTON_M: {
             s->settings.current_substate = SETTINGS_GO_TO_SPLASH;
+	    pw_audio_play_sound(SOUND_NAVIGATE_MENU);
             break;
         }
         }

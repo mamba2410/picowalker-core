@@ -12,6 +12,8 @@ add_library(picowalker-core
     src/menu.h
     src/screen.c
     src/screen.h
+    src/audio.c
+    src/audio.h
     src/globals.c
     src/globals.h
     src/types.h

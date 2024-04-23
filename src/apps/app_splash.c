@@ -7,6 +7,7 @@
 #include "../eeprom_map.h"
 #include "../eeprom.h"
 #include "../screen.h"
+#include "../audio.h"
 #include "../utils.h"
 #include "../types.h"
 #include "../globals.h"
@@ -29,16 +30,19 @@ void pw_splash_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b) 
     case BUTTON_M: {
         s->splash.menu_cursor = (MENU_SIZE-1)/2;
         s->splash.current_substate = SPLASH_GO_TO_MENU;
+	pw_audio_play_sound(SOUND_NAVIGATE_MENU);
         break;
     }
     case BUTTON_L: {
         s->splash.menu_cursor = MENU_SIZE-1;
         s->splash.current_substate = SPLASH_GO_TO_MENU;
+	pw_audio_play_sound(SOUND_NAVIGATE_MENU);
         break;
     }
     case BUTTON_R: {
         s->splash.menu_cursor = 0;
         s->splash.current_substate = SPLASH_GO_TO_MENU;
+	pw_audio_play_sound(SOUND_NAVIGATE_MENU);
         break;
     }
     }
