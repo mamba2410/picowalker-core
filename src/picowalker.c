@@ -29,11 +29,12 @@ screen_flags_t screen_flags;
 
 void walker_setup() {
     // Setup IR uart and rx interrupts
+    pw_battery_init();
+    pw_eeprom_init();
+    pw_accel_init();
     pw_ir_init();
     pw_button_init();
     pw_screen_init();
-    pw_eeprom_init();
-    pw_accel_init();
     pw_srand(0x12345678);
 
     if(!pw_eeprom_check_for_nintendo()) {
