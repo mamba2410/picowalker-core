@@ -22,6 +22,7 @@ ir_err_t pw_ir_identity_ack(pw_packet_t *packet);
 /*
  *  Listen for a packet.
  *  If we don't hear anything, send advertising byte
+ *  then listen for reply
  */
 ir_err_t pw_action_listen_and_advertise(pw_packet_t *rx, size_t *pn_read, uint8_t *padvertising_attempts) {
 
@@ -29,15 +30,18 @@ ir_err_t pw_action_listen_and_advertise(pw_packet_t *rx, size_t *pn_read, uint8_
 
     err = pw_ir_recv_packet(rx, 8, pn_read);
 
-    // if we didn't read anything, send an advertising packet
-    if(*pn_read == 0) {
-        (void)pw_ir_send_advertising_packet();
-
-        (*padvertising_attempts)++;
-        if(*padvertising_attempts > MAX_ADVERTISING_PACKETS) {
-            return IR_ERR_ADVERTISING_MAX;
-        }
+    if(*pn_read > 0) {
+        return IR_OK;
     }
+
+    (void)pw_ir_send_advertising_packet();
+
+    (*padvertising_attempts)++;
+    if(*padvertising_attempts > MAX_ADVERTISING_PACKETS) {
+        return IR_ERR_ADVERTISING_MAX;
+    }
+
+    err = pw_ir_recv_packet(rx, 8, pn_read);
 
     return err;
 }
