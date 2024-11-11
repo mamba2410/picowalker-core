@@ -19,6 +19,35 @@
  * ```
  */
 
+const char* STATE_NAMES[N_COMM_STATE] = {
+    [COMM_STATE_AWAITING] = "awaiting packet",
+    [COMM_STATE_DISCONNECTED] = "disconnected",
+    [COMM_STATE_MASTER] = "comms master",
+    [COMM_STATE_SLAVE] = "comms slave",
+};
+
+const char* SUBSTATE_NAMES[N_COMM_SUBSTATE] = {
+    [COMM_SUBSTATE_NONE] = "none",
+    [COMM_SUBSTATE_FINDING_PEER] = "finding peer",
+    [COMM_SUBSTATE_DETERMINE_ROLE] = "determine role",
+    [COMM_SUBSTATE_AWAITING_SLAVE_ACK] = "awaiting slave ack",
+    [COMM_SUBSTATE_START_PEER_PLAY] = "start peer play",
+    [COMM_SUBSTATE_PEER_PLAY_ACK] = "peer play ack",
+    [COMM_SUBSTATE_SEND_MASTER_SPRITES] = "send master sprites",
+    [COMM_SUBSTATE_SEND_MASTER_NAME_IMAGE] = "send master name image",
+    [COMM_SUBSTATE_SEND_MASTER_TEAMDATA] = "send master team data",
+    [COMM_SUBSTATE_READ_SLAVE_SPRITES] = "read slave sprites",
+    [COMM_SUBSTATE_READ_SLAVE_NAME_IMAGE] = "read slave name image",
+    [COMM_SUBSTATE_READ_SLAVE_TEAMDATA] = "read slave team data",
+    [COMM_SUBSTATE_SEND_PEER_PLAY_DX] = "send peer play dx",
+    [COMM_SUBSTATE_RECV_PEER_PLAY_DX] = "recv peer play dx",
+    [COMM_SUBSTATE_WRITE_PEER_PLAY_DATA] = "write peer play data",
+    [COMM_SUBSTATE_SEND_PEER_PLAY_END] = "send peer play end",
+    [COMM_SUBSTATE_RECV_PEER_PLAY_END] = "recv peer play end",
+    [COMM_SUBSTATE_DISPLAY_PEER_PLAY_ANIMATION] = "display peer play animation",
+    [COMM_SUBSTATE_CALCULATE_PEER_PLAY_GIFT] = "calculate peer play gift",
+};
+
 enum {
     CSS_NORMAL,
     CSS_GO_TO_SPLASH,
@@ -64,13 +93,17 @@ void pw_comms_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf)
             err = IR_OK;
             break;
         }
+        default: {
+            printf("[Error] Unknown comm state\n");
+            break;
+        }
         } // switch(cs)
 
         if(err != IR_OK) {
-            printf("\tError code: %02x: %s\n\tState: %d\n\tSubstate %d\n",
-                   err, PW_IR_ERR_NAMES[err],
-                   pw_ir_get_comm_state(),
-                   s->comms.current_substate
+            printf("[Info] IR error code: %s\n\tState: %s\n\tSubstate %s\n",
+                   PW_IR_ERR_NAMES[err],
+                   STATE_NAMES[pw_ir_get_comm_state()],
+                   SUBSTATE_NAMES[s->comms.current_substate]
                   );
 
             pw_ir_set_comm_state(COMM_STATE_DISCONNECTED);

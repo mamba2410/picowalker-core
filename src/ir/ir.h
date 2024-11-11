@@ -110,10 +110,13 @@ typedef enum {
     COMM_STATE_DISCONNECTED,
     COMM_STATE_MASTER,
     COMM_STATE_SLAVE,
+    N_COMM_STATE,
 } comm_state_t;
 
 
 extern const char* const PW_IR_ERR_NAMES[];
+extern const char* const SUBSTATE_NAMES[];
+extern const char* const STATE_NAMES[];
 extern uint8_t session_id[];
 
 /*
