@@ -271,6 +271,84 @@ ir_err_t pw_action_slave_perform_request(app_comms_t *comms, pw_packet_t *packet
         comms->current_substate = COMM_SUBSTATE_RETURN_TO_FIRST;
         break;
     }
+    case CMD_PEER_PLAY_START: {
+        // TODO: Check if we can play, if not send CMD_PEER_PLAY_SEEN
+        packet->cmd = CMD_PEER_PLAY_RSP;
+        packet->extra = EXTRA_BYTE_FROM_WALKER;
+        pw_ir_delay_ms(ACTION_DELAY_MS);
+        pw_eeprom_reliable_read(
+            PW_EEPROM_ADDR_IDENTITY_DATA_1,
+            PW_EEPROM_ADDR_IDENTITY_DATA_2,
+            packet->payload,
+            sizeof(walker_info_t)
+        );
+        // TODO: remove
+        packet->payload[0x10] = pw_rand();
+        packet->payload[0x0c] = pw_rand();
+        err = pw_ir_send_packet(packet, 8+sizeof(walker_info_t), &n_rw);
+        break;
+    }
+    case CMD_PEER_PLAY_RSP: {
+        // Shouldn't happen if we're in slave mode
+        err = IR_ERR_UNEXPECTED_PACKET;
+        break;
+    }
+    case CMD_PEER_PLAY_DX: {
+        pw_eeprom_write(PW_EEPROM_ADDR_CURRENT_PEER_DATA,
+            packet->payload,
+            sizeof(peer_play_data_t)
+        );
+        packet->cmd = CMD_PEER_PLAY_DX;
+        packet->extra = EXTRA_BYTE_FROM_WALKER;
+        peer_play_data_t *ppd = (peer_play_data_t*)packet->payload;
+
+        // Read `walker_info_t`
+        pw_eeprom_reliable_read(
+            PW_EEPROM_ADDR_IDENTITY_DATA_1,
+            PW_EEPROM_ADDR_IDENTITY_DATA_2,
+            eeprom_buf,
+            sizeof(walker_info_t)
+        );
+        walker_info_t *wi = (walker_info_t*)(eeprom_buf);
+        // TODO: read from global health data
+        ppd->le_current_watts = 9999;
+        ppd->le_current_steps = 99999;
+        ppd->le_unk0 = wi->le_unk0;
+        ppd->le_unk2 = wi->le_unk2;
+        for(size_t i = 0; i < 8; i++)
+            ppd->trainer_name[i] = wi->le_trainer_name[i];
+        wi = NULL;
+
+        // Read `route_info_t`
+        pw_eeprom_read(
+            PW_EEPROM_ADDR_ROUTE_INFO,
+            eeprom_buf,
+            sizeof(route_info_t)
+        );
+        route_info_t *ri = (route_info_t*)(eeprom_buf);
+        ppd->le_species = ri->pokemon_summary.le_species;
+        ppd->pokemon_flags_1 = ri->pokemon_summary.pokemon_flags_1;
+        ppd->pokemon_flags_2 = ri->pokemon_summary.pokemon_flags_2;
+        for(size_t i = 0; i < 11; i++) {
+            ppd->pokemon_name[i] = ri->pokemon_nickname[i];
+        }
+
+        err = pw_ir_send_packet(packet, 8+sizeof(peer_play_data_t), &n_rw);
+        break;
+    }
+    case CMD_PEER_PLAY_END: {
+        packet->cmd = CMD_PEER_PLAY_END;
+        packet->extra = EXTRA_BYTE_FROM_WALKER;
+        err = pw_ir_send_packet(packet, 8, &n_rw);
+        comms->current_substate = COMM_SUBSTATE_DISPLAY_PEER_PLAY_ANIMATION;
+        comms->anim_frame = 0;
+        comms->final_anim_frame = PEER_PLAY_ANIM_FRAMES;
+        break;
+    }
+    case CMD_PEER_PLAY_SEEN: {
+        comms->current_substate = COMM_SUBSTATE_CANNOT_CONNECT_AGAIN;
+        break;
+    }
     default: {
         printf("[Error] Slave recv unhandled packet: %02x\n", packet->cmd);
         err = IR_ERR_UNEXPECTED_PACKET;

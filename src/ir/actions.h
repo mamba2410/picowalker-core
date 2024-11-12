@@ -12,6 +12,7 @@
 
 #define WALK_START_ANIM_FRAMES (4+1+1+2+8)
 #define WALK_END_ANIM_FRAMES (4+1+3+8)
+#define PEER_PLAY_ANIM_FRAMES (24)
 
 typedef enum {
     COMM_SUBSTATE_FIRST_IDLE,
