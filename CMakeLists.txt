@@ -45,8 +45,8 @@ add_library(picowalker-core
     src/apps/app_battle.h
     src/apps/app_comms.c
     src/apps/app_comms.h
-    src/apps/app_first_comms.c
-    src/apps/app_first_comms.h
+    #src/apps/app_first_comms.c
+    #src/apps/app_first_comms.h
     src/apps/app_settings.c
     src/apps/app_settings.h
     src/apps/app_switch.c

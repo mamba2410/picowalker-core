@@ -24,11 +24,22 @@ void pw_comms_init(pw_state_t *s, const screen_flags_t *sf) {
     //pw_eeprom_write_health_data(&health_data_cache);
     //pw_eeprom_write_walker_info(&walker_info_cache);
 
-    s->comms.current_substate = COMM_SUBSTATE_FINDING_PEER;
+    if(s->sid == STATE_FIRST_COMMS) {
+        s->comms.first_comms = true;
+        s->comms.current_substate = COMM_SUBSTATE_IDLE;
+    } else {
+        s->comms.first_comms = false;
+        s->comms.current_substate = COMM_SUBSTATE_FINDING_PEER;
+    }
+
     s->comms.advertising_attempts = 0;  // advertising attempts
     s->comms.loop_counter = 0;
     s->comms.timer = 0;
     s->comms.anim_frame = 0;
+
+    // TODO: Turn on IR hardware if in normal comms state
+    // delegate to "finding peer" if in first comms state
+    // Go through an "init hardware" state before finding peer?
 }
 
 void pw_comms_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf) {
@@ -75,6 +86,13 @@ void pw_comms_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf)
     }
     case COMM_SUBSTATE_SEND_TO_SPLASH: {
         s->sid = STATE_SPLASH;
+        break;
+    }
+    case COMM_SUBSTATE_IDLE: {
+        // First comms just spin for 
+        if(!comms->first_comms) {
+            comms->current_substate = COMM_SUBSTATE_SEND_TO_SPLASH;
+        }
         break;
     }
     default: {
@@ -131,6 +149,13 @@ void pw_comms_init_display(pw_state_t *s, const screen_flags_t *sf) {
             pw_screen_clear_area((SCREEN_WIDTH-8)/2, 0, 8, 16);
             break;
         }
+        // TODO: same as immediately above
+        case COMM_SUBSTATE_CANNOT_COMPLETE: { break; }
+        case COMM_SUBSTATE_TRAINER_UNAVAILABLE: { break; }
+        case COMM_SUBSTATE_ALREADY_RECEIVED_EVENT: { break; }
+        case COMM_SUBSTATE_CANNOT_CONNECT_AGAIN: { break; }
+        case COMM_SUBSTATE_COULD_NOT_RECEIVE: { break; }
+        case COMM_SUBSTATE_COMPLETED: { break; }
         case COMM_SUBSTATE_DISPLAY_PEER_PLAY_ANIMATION: {
             // TODO: Draw bars, text box, remove arc
             break;
@@ -160,13 +185,24 @@ void pw_comms_init_display(pw_state_t *s, const screen_flags_t *sf) {
 
 void pw_comms_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b) {
 
-    // TODO: Switch on state and then send to `COMM_SUBSTATE_SEND_TO_SPLASH` on press
-    switch(b) {
-    case BUTTON_M:
-    case BUTTON_L:
-    case BUTTON_R:
-    default:
+    switch(s->comms.current_substate) {
+    case COMM_SUBSTATE_NO_PEER_FOUND:
+    case COMM_SUBSTATE_CANNOT_CONNECT:
+    case COMM_SUBSTATE_CANNOT_COMPLETE:
+    case COMM_SUBSTATE_TRAINER_UNAVAILABLE:
+    case COMM_SUBSTATE_ALREADY_RECEIVED_EVENT:
+    case COMM_SUBSTATE_CANNOT_CONNECT_AGAIN:
+    case COMM_SUBSTATE_COULD_NOT_RECEIVE:
+    case COMM_SUBSTATE_COMPLETED: {
+        s->comms.current_substate = COMM_SUBSTATE_SEND_TO_SPLASH;
         break;
+    }
+    case COMM_SUBSTATE_IDLE: {
+        s->comms.current_substate = COMM_SUBSTATE_FINDING_PEER;
+        break;
+    }
+    // TODO: ending animations
+    default: break;
     }
 
 }
@@ -207,7 +243,13 @@ void pw_comms_draw_update(pw_state_t *s, const screen_flags_t *sf) {
         }
         // Error states to display message
         case COMM_SUBSTATE_NO_PEER_FOUND:
-        case COMM_SUBSTATE_CANNOT_CONNECT: {
+        case COMM_SUBSTATE_CANNOT_CONNECT:
+        case COMM_SUBSTATE_CANNOT_COMPLETE:
+        case COMM_SUBSTATE_TRAINER_UNAVAILABLE:
+        case COMM_SUBSTATE_ALREADY_RECEIVED_EVENT:
+        case COMM_SUBSTATE_CANNOT_CONNECT_AGAIN:
+        case COMM_SUBSTATE_COULD_NOT_RECEIVE:
+        case COMM_SUBSTATE_COMPLETED: {
 
             if(s->comms.anim_frame == 0) {
                 pw_comms_init_display(s, sf);

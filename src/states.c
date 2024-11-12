@@ -124,11 +124,11 @@ state_funcs_t const STATE_FUNCS[N_STATES] = {
         .deinit=pw_empty_event,
     },
     [STATE_FIRST_COMMS]   = {
-        .init=pw_first_comms_init,
-        .loop=pw_first_comms_event_loop,
-        .input=pw_first_comms_handle_input,
-        .draw_init=pw_first_comms_init_display,
-        .draw_update=pw_first_comms_draw_update,
+        .init=pw_comms_init,
+        .loop=pw_comms_event_loop,
+        .input=pw_comms_handle_input,
+        .draw_init=pw_comms_init_display,
+        .draw_update=pw_comms_draw_update,
         .deinit=pw_empty_event,
     },
     [STATE_SWITCHES] = {

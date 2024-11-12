@@ -213,6 +213,7 @@ ir_err_t pw_action_slave_perform_request(app_comms_t *comms, pw_packet_t *packet
         pw_ir_delay_ms(ACTION_DELAY_MS);
 
         err = pw_ir_send_packet(packet, 8, &n_rw);
+        comms->current_substate = COMM_SUBSTATE_COMPLETED;
         break;
     }
     case CMD_WALK_END_REQ: {
@@ -223,7 +224,7 @@ ir_err_t pw_action_slave_perform_request(app_comms_t *comms, pw_packet_t *packet
 
         pw_ir_end_walk();
 
-        pw_ir_set_comm_state(COMM_STATE_DISCONNECTED);
+        comms->current_substate = COMM_SUBSTATE_DISPLAY_WALK_END_ANIMATION;
         break;
     }
     case CMD_WALK_START_INIT:
@@ -233,18 +234,18 @@ ir_err_t pw_action_slave_perform_request(app_comms_t *comms, pw_packet_t *packet
         pw_ir_delay_ms(ACTION_DELAY_MS);
         err = pw_ir_send_packet(packet, 8, &n_rw);
         pw_ir_start_walk();
-        comms->screen_state = CSS_WALK_START;
+        comms->current_substate = COMM_SUBSTATE_DISPLAY_WALK_START_ANIMATION;
         
         break;
     }
     case CMD_DISCONNECT: {
         err = IR_OK;
-        pw_ir_set_comm_state(COMM_STATE_DISCONNECTED);
+        comms->current_substate = COMM_SUBSTATE_COMPLETED;
         break;
     }
     case CMD_NOCOMPLETE_ALIAS1: {
         err = IR_OK;
-        pw_ir_set_comm_state(COMM_STATE_DISCONNECTED);
+        comms->current_substate = COMM_SUBSTATE_CANNOT_COMPLETE;
         break;
     }
     case CMD_WALKER_RESET_1: {
