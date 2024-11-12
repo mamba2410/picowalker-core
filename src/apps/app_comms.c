@@ -280,14 +280,12 @@ void pw_comms_init_display(pw_state_t *s, const screen_flags_t *sf) {
             break;
         }
         case COMM_SUBSTATE_NO_PEER_FOUND: {
-            // TODO: Draw message, text box, remove arc
             pw_screen_clear_area((SCREEN_WIDTH-8)/2, 0, 8, 16);
             pw_screen_draw_message(SCREEN_HEIGHT-16, 1, 16); // no trainer found
             pw_screen_draw_text_box(0, SCREEN_HEIGHT-16, SCREEN_WIDTH, 16, SCREEN_BLACK);
             break;
         }
         case COMM_SUBSTATE_CANNOT_CONNECT: {
-            // TODO: Draw message, text box, remove arc
             pw_screen_clear_area((SCREEN_WIDTH-8)/2, 0, 8, 16);
             pw_screen_draw_message(SCREEN_HEIGHT-16, 4, 16); // cannot connect
             pw_screen_draw_text_box(0, SCREEN_HEIGHT-16, SCREEN_WIDTH, 16, SCREEN_BLACK);
@@ -299,12 +297,17 @@ void pw_comms_init_display(pw_state_t *s, const screen_flags_t *sf) {
             pw_screen_draw_text_box(0, SCREEN_HEIGHT-32, SCREEN_WIDTH, 32, SCREEN_BLACK);
             break;
         }
+        case COMM_SUBSTATE_COMPLETED: {
+            pw_screen_clear_area((SCREEN_WIDTH-8)/2, 0, 8, 16);
+            pw_screen_draw_message(SCREEN_HEIGHT-16, 16, 16); // completed
+            pw_screen_draw_text_box(0, SCREEN_HEIGHT-16, SCREEN_WIDTH, 16, SCREEN_BLACK);
+            break;
+        }
         // TODO: same as immediately above
         case COMM_SUBSTATE_TRAINER_UNAVAILABLE: { break; }
         case COMM_SUBSTATE_ALREADY_RECEIVED_EVENT: { break; }
         case COMM_SUBSTATE_CANNOT_CONNECT_AGAIN: { break; }
         case COMM_SUBSTATE_COULD_NOT_RECEIVE: { break; }
-        case COMM_SUBSTATE_COMPLETED: { break; }
         case COMM_SUBSTATE_DISPLAY_PEER_PLAY_ANIMATION: {
             // TODO: Draw bars, text box, remove arc
             break;
