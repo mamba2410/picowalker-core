@@ -227,6 +227,8 @@ ir_err_t pw_action_slave_perform_request(app_comms_t *comms, pw_packet_t *packet
         pw_ir_end_walk();
 
         comms->current_substate = COMM_SUBSTATE_DISPLAY_WALK_END_ANIMATION;
+        comms->final_anim_frame = WALK_END_ANIM_FRAMES;
+        comms->anim_frame = 0;
         break;
     }
     case CMD_WALK_START_INIT:
