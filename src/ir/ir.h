@@ -82,6 +82,8 @@
 #define PW_IR_READ_TIMEOUT_US   (PW_IR_READ_TIMEOUT_MS*1000)
 #define PW_IR_READ_TIMEOUT_DS   (PW_IR_READ_TIMEOUT_MS/100)
 
+#define SESSION_ID_SIZE 4
+
 typedef enum {
     IR_OK,
     IR_ERR_GENERAL,
@@ -105,20 +107,6 @@ typedef enum {
     IR_ERR_COUNT,
 } ir_err_t;
 
-typedef enum {
-    COMM_STATE_AWAITING,
-    COMM_STATE_DISCONNECTED,
-    COMM_STATE_MASTER,
-    COMM_STATE_SLAVE,
-    N_COMM_STATE,
-} comm_state_t;
-
-
-extern const char* const PW_IR_ERR_NAMES[];
-extern const char* const SUBSTATE_NAMES[];
-extern const char* const STATE_NAMES[];
-extern uint8_t session_id[];
-
 /*
  *  These should be defined by some driver
  */
@@ -126,6 +114,9 @@ extern void pw_ir_init();
 extern int pw_ir_read(uint8_t *buf, size_t len);
 extern int pw_ir_write(uint8_t *buf, size_t len);
 
+/*
+ *  Defined by `ir.c`
+ */
 ir_err_t pw_ir_send_packet(pw_packet_t *packet, size_t len, size_t *n_read);
 ir_err_t pw_ir_recv_packet(pw_packet_t *packet, size_t len, size_t *n_write);
 ir_err_t pw_ir_send_advertising_packet();
@@ -133,11 +124,11 @@ ir_err_t pw_ir_send_advertising_packet();
 uint16_t pw_ir_checksum_seeded(uint8_t *data, size_t len, uint16_t seed);
 uint16_t pw_ir_checksum(pw_packet_t *packet, size_t len);
 
-void pw_ir_set_comm_state(comm_state_t s);
-comm_state_t pw_ir_get_comm_state();
-void pw_ir_die(const char* message);
 void pw_ir_delay_ms(size_t ms);
 
+ir_err_t pw_ir_get_session_id(uint8_t session_id[SESSION_ID_SIZE]);
+ir_err_t pw_ir_set_session_id(uint8_t session_id[SESSION_ID_SIZE]);
+ir_err_t pw_ir_mix_session_id(uint8_t session_id[SESSION_ID_SIZE]);
 
 #endif /* PW_IR_H */
 

@@ -5,9 +5,7 @@
 
 #include "ir.h"
 
-static comm_state_t g_comm_state = COMM_STATE_DISCONNECTED;
-
-uint8_t session_id[4] = {0xde, 0xad, 0xbe, 0xef};
+static volatile uint8_t g_session_id[SESSION_ID_SIZE] = {0xde, 0xad, 0xbe, 0xef};
 
 const char* const PW_IR_ERR_NAMES[] = {
     [IR_OK] = "ok",
@@ -31,11 +29,10 @@ const char* const PW_IR_ERR_NAMES[] = {
     [IR_ERR_UNHANDLED_ERROR] = "unhandled error",
 };
 
-
 ir_err_t pw_ir_send_packet(pw_packet_t *packet, size_t len, size_t *pn_write) {
 
     for(uint8_t i = 0; i < 4; i++)
-        packet->session_id_bytes[i] = session_id[i];
+        packet->session_id_bytes[i] = g_session_id[i];
 
     uint16_t chk = pw_ir_checksum(packet, len);
 
@@ -77,7 +74,7 @@ ir_err_t pw_ir_recv_packet(pw_packet_t *packet, size_t len, size_t *pn_read) {
     if(packet_chk != chk) return IR_ERR_BAD_CHECKSUM;
 
     for(size_t i = i; i < 4; i++) {
-        if(packet->session_id_bytes[i] != session_id[i]) return IR_ERR_BAD_SESSID;
+        if(packet->session_id_bytes[i] != g_session_id[i]) return IR_ERR_BAD_SESSID;
     }
 
     return IR_OK;
@@ -127,15 +124,6 @@ uint16_t pw_ir_checksum(pw_packet_t *packet, size_t len) {
     return crc;
 }
 
-
-void pw_ir_set_comm_state(comm_state_t s) {
-    g_comm_state = s;
-}
-
-comm_state_t pw_ir_get_comm_state() {
-    return g_comm_state;
-}
-
 ir_err_t pw_ir_send_advertising_packet() {
 
     uint8_t advertising_buf[] = {CMD_ADVERTISING^0xaa};
@@ -148,9 +136,42 @@ ir_err_t pw_ir_send_advertising_packet() {
     return IR_OK;
 }
 
-void pw_ir_die(const char* message) {
-    printf("IR disconnecting: %s\n", message);
-    pw_ir_set_comm_state(COMM_STATE_DISCONNECTED);
+/**
+ *  Sets global context session ID for packets
+ */
+ir_err_t pw_ir_set_session_id(uint8_t session_id[SESSION_ID_SIZE]) {
+    if(!session_id) return IR_ERR_BAD_SESSID;
+
+    for(uint8_t i = 0; i < SESSION_ID_SIZE; i++) {
+        g_session_id[i] = session_id[i];
+    }
+
+    return IR_OK;
 }
 
+/**
+ *  Gets global context session ID for packets
+ */
+ir_err_t pw_ir_get_session_id(uint8_t session_id[SESSION_ID_SIZE]) {
+    if(!session_id) return IR_ERR_BAD_SESSID;
+
+    for(uint8_t i = 0; i < SESSION_ID_SIZE; i++) {
+        session_id[i] = g_session_id[i];
+    }
+
+    return IR_OK;
+}
+
+/**
+ *  Mixes global context session ID with given session ID
+ */
+ir_err_t pw_ir_mix_session_id(uint8_t session_id[SESSION_ID_SIZE]) {
+    if(!session_id) return IR_ERR_BAD_SESSID;
+
+    for(uint8_t i = 0; i < SESSION_ID_SIZE; i++) {
+        g_session_id[i] ^= session_id[i];
+    }
+
+    return IR_OK;
+}
 
