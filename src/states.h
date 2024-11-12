@@ -94,6 +94,7 @@ typedef struct {
     uint8_t loop_counter;
     uint16_t timer;
     uint8_t anim_frame;
+    uint8_t final_anim_frame;
     bool first_comms;
 } app_comms_t;
 

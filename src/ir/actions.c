@@ -70,7 +70,6 @@ ir_err_t pw_action_try_find_peer(app_comms_t *comms, pw_packet_t *packet, size_t
         case IR_ERR_TIMEOUT:
             return IR_OK; // ignore timeout
         case IR_ERR_ADVERTISING_MAX:
-            comms->current_substate = COMM_SUBSTATE_NO_PEER_FOUND;
             return IR_ERR_ADVERTISING_MAX;
         default:
             return err; // TODO: change this
@@ -109,8 +108,11 @@ ir_err_t pw_action_try_find_peer(app_comms_t *comms, pw_packet_t *packet, size_t
             pw_ir_mix_session_id(session_id_master);
             pw_ir_delay_ms(ACTION_DELAY_MS);
 
-            // TODO STATE: Move us into some "slave waiting request" state
-            comms->current_substate = COMM_SUBSTATE_SLAVE_PERFORM_REQUEST;
+            if(comms->first_comms) {
+                comms->current_substate = COMM_SUBSTATE_FIRST_SLAVE_PERFORM_REQUEST;
+            } else {
+                comms->current_substate = COMM_SUBSTATE_SLAVE_PERFORM_REQUEST;
+            }
             break;
         default:
             return IR_ERR_UNEXPECTED_PACKET;
@@ -234,7 +236,12 @@ ir_err_t pw_action_slave_perform_request(app_comms_t *comms, pw_packet_t *packet
         pw_ir_delay_ms(ACTION_DELAY_MS);
         err = pw_ir_send_packet(packet, 8, &n_rw);
         pw_ir_start_walk();
+
+        // Start animation
         comms->current_substate = COMM_SUBSTATE_DISPLAY_WALK_START_ANIMATION;
+        comms->final_anim_frame = WALK_START_ANIM_FRAMES;
+        comms->anim_frame = 0;
+        err = IR_OK;
         
         break;
     }
@@ -259,6 +266,7 @@ ir_err_t pw_action_slave_perform_request(app_comms_t *comms, pw_packet_t *packet
         );
         err = pw_ir_send_packet(packet, 8+sizeof(unique_identity_data_t), &n_rw);
         pw_eeprom_reset(true, false);
+        comms->current_substate = COMM_SUBSTATE_RETURN_TO_FIRST;
         break;
     }
     default: {
