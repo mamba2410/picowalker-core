@@ -2,6 +2,8 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+#include "stdio.h"
+
 #include "../states.h"
 #include "../buttons.h"
 #include "../screen.h"
@@ -12,45 +14,10 @@
 #include "app_comms.h"
 
 /** @file app_comms.c
- * ```
- *  current_substate = comm_substate
- *  reg_b = screen_state
- *  reg_c = advertising_counter
- * ```
+ *
  */
 
-const char* STATE_NAMES[N_COMM_STATE] = {
-    [COMM_STATE_AWAITING] = "awaiting packet",
-    [COMM_STATE_DISCONNECTED] = "disconnected",
-    [COMM_STATE_MASTER] = "comms master",
-    [COMM_STATE_SLAVE] = "comms slave",
-};
-
-const char* SUBSTATE_NAMES[N_COMM_SUBSTATE] = {
-    [COMM_SUBSTATE_NONE] = "none",
-    [COMM_SUBSTATE_FINDING_PEER] = "finding peer",
-    [COMM_SUBSTATE_DETERMINE_ROLE] = "determine role",
-    [COMM_SUBSTATE_AWAITING_SLAVE_ACK] = "awaiting slave ack",
-    [COMM_SUBSTATE_START_PEER_PLAY] = "start peer play",
-    [COMM_SUBSTATE_PEER_PLAY_ACK] = "peer play ack",
-    [COMM_SUBSTATE_SEND_MASTER_SPRITES] = "send master sprites",
-    [COMM_SUBSTATE_SEND_MASTER_NAME_IMAGE] = "send master name image",
-    [COMM_SUBSTATE_SEND_MASTER_TEAMDATA] = "send master team data",
-    [COMM_SUBSTATE_READ_SLAVE_SPRITES] = "read slave sprites",
-    [COMM_SUBSTATE_READ_SLAVE_NAME_IMAGE] = "read slave name image",
-    [COMM_SUBSTATE_READ_SLAVE_TEAMDATA] = "read slave team data",
-    [COMM_SUBSTATE_SEND_PEER_PLAY_DX] = "send peer play dx",
-    [COMM_SUBSTATE_RECV_PEER_PLAY_DX] = "recv peer play dx",
-    [COMM_SUBSTATE_WRITE_PEER_PLAY_DATA] = "write peer play data",
-    [COMM_SUBSTATE_SEND_PEER_PLAY_END] = "send peer play end",
-    [COMM_SUBSTATE_RECV_PEER_PLAY_END] = "recv peer play end",
-    [COMM_SUBSTATE_DISPLAY_PEER_PLAY_ANIMATION] = "display peer play animation",
-    [COMM_SUBSTATE_CALCULATE_PEER_PLAY_GIFT] = "calculate peer play gift",
-};
-
-enum {
-    CSS_NORMAL,
-    CSS_GO_TO_SPLASH,
+const char* const PW_COMM_SUBSTATE_NAMES[N_COMM_SUBSTATE] = {
 };
 
 void pw_comms_init(pw_state_t *s, const screen_flags_t *sf) {
@@ -58,98 +25,144 @@ void pw_comms_init(pw_state_t *s, const screen_flags_t *sf) {
     //pw_eeprom_write_walker_info(&walker_info_cache);
 
     s->comms.current_substate = COMM_SUBSTATE_FINDING_PEER;
-    s->comms.screen_state = CSS_NORMAL;
     s->comms.advertising_attempts = 0;  // advertising attempts
-    pw_ir_set_comm_state(COMM_STATE_AWAITING);
+    s->comms.loop_counter = 0;
+    s->comms.timer = 0;
+    s->comms.anim_frame = 0;
 }
 
 void pw_comms_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf) {
 
-    switch(s->comms.screen_state) {
-    case CSS_NORMAL: {
-        comm_state_t cs = pw_ir_get_comm_state();
-        ir_err_t err = IR_ERR_UNHANDLED_ERROR;
-        size_t n_rw;
+    app_comms_t *comms = &s->comms;
+    ir_err_t err = IR_ERR_UNHANDLED_ERROR;
+    size_t n_rw;
 
-        switch(cs) {
-        case COMM_STATE_AWAITING: {
-            err = pw_action_try_find_peer(&s->comms, &packet_buf, PACKET_BUF_SIZE);
-            break;
-        }
-        case COMM_STATE_SLAVE: {
-            err = pw_ir_recv_packet(&packet_buf, PACKET_BUF_SIZE, &n_rw);
-            if(err == IR_OK || err == IR_ERR_SIZE_MISMATCH) {
-                err = pw_action_slave_perform_request(&packet_buf, n_rw);
-            }
-            break;
-        }
-        case COMM_STATE_MASTER: {
-            if(s->comms.current_substate == COMM_SUBSTATE_AWAITING_SLAVE_ACK)
-                s->comms.current_substate = COMM_SUBSTATE_START_PEER_PLAY;
-            err = pw_action_peer_play(&s->comms, &packet_buf, PACKET_BUF_SIZE);
-            break;
-        }
-        case COMM_STATE_DISCONNECTED: {
-            err = IR_OK;
-            break;
-        }
-        default: {
-            printf("[Error] Unknown comm state\n");
-            break;
-        }
-        } // switch(cs)
+    switch(comms->current_substate) {
+    case COMM_SUBSTATE_FINDING_PEER:
+    case COMM_SUBSTATE_DETERMINE_ROLE:
+    case COMM_SUBSTATE_AWAITING_SLAVE_ACK: {
+        // TODO: do we need all of this error prop? Either no prop
+        // and change state in function, or full prop and change state here
+        err = pw_action_try_find_peer(comms, &packet_buf, PACKET_BUF_SIZE);
+        break;
+    }
+    case COMM_SUBSTATE_SLAVE_PERFORM_REQUEST: {
+        err = pw_ir_recv_packet(&packet_buf, PACKET_BUF_SIZE, &n_rw);
 
-        if(err != IR_OK) {
-            printf("[Info] IR error code: %s\n\tState: %s\n\tSubstate %s\n",
-                   PW_IR_ERR_NAMES[err],
-                   STATE_NAMES[pw_ir_get_comm_state()],
-                   SUBSTATE_NAMES[s->comms.current_substate]
-                  );
-
-            pw_ir_set_comm_state(COMM_STATE_DISCONNECTED);
+        // TODO: switch on `err` and show "cannot complete" if its bad
+        if(err == IR_OK || err == IR_ERR_SIZE_MISMATCH) {
+            err = pw_action_slave_perform_request(comms, &packet_buf, n_rw);
         }
 
         break;
     }
-    case CSS_GO_TO_SPLASH: {
-        p->sid = STATE_SPLASH;
+    // Fallthrough for all peer play packet exchanges
+    case COMM_SUBSTATE_START_PEER_PLAY:
+    case COMM_SUBSTATE_PEER_PLAY_ACK:
+    case COMM_SUBSTATE_SEND_MASTER_SPRITES:
+    case COMM_SUBSTATE_SEND_MASTER_NAME_IMAGE:
+    case COMM_SUBSTATE_SEND_MASTER_TEAMDATA:
+    case COMM_SUBSTATE_READ_SLAVE_SPRITES:
+    case COMM_SUBSTATE_READ_SLAVE_NAME_IMAGE:
+    case COMM_SUBSTATE_READ_SLAVE_TEAMDATA:
+    case COMM_SUBSTATE_SEND_PEER_PLAY_DX:
+    case COMM_SUBSTATE_RECV_PEER_PLAY_DX:
+    case COMM_SUBSTATE_WRITE_PEER_PLAY_DATA:
+    case COMM_SUBSTATE_SEND_PEER_PLAY_END:
+    case COMM_SUBSTATE_RECV_PEER_PLAY_END: {
+        err = pw_action_peer_play(comms, &packet_buf, PACKET_BUF_SIZE);
         break;
     }
-    } // screen_state
+    case COMM_SUBSTATE_SEND_TO_SPLASH: {
+        s->sid = STATE_SPLASH;
+        break;
+    }
+    default: {
+        printf("[Error] Unknown comm state %d\n", comms->current_substate);
+        break;
+    }
+    } // switch(cs)
+
+    // TODO: remove this and display proper messages on screen
+    if(err != IR_OK) {
+        printf("[Info] IR error \"%s\"\n\tSubstate \"%s\"\n",
+               PW_IR_ERR_NAMES[err],
+               PW_COMM_SUBSTATE_NAMES[s->comms.current_substate]
+              );
+
+        comms->current_substate = COMM_SUBSTATE_SEND_TO_SPLASH;
+    }
 
 }
 
 void pw_comms_init_display(pw_state_t *s, const screen_flags_t *sf) {
 
-    pw_screen_draw_from_eeprom(
-        (SCREEN_WIDTH-32)/2, SCREEN_HEIGHT-32-16,
-        32, 32,
-        PW_EEPROM_ADDR_IMG_POKEWALKER_BIG,
-        PW_EEPROM_SIZE_IMG_POKEWALKER_BIG
-    );
-    pw_screen_draw_from_eeprom(
-        (SCREEN_WIDTH-8)/2, 0,
-        8, 16,
-        PW_EEPROM_ADDR_IMG_IR_ARCS,
-        PW_EEPROM_SIZE_IMG_IR_ARCS
-    );
-    pw_screen_draw_from_eeprom(
-        0, SCREEN_HEIGHT-16,
-        96, 16,
-        PW_EEPROM_ADDR_TEXT_CONNECTING,
-        PW_EEPROM_SIZE_TEXT_CONNECTING
-    );
+    switch(s->comms.current_substate) {
+        case COMM_SUBSTATE_FINDING_PEER: {
+            // Draw pokewalker image, "connecting" and arcs
+            pw_screen_draw_from_eeprom(
+                (SCREEN_WIDTH-32)/2, SCREEN_HEIGHT-32-16,
+                32, 32,
+                PW_EEPROM_ADDR_IMG_POKEWALKER_BIG,
+                PW_EEPROM_SIZE_IMG_POKEWALKER_BIG
+            );
+            pw_screen_draw_from_eeprom(
+                (SCREEN_WIDTH-8)/2, 0,
+                8, 16,
+                PW_EEPROM_ADDR_IMG_IR_ARCS,
+                PW_EEPROM_SIZE_IMG_IR_ARCS
+            );
+            pw_screen_draw_from_eeprom(
+                0, SCREEN_HEIGHT-16,
+                96, 16,
+                PW_EEPROM_ADDR_TEXT_CONNECTING,
+                PW_EEPROM_SIZE_TEXT_CONNECTING
+            );
+            pw_screen_draw_text_box(0, SCREEN_HEIGHT-16, SCREEN_WIDTH, 16, SCREEN_BLACK);
+            break;
+        }
+        case COMM_SUBSTATE_NO_PEER_FOUND: {
+            // TODO: Draw message, text box, remove arc
+            pw_screen_clear_area((SCREEN_WIDTH-8)/2, 0, 8, 16);
+            break;
+        }
+        case COMM_SUBSTATE_CANNOT_CONNECT: {
+            // TODO: Draw message, text box, remove arc
+            pw_screen_clear_area((SCREEN_WIDTH-8)/2, 0, 8, 16);
+            break;
+        }
+        case COMM_SUBSTATE_DISPLAY_PEER_PLAY_ANIMATION: {
+            // TODO: Draw bars, text box, remove arc
+            break;
+        }
+        case COMM_SUBSTATE_DISPLAY_WALK_START_ANIMATION: {
+            // TODO: Draw bars, text box, remove arc
+            break;
+        }
+        case COMM_SUBSTATE_DISPLAY_WALK_END_ANIMATION: {
+            // TODO: Draw bars, text box, remove arc
+            break;
+        }
+        case COMM_SUBSTATE_DISPLAY_ITEM_GIFT_ANIMATION: {
+            // TODO: Draw bars, text box, remove arc
+            break;
+        }
+        case COMM_SUBSTATE_DISPLAY_POKE_GIFT_ANIMATION: {
+            // TODO: Draw bars, text box, remove arc
+            break;
+        }
+        default: {
+            break;
+        }
+    }
 
 }
 
 void pw_comms_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b) {
 
+    // TODO: Switch on state and then send to `COMM_SUBSTATE_SEND_TO_SPLASH` on press
     switch(b) {
     case BUTTON_M:
-        if(pw_ir_get_comm_state() == COMM_STATE_DISCONNECTED) {
-            s->comms.screen_state = CSS_GO_TO_SPLASH;
-        }
-        break;
     case BUTTON_L:
     case BUTTON_R:
     default:
@@ -158,18 +171,60 @@ void pw_comms_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b) {
 
 }
 
+// TODO: rename to upate_display
 void pw_comms_draw_update(pw_state_t *s, const screen_flags_t *sf) {
 
-    if(sf->frame & ANIM_FRAME_NORMAL_TIME) {
-        pw_screen_draw_from_eeprom(
-            (SCREEN_WIDTH-8)/2, 0,
-            8, 16,
-            PW_EEPROM_ADDR_IMG_IR_ARCS,
-            PW_EEPROM_SIZE_IMG_IR_ARCS
-        );
-    } else
-        pw_screen_clear_area((SCREEN_WIDTH-8)/2, 0, 8, 16);
+    // TODO: Animations
+    switch(s->comms.current_substate) {
+        // Regular states with blinking cursor
+        case COMM_SUBSTATE_FINDING_PEER:
+        case COMM_SUBSTATE_DETERMINE_ROLE:
+        case COMM_SUBSTATE_AWAITING_SLAVE_ACK:
+        case COMM_SUBSTATE_START_PEER_PLAY:
+        case COMM_SUBSTATE_PEER_PLAY_ACK:
+        case COMM_SUBSTATE_SEND_MASTER_SPRITES:
+        case COMM_SUBSTATE_SEND_MASTER_NAME_IMAGE:
+        case COMM_SUBSTATE_SEND_MASTER_TEAMDATA:
+        case COMM_SUBSTATE_READ_SLAVE_SPRITES:
+        case COMM_SUBSTATE_READ_SLAVE_NAME_IMAGE:
+        case COMM_SUBSTATE_READ_SLAVE_TEAMDATA:
+        case COMM_SUBSTATE_SEND_PEER_PLAY_DX:
+        case COMM_SUBSTATE_RECV_PEER_PLAY_DX:
+        case COMM_SUBSTATE_WRITE_PEER_PLAY_DATA:
+        case COMM_SUBSTATE_SEND_PEER_PLAY_END:
+        case COMM_SUBSTATE_RECV_PEER_PLAY_END: {
+            if(sf->frame & ANIM_FRAME_NORMAL_TIME) {
+                pw_screen_draw_from_eeprom(
+                    (SCREEN_WIDTH-8)/2, 0,
+                    8, 16,
+                    PW_EEPROM_ADDR_IMG_IR_ARCS,
+                    PW_EEPROM_SIZE_IMG_IR_ARCS
+                );
+            } else {
+                pw_screen_clear_area((SCREEN_WIDTH-8)/2, 0, 8, 16);
+            }
+            break;
+        }
+        // Error states to display message
+        case COMM_SUBSTATE_NO_PEER_FOUND:
+        case COMM_SUBSTATE_CANNOT_CONNECT: {
 
+            if(s->comms.anim_frame == 0) {
+                pw_comms_init_display(s, sf);
+                s->comms.anim_frame++;
+            }
+            break;
+        }
+        // TODO: fill in
+        case COMM_SUBSTATE_DISPLAY_PEER_PLAY_ANIMATION:
+        case COMM_SUBSTATE_DISPLAY_WALK_START_ANIMATION:
+        case COMM_SUBSTATE_DISPLAY_WALK_END_ANIMATION:
+        case COMM_SUBSTATE_DISPLAY_ITEM_GIFT_ANIMATION:
+        case COMM_SUBSTATE_DISPLAY_POKE_GIFT_ANIMATION:
+        default: {
+            break;
+        }
+    }
 }
 
 

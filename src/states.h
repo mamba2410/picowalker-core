@@ -91,10 +91,9 @@ typedef struct {
 typedef struct {
     uint8_t current_substate;
     uint8_t advertising_attempts;
-    uint8_t screen_state;
     uint8_t loop_counter;
     uint16_t timer;
-    uint8_t previous_screen_state;
+    uint8_t anim_frame;
 } app_comms_t;
 
 typedef struct {

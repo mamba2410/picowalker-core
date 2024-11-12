@@ -11,7 +11,6 @@
 /// @file ir/actions.h
 
 typedef enum {
-    COMM_SUBSTATE_NONE,
     COMM_SUBSTATE_FINDING_PEER,
     COMM_SUBSTATE_DETERMINE_ROLE,
     COMM_SUBSTATE_AWAITING_SLAVE_ACK,
@@ -29,14 +28,23 @@ typedef enum {
     COMM_SUBSTATE_SEND_PEER_PLAY_END,
     COMM_SUBSTATE_RECV_PEER_PLAY_END,
     COMM_SUBSTATE_DISPLAY_PEER_PLAY_ANIMATION,
+    COMM_SUBSTATE_DISPLAY_WALK_START_ANIMATION,
+    COMM_SUBSTATE_DISPLAY_WALK_END_ANIMATION,
+    COMM_SUBSTATE_DISPLAY_ITEM_GIFT_ANIMATION,
+    COMM_SUBSTATE_DISPLAY_POKE_GIFT_ANIMATION,
     COMM_SUBSTATE_CALCULATE_PEER_PLAY_GIFT,
+    COMM_SUBSTATE_SLAVE_PERFORM_REQUEST,
+    COMM_SUBSTATE_MASTER_DETERMINE_ACTION,
+    COMM_SUBSTATE_SEND_TO_SPLASH,
+    COMM_SUBSTATE_NO_PEER_FOUND,
+    COMM_SUBSTATE_CANNOT_CONNECT,
     N_COMM_SUBSTATE,
 } comm_substate_t;
 
-ir_err_t pw_action_listen_and_advertise(pw_packet_t *rx, size_t *pn_read, uint8_t *padvertising_attempts);
+ir_err_t pw_action_listen_and_advertise(app_comms_t *comms, pw_packet_t *packet, size_t *pn_read);
 ir_err_t pw_action_try_find_peer(app_comms_t *comms, pw_packet_t *packet, size_t packet_max);
 ir_err_t pw_action_peer_play(app_comms_t *comms, pw_packet_t *packet, size_t max_len);
-ir_err_t pw_action_slave_perform_request(pw_packet_t *packet, size_t len);
+ir_err_t pw_action_slave_perform_request(app_comms_t *comms, pw_packet_t *packet, size_t len);
 
 ir_err_t pw_action_send_large_raw_data_from_eeprom(uint16_t src, uint16_t dst, size_t final_write_size,
         size_t write_size, uint8_t *pcounter, pw_packet_t *packet, size_t max_len);

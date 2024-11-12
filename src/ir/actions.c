@@ -13,6 +13,7 @@
 #include "compression.h"
 #include "../globals.h"
 #include "../states.h"
+#include "../apps/app_comms.h"
 
 #define ACTION_DELAY_MS 1
 
@@ -24,11 +25,11 @@ ir_err_t pw_ir_identity_ack(pw_packet_t *packet);
  *  If we don't hear anything, send advertising byte
  *  then listen for reply
  */
-ir_err_t pw_action_listen_and_advertise(pw_packet_t *rx, size_t *pn_read, uint8_t *padvertising_attempts) {
+ir_err_t pw_action_listen_and_advertise(app_comms_t *comms, pw_packet_t *packet, size_t *pn_read) {
 
     ir_err_t err = IR_ERR_TIMEOUT;
 
-    err = pw_ir_recv_packet(rx, 8, pn_read);
+    err = pw_ir_recv_packet(packet, 8, pn_read);
 
     if(*pn_read > 0) {
         return IR_OK;
@@ -36,19 +37,18 @@ ir_err_t pw_action_listen_and_advertise(pw_packet_t *rx, size_t *pn_read, uint8_
 
     (void)pw_ir_send_advertising_packet();
 
-    (*padvertising_attempts)++;
-    if(*padvertising_attempts > MAX_ADVERTISING_PACKETS) {
+    comms->advertising_attempts++;
+    if(comms->advertising_attempts > MAX_ADVERTISING_PACKETS) {
         return IR_ERR_ADVERTISING_MAX;
     }
 
-    err = pw_ir_recv_packet(rx, 8, pn_read);
+    err = pw_ir_recv_packet(packet, 8, pn_read);
 
     return err;
 }
 
 
 /*
- *  We should be in COMM_STATE_AWAITING
  *  Do one action per call, called in the main event loop
  */
 ir_err_t pw_action_try_find_peer(app_comms_t *comms, pw_packet_t *packet, size_t packet_max) {
@@ -59,26 +59,30 @@ ir_err_t pw_action_try_find_peer(app_comms_t *comms, pw_packet_t *packet, size_t
     switch(comms->current_substate) {
     case COMM_SUBSTATE_FINDING_PEER: {
 
-        err = pw_action_listen_and_advertise(packet, &n_read, &(comms->advertising_attempts));
+        err = pw_action_listen_and_advertise(comms, packet, &n_read);
 
         switch(err) {
         case IR_ERR_SIZE_MISMATCH:  // also ok since we might recv 0xfc
         case IR_OK:
-            // we got a valid packet back, now check if master or slave on next iteration
+            // We received at least one byte, so fall through and check what it was.
             comms->current_substate = COMM_SUBSTATE_DETERMINE_ROLE;
             break;
         case IR_ERR_TIMEOUT:
-            err = IR_OK;
             return IR_OK; // ignore timeout
         case IR_ERR_ADVERTISING_MAX:
+            comms->current_substate = COMM_SUBSTATE_NO_PEER_FOUND;
             return IR_ERR_ADVERTISING_MAX;
         default:
             return err; // TODO: change this
         }
 
         //break;
+        // Fall through
     }
     case COMM_SUBSTATE_DETERMINE_ROLE: {
+
+        // TODO: If `n_read` > 1 then test if its 0xFC followed by master assert
+        // If it is a master assert, then we follow that packet instead
 
         // We should already have a response in the packet buffer
         switch(packet->cmd) {
@@ -95,18 +99,18 @@ ir_err_t pw_action_try_find_peer(app_comms_t *comms, pw_packet_t *packet, size_t
             packet->extra = 2;
 
             // record master key
-            uint8_t session_id_master[4];
-            for(int i = 0; i < 4; i++)
+            uint8_t session_id_master[SESSION_ID_SIZE];
+            for(int i = 0; i < SESSION_ID_SIZE; i++)
                 session_id_master[i] = packet->session_id_bytes[i];
 
             err = pw_ir_send_packet(packet, 8, &n_read);
 
             // combine keys
-            for(int i = 0; i < 4; i++)
-                session_id[i] ^= session_id_master[i];
+            pw_ir_mix_session_id(session_id_master);
             pw_ir_delay_ms(ACTION_DELAY_MS);
 
-            pw_ir_set_comm_state(COMM_STATE_SLAVE);
+            // TODO STATE: Move us into some "slave waiting request" state
+            comms->current_substate = COMM_SUBSTATE_SLAVE_PERFORM_REQUEST;
             break;
         default:
             return IR_ERR_UNEXPECTED_PACKET;
@@ -119,14 +123,15 @@ ir_err_t pw_action_try_find_peer(app_comms_t *comms, pw_packet_t *packet, size_t
         err = pw_ir_recv_packet(packet, 8, &n_read);
         if(err != IR_OK) return err;
 
+        // TODO: Test for advertising byte, probably just log and ignore
         if(packet->cmd != CMD_SLAVE_ACK) return IR_ERR_UNEXPECTED_PACKET;
 
         // combine keys
-        for(int i = 0; i < 4; i++)
-            session_id[i] ^= packet->session_id_bytes[i];
+        pw_ir_mix_session_id(packet->session_id_bytes);
 
         // key exchange done, we are now master
-        pw_ir_set_comm_state(COMM_STATE_MASTER);
+        // TODO STATE: Move us into some master state to determine what to do next
+        comms->current_substate = COMM_SUBSTATE_MASTER_DETERMINE_ACTION;
         break;
     }
     default:
@@ -139,7 +144,7 @@ ir_err_t pw_action_try_find_peer(app_comms_t *comms, pw_packet_t *packet, size_t
 /*
  *  We are slave, given already recv'd packet, respond appropriately
  */
-ir_err_t pw_action_slave_perform_request(pw_packet_t *packet, size_t len) {
+ir_err_t pw_action_slave_perform_request(app_comms_t *comms, pw_packet_t *packet, size_t len) {
 
     ir_err_t err = IR_ERR_UNHANDLED_ERROR;
     size_t n_rw;
@@ -228,6 +233,8 @@ ir_err_t pw_action_slave_perform_request(pw_packet_t *packet, size_t len) {
         pw_ir_delay_ms(ACTION_DELAY_MS);
         err = pw_ir_send_packet(packet, 8, &n_rw);
         pw_ir_start_walk();
+        comms->screen_state = CSS_WALK_START;
+        
         break;
     }
     case CMD_DISCONNECT: {
@@ -486,7 +493,7 @@ ir_err_t pw_action_peer_play(app_comms_t *comms, pw_packet_t *packet, size_t max
         err = pw_ir_recv_packet(packet, 8, &n_read);
         if(err != IR_OK) return err;
         if(packet->cmd != CMD_PEER_PLAY_END) return IR_ERR_UNEXPECTED_PACKET;
-        comms->current_substate = COMM_SUBSTATE_DISPLAY_PEER_PLAY_ANIMATION;
+        comms->current_substate = COMM_SUBSTATE_CALCULATE_PEER_PLAY_GIFT;
         break;
     }
     case COMM_SUBSTATE_DISPLAY_PEER_PLAY_ANIMATION: {

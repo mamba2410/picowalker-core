@@ -107,6 +107,8 @@ typedef enum {
     IR_ERR_COUNT,
 } ir_err_t;
 
+extern const char* const PW_IR_ERR_NAMES[];
+
 /*
  *  These should be defined by some driver
  */
