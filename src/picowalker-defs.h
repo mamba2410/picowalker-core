@@ -69,6 +69,8 @@ void pw_screen_fill_area(
     screen_pos_t w, screen_pos_t h,
     screen_colour_t colour
 );
+void pw_screen_sleep();
+void pw_screen_wake();
 
 
 /*
@@ -89,6 +91,8 @@ void pw_eeprom_init();
 int pw_eeprom_read(eeprom_addr_t addr, uint8_t *buf, size_t len);
 int pw_eeprom_write(eeprom_addr_t addr, uint8_t *buf, size_t len);
 void pw_eeprom_set_area(eeprom_addr_t addr, uint8_t v, size_t len);
+void pw_eeprom_sleep();
+void pw_eeprom_wake();
 
 
 /*
@@ -110,6 +114,11 @@ typedef enum {
     FLASH_IMG_TINY_CHARS,
 } pw_flash_img_t;
 
+/*
+ *  Functions defined by the driver
+ */
+void pw_flash_sleep();
+void pw_flash_wake();
 
 /*
  *  ==================================================================================
@@ -154,5 +163,46 @@ void pw_button_init();
 void pw_ir_init();
 int pw_ir_read(uint8_t *buf, size_t len);
 int pw_ir_write(uint8_t *buf, size_t len);
+void pw_ir_sleep();
+void pw_ir_wake();
+
+/*
+ *  ==================================================================================
+ *  BATTERY
+ *  ==================================================================================
+ */
+
+/*
+ * Types and defines
+ */
+#define PW_BATTERY_STATUS_FLAGS_CHARGING    (1<<0)
+#define PW_BATTERY_STATUS_FLAGS_FAULT       (1<<1)
+#define PW_BATTERY_LOW_THRESHOLD            (10)
+
+typedef struct pw_battery_status_s {
+    uint8_t  percent;
+    uint8_t flags;
+} pw_battery_status_t;
+
+/*
+ *  Functions defined by the driver
+ */
+void pw_battery_init();
+pw_battery_status_t pw_battery_get_status();
+
+/*
+ *  ==================================================================================
+ *  POWER
+ *  ==================================================================================
+ */
+
+/*
+ * Types and defines
+ */
+
+/*
+ *  Functions defined by driver
+ */
+void pw_power_enter_sleep();
 
 #endif /* PW_PICOWALKER_INCLUDE_H */
