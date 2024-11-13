@@ -31,7 +31,7 @@ screen_flags_t screen_flags;
 
 void walker_setup() {
     // Setup IR uart and rx interrupts
-    pw_battery_init();
+    pw_power_init();
     pw_eeprom_init();
     pw_accel_init();
     pw_ir_init();
@@ -110,17 +110,12 @@ void walker_loop() {
     }
 
     // Check if we should sleep
-    walker_timings.now = pw_now_us();
-    td = (power_context.last_user_action_time>walker_timings.now)?(power_context.last_user_action_time-walker_timings.now):(walker_timings.now-power_context.last_user_action_time);
-    if(td > PW_POWER_SLEEP_TIMEOUT_MS) {
+    if(pw_power_should_sleep()) {
         printf("Sleep timeout hit, entering sleep\n");
 
         // Pass control to "driver" and enter sleep
         // Driver should bring all clocks, hardware etc back to how it was left
         pw_power_enter_sleep();
-
-        // Update last action time so we don't immediately fall asleep again
-        power_context.last_user_action_time = pw_now_us();
 
         // Re-draw the screen
         STATE_FUNCS[current_state->sid].draw_init(current_state, &screen_flags);
@@ -128,7 +123,6 @@ void walker_loop() {
 }
 
 void pw_state_handle_input(uint8_t b) {
-    power_context.last_user_action_time = pw_now_us();
     STATE_FUNCS[current_state->sid].input(current_state, &screen_flags, b);
 }
 

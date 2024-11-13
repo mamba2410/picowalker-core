@@ -28,6 +28,10 @@
   - walk end doesn't remove special items?
 - Comms
   - Peer play doesn't work (`slave_perform_action()` commands)
+- Power
+  - Better way of checking for sleep. Still needs to sleep in main loop, not in interrupt context.
+    - Solve in drivers and just have a function `pw_power_should_sleep()` which returns
+        true if main loop should trigger sleep.
 
 ## Apps
 
