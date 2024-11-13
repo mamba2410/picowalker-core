@@ -2,10 +2,12 @@
 
 ## Features
 
-- Graphics
-    - Walking animation when steps are being taken on spash screen
-    - walk end animation
-- Screen should be blank while initialising
+- Trainer card
+  - Display time properly
+- RTC
+  - New timer driver function to get current time in pokewalker timestamp
+- Logs
+  - Add logging driver (printf wrapper)
 
 ## Bugs
 

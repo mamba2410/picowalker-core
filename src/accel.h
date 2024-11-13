@@ -9,8 +9,4 @@
 
 void pw_accel_process_steps();
 
-// implemented by drivers
-extern int8_t pw_accel_init();
-extern uint32_t pw_accel_get_new_steps();
-
 #endif /* PW_ACCEL_H */

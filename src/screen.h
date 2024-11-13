@@ -5,64 +5,13 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+#include "picowalker-defs.h"
 #include "eeprom.h"
 
 /// @file screen.h
 
 #define SCREEN_REDRAW_DELAY_US  250000  // 250ms
 
-#define SCREEN_WIDTH    96
-#define SCREEN_HEIGHT   64
-
-#define SCREEN_BLACK    3
-#define SCREEN_DGREY    2
-#define SCREEN_LGREY    1
-#define SCREEN_WHITE    0
-
-typedef uint8_t screen_pos_t;       /// 0-95
-typedef uint8_t screen_colour_t;    /// 2-bits, pw style
-
-typedef struct {
-    screen_pos_t height, width;
-    uint8_t *data;
-    size_t size; /// bytes
-} pw_img_t;
-
-typedef struct {
-    screen_pos_t width, height;
-    screen_pos_t true_width, true_height;
-    screen_pos_t offset_x, offset_y;
-} screen_t;
-
-
-/*
- *  Functions defined by the drivers
- */
-extern void pw_screen_init();
-extern void pw_screen_draw_img(
-    pw_img_t *img,
-    screen_pos_t x, screen_pos_t y
-);
-extern void pw_screen_clear_area(
-    screen_pos_t x, screen_pos_t y,
-    screen_pos_t width, screen_pos_t height
-);
-extern void pw_screen_draw_horiz_line(
-    screen_pos_t x, screen_pos_t y,
-    screen_pos_t len,
-    screen_colour_t colour
-);
-extern void pw_screen_draw_text_box(
-    screen_pos_t x1, screen_pos_t y1,
-    screen_pos_t w, screen_pos_t h,
-    screen_colour_t colour
-);
-extern void pw_screen_clear();
-extern void pw_screen_fill_area(
-    screen_pos_t x, screen_pos_t y,
-    screen_pos_t w, screen_pos_t h,
-    screen_colour_t colour
-);
 
 /*
  *  Derived functions
