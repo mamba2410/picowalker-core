@@ -4,6 +4,7 @@
 #include <stdbool.h>
 
 #include "picowalker.h"
+#include "picowalker-defs.h"
 #include "buttons.h"
 #include "screen.h"
 #include "states.h"
@@ -16,6 +17,7 @@
 #include "eeprom.h"
 #include "eeprom_map.h"
 #include "accel.h"
+#include "power.h"
 
 struct {
     uint64_t now;
@@ -106,9 +108,27 @@ void walker_loop() {
         screen_flags.frame = (screen_flags.frame+1)%4;
         PW_CLR_REQUEST(current_state->requests, PW_REQUEST_REDRAW);
     }
+
+    // Check if we should sleep
+    walker_timings.now = pw_now_us();
+    td = (power_context.last_user_action_time>walker_timings.now)?(power_context.last_user_action_time-walker_timings.now):(walker_timings.now-power_context.last_user_action_time);
+    if(td > PW_POWER_SLEEP_TIMEOUT_MS) {
+        printf("Sleep timeout hit, entering sleep\n");
+
+        // Pass control to "driver" and enter sleep
+        // Driver should bring all clocks, hardware etc back to how it was left
+        pw_power_enter_sleep();
+
+        // Update last action time so we don't immediately fall asleep again
+        power_context.last_user_action_time = pw_now_us();
+
+        // Re-draw the screen
+        STATE_FUNCS[current_state->sid].draw_init(current_state, &screen_flags);
+    }
 }
 
 void pw_state_handle_input(uint8_t b) {
+    power_context.last_user_action_time = pw_now_us();
     STATE_FUNCS[current_state->sid].input(current_state, &screen_flags, b);
 }
 
