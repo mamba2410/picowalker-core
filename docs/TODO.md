@@ -1,15 +1,11 @@
 # TODO
 
-Most of this stuff has been moved to focalboard, but here will be more detailed looks at ideas/suggestions and bugs
-
 ## Features
 
 - Graphics
     - Walking animation when steps are being taken on spash screen
-    - Walk start animation
-        - Comms app probably needs refactoring or at least a better look at
     - walk end animation
-
+- Screen should be blank while initialising
 
 ## Bugs
 
@@ -30,6 +26,8 @@ Most of this stuff has been moved to focalboard, but here will be more detailed 
   - going backwards from page 2 sets weird cursor value?
   - blinking images, don't redraw blank right before overriding text
   - walk end doesn't remove special items?
+- Comms
+  - Peer play doesn't work (`slave_perform_action()` commands)
 
 ## Apps
 
