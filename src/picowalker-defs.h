@@ -168,7 +168,25 @@ void pw_ir_wake();
 
 /*
  *  ==================================================================================
- *  BATTERY
+ *  ACCEL
+ *  ==================================================================================
+ */
+
+/*
+ * Types and defines
+ */
+
+/*
+ *  Functions defined by driver
+ */
+void pw_accel_init();
+uint32_t pw_accel_get_new_steps();
+void pw_accel_sleep();
+void pw_accel_wake();
+
+/*
+ *  ==================================================================================
+ *  POWER
  *  ==================================================================================
  */
 
@@ -185,24 +203,12 @@ typedef struct pw_battery_status_s {
 } pw_battery_status_t;
 
 /*
- *  Functions defined by the driver
- */
-void pw_battery_init();
-pw_battery_status_t pw_battery_get_status();
-
-/*
- *  ==================================================================================
- *  POWER
- *  ==================================================================================
- */
-
-/*
- * Types and defines
- */
-
-/*
  *  Functions defined by driver
  */
+void pw_power_init();
+pw_battery_status_t pw_power_get_battery_status();
 void pw_power_enter_sleep();
+bool pw_power_should_sleep();
 
 #endif /* PW_PICOWALKER_INCLUDE_H */
+
