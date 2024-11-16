@@ -9,6 +9,10 @@
   - Interrupts every so long (hour, maybe minute, maybe day)
 - Logs
   - Add logging driver (printf wrapper)
+- Sleep
+  - Add new `pw_power_disable_sleep()` and call it when opening comms app.
+    Also counterpart to re-enable it when comms app closes.
+    Or just set a large sleep timeout.
 
 ## Bugs
 
@@ -44,5 +48,4 @@
   - Sound
   - Shade
   - Secret pico settings?
-- Sleep
 
