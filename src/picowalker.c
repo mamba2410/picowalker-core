@@ -75,6 +75,8 @@ void walker_loop() {
     if(td > ACCEL_NORMAL_SAMPLE_TIME_US) {
         walker_timings.prev_accel_check = walker_timings.now;
         pw_accel_process_steps();
+
+        pw_power_get_battery_status();
     }
 
     // Run current state's event loop
@@ -111,7 +113,7 @@ void walker_loop() {
 
     // Check if we should sleep
     if(pw_power_should_sleep()) {
-        printf("Sleep timeout hit, entering sleep\n");
+        printf("[Debug] Sleep timeout hit, entering sleep\n");
 
         // Pass control to "driver" and enter sleep
         // Driver should bring all clocks, hardware etc back to how it was left

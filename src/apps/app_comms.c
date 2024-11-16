@@ -81,6 +81,7 @@ void pw_comms_init(pw_state_t *s, const screen_flags_t *sf) {
     // TODO: Turn on IR hardware if in normal comms state
     // delegate to "finding peer" if in first comms state
     // Go through an "init hardware" state before finding peer?
+    pw_ir_wake();
 }
 
 void pw_comms_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf) {
@@ -612,4 +613,5 @@ void pw_comms_deinit(pw_state_t *s, const screen_flags_t *sf) {
     //int res;
     //res = pw_eeprom_read_walker_info(&walker_info_cache);
     //res = pw_eeprom_read_health_data(&health_data_cache);
+    pw_ir_sleep();
 }
