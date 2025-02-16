@@ -40,6 +40,10 @@ static uint16_t const MENU_ICONS[] = {
     PW_EEPROM_ADDR_IMG_MENU_ICON_SETTINGS,
 };
 
+static uint8_t const MENU_COSTS[] = {
+    10, 3, 0, 0, 0, 0
+};
+
 enum {
     MS_NORMAL,
     MS_CLICKED,
@@ -210,6 +214,25 @@ void pw_menu_update_display(pw_state_t *s, const screen_flags_t *sf) {
         } else {
             pw_screen_clear_area(4+i*16, y_values[i]-8, 8, 8);
         }
+    }
+
+    if(MENU_COSTS[s->menu.cursor] != 0) {
+        pw_screen_clear_area(0, SCREEN_HEIGHT-16, 16, 16);
+        pw_screen_draw_integer(MENU_COSTS[s->menu.cursor], 16, SCREEN_HEIGHT-16);
+        pw_screen_draw_from_eeprom(
+            24, SCREEN_HEIGHT-16,
+            16, 16,
+            PW_EEPROM_ADDR_IMG_WATTS,
+            PW_EEPROM_SIZE_IMG_WATTS
+        );
+        pw_screen_draw_from_eeprom(
+            40, SCREEN_HEIGHT-16,
+            8, 16,
+            PW_EEPROM_ADDR_IMG_CHAR_SLASH,
+            PW_EEPROM_SIZE_IMG_CHAR
+        );
+    } else {
+        pw_screen_clear_area(0, SCREEN_HEIGHT-16, SCREEN_WIDTH/2, 16);
     }
 
     // TODO: Move out of here and only draw once
