@@ -47,6 +47,7 @@ static uint8_t const MENU_COSTS[] = {
 enum {
     MS_NORMAL,
     MS_CLICKED,
+    MS_MESSAGE,
     MS_SPLASH,
 };
 
@@ -54,29 +55,25 @@ enum {
 // + = right
 // - = left
 // true = send to splash
-bool pw_menu_move_cursor(pw_state_t *s, int8_t move) {
+void pw_menu_move_cursor(pw_state_t *s, int8_t move) {
     s->menu.cursor += move;
 
     if( s->menu.cursor < 0 || s->menu.cursor >= MENU_SIZE ) {
         s->menu.cursor = 0;
         s->menu.substate = MS_SPLASH;
-        return true;
     }
-
-    PW_SET_REQUEST(s->requests, PW_REQUEST_REDRAW);
-    return false;
 }
 
 void pw_menu_init(pw_state_t *s, const screen_flags_t *sf) {
     s->menu.message = MSG_NONE;
+    s->menu.substate = MS_NORMAL;
 }
 
 void pw_menu_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf) {
     switch(s->menu.substate) {
 
-    case MS_NORMAL: {
-        break;    // nothing to do
-    }
+    case MS_NORMAL: { break; }  // nothing to do
+    case MS_MESSAGE: { break; } // nothing to do
     case MS_CLICKED: {
 
         if(MENU_ENTRIES[s->menu.cursor] == STATE_INVENTORY) {
@@ -87,12 +84,14 @@ void pw_menu_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf) 
             // no pokemon or items
             if(inv.caught_pokemon == 0 && inv.dowsed_items == 0) {
                 s->menu.message = MSG_NOTHING_HELD;
+                s->menu.substate = MS_MESSAGE;
                 return;
             }
         }
 
         if(health_data_cache.current_watts < MENU_COSTS[s->menu.cursor]) {
             s->menu.message = MSG_NEED_WATTS;
+            s->menu.substate = MS_MESSAGE;
             return;
         } else {
             printf("subtracting %d watts from %d", MENU_COSTS[s->menu.cursor], health_data_cache.current_watts);
@@ -104,6 +103,7 @@ void pw_menu_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf) 
     }
     case MS_SPLASH: {
         p->sid = STATE_SPLASH;
+        break;
     }
     }
 }
@@ -162,98 +162,110 @@ void pw_menu_init_display(pw_state_t *s, const screen_flags_t *sf) {
 
 void pw_menu_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b) {
 
-    // if there's a message, draw it
-    if(s->menu.message != MSG_NONE) {
-        pw_screen_clear_area(0, SCREEN_HEIGHT-16, SCREEN_WIDTH, 16);
-        s->menu.message = MSG_NONE;
-        PW_SET_REQUEST(s->requests, PW_REQUEST_REDRAW);
-        return;
+    if(s->menu.substate == MS_MESSAGE) {
+        s->menu.substate = MS_NORMAL;
+    } else {
+        switch(b) {
+            case BUTTON_L: {
+                pw_menu_move_cursor(s, -1);
+                break;
+            };
+            case BUTTON_M: {
+                s->menu.substate = MS_CLICKED;
+                break;
+            };
+            case BUTTON_R: {
+                pw_menu_move_cursor(s, +1);
+                break;
+            };
+            default:
+                break;
+        }
     }
 
-    switch(b) {
-    case BUTTON_L: {
-        pw_menu_move_cursor(s, -1);
-        break;
-    };
-    case BUTTON_M: {
-        s->menu.substate = MS_CLICKED;
-        break;
-    };
-    case BUTTON_R: {
-        pw_menu_move_cursor(s, +1);
-        break;
-    };
-    default:
-        break;
-    }
+    // Cursor has moved, we want a redraw of cursor and watts
+    PW_SET_REQUEST(s->requests, PW_REQUEST_REDRAW);
 
 }
 
 void pw_menu_update_display(pw_state_t *s, const screen_flags_t *sf) {
 
-    // quick way to redraw if we were just displaying a message
-    if(s->menu.redraw_message) {
-        pw_menu_init_display(s, sf);
-        s->menu.redraw_message = false;
-    }
+    switch(s->menu.substate) {
+        case MS_NORMAL: {
+            // redraw whole bottom portion
+            if(MENU_COSTS[s->menu.cursor] != 0) {
+                size_t x = pw_screen_draw_integer(MENU_COSTS[s->menu.cursor], 16, SCREEN_HEIGHT-16);
+                pw_screen_clear_area(0, SCREEN_HEIGHT-16, x, 16);
+                pw_screen_draw_from_eeprom(
+                    24, SCREEN_HEIGHT-16,
+                    16, 16,
+                    PW_EEPROM_ADDR_IMG_WATTS,
+                    PW_EEPROM_SIZE_IMG_WATTS
+                );
+                pw_screen_draw_from_eeprom(
+                    40, SCREEN_HEIGHT-16,
+                    8, 16,
+                    PW_EEPROM_ADDR_IMG_CHAR_SLASH,
+                    PW_EEPROM_SIZE_IMG_CHAR
+                );
+            } else {
+                pw_screen_clear_area(0, SCREEN_HEIGHT-16, SCREEN_WIDTH/2, 16);
+            }
 
-
-    /*
-     *  Redraw title, arrows
-     */
-    pw_screen_draw_from_eeprom(
-        8, 0,
-        80, 16,
-        MENU_TITLES[s->menu.cursor],
-        PW_EEPROM_SIZE_IMG_MENU_TITLE_CONNECT
-    );
-
-    size_t y_values[] = {24, 26, 28, 30, 26, 24};
-    for(size_t i = 0; i < MENU_SIZE; i++) {
-        if(s->menu.cursor == i) {
-            eeprom_addr_t addr = (sf->frame&ANIM_FRAME_NORMAL_TIME)?PW_EEPROM_ADDR_IMG_ARROW_DOWN_NORMAL:PW_EEPROM_ADDR_IMG_ARROW_DOWN_OFFSET;
             pw_screen_draw_from_eeprom(
-                4+i*16, y_values[i]-8,
-                8, 8,
-                addr,
-                PW_EEPROM_SIZE_IMG_ARROW
+                SCREEN_WIDTH-16, SCREEN_HEIGHT-16,
+                16, 16,
+                PW_EEPROM_ADDR_IMG_WATTS,
+                PW_EEPROM_SIZE_IMG_WATTS
+            );
+            size_t x = pw_screen_draw_integer(health_data_cache.current_watts, SCREEN_WIDTH-16, SCREEN_HEIGHT-16);
+            pw_screen_clear_area(SCREEN_WIDTH/2, SCREEN_HEIGHT-16, x - SCREEN_WIDTH/2, 16);
+            pw_screen_clear_area(16, SCREEN_HEIGHT-16, 8, 16);
+
+            // toggle cursor
+            // TODO: make these global/const
+            size_t y_values[] = {24, 26, 28, 30, 26, 24};
+            for(size_t i = 0; i < MENU_SIZE; i++) {
+                if(s->menu.cursor == i) {
+                    eeprom_addr_t addr = (sf->frame&ANIM_FRAME_NORMAL_TIME)?PW_EEPROM_ADDR_IMG_ARROW_DOWN_NORMAL:PW_EEPROM_ADDR_IMG_ARROW_DOWN_OFFSET;
+                    pw_screen_draw_from_eeprom(
+                        4+i*16, y_values[i]-8,
+                        8, 8,
+                        addr,
+                        PW_EEPROM_SIZE_IMG_ARROW
+                    );
+
+                } else {
+                    // clear prev cursor position
+                    pw_screen_clear_area(4+i*16, y_values[i]-8, 8, 8);
+                }
+            }
+
+            // redraw title
+            pw_screen_draw_from_eeprom(
+                8, 0,
+                80, 16,
+                MENU_TITLES[s->menu.cursor],
+                PW_EEPROM_SIZE_IMG_MENU_TITLE_CONNECT
             );
 
-        } else {
-            pw_screen_clear_area(4+i*16, y_values[i]-8, 8, 8);
+            break;
         }
-    }
-
-    if(MENU_COSTS[s->menu.cursor] != 0) {
-        pw_screen_clear_area(0, SCREEN_HEIGHT-16, 16, 16);
-        pw_screen_draw_integer(MENU_COSTS[s->menu.cursor], 16, SCREEN_HEIGHT-16);
-        pw_screen_draw_from_eeprom(
-            24, SCREEN_HEIGHT-16,
-            16, 16,
-            PW_EEPROM_ADDR_IMG_WATTS,
-            PW_EEPROM_SIZE_IMG_WATTS
-        );
-        pw_screen_draw_from_eeprom(
-            40, SCREEN_HEIGHT-16,
-            8, 16,
-            PW_EEPROM_ADDR_IMG_CHAR_SLASH,
-            PW_EEPROM_SIZE_IMG_CHAR
-        );
-    } else {
-        pw_screen_clear_area(0, SCREEN_HEIGHT-16, SCREEN_WIDTH/2, 16);
-    }
-
-    // TODO: Move out of here and only draw once
-    // draw menu message if we have one
-    if(s->menu.message != MSG_NONE) {
-        pw_screen_draw_from_eeprom(
-            0, SCREEN_HEIGHT-16,
-            SCREEN_WIDTH, 16,
-            // TODO: change this to MENU_MESSAGES
-            PW_EEPROM_ADDR_TEXT_NEED_WATTS + PW_EEPROM_SIZE_TEXT_NEED_WATTS*(s->menu.message-1),
-            PW_EEPROM_SIZE_TEXT_NEED_WATTS
-        );
-        pw_screen_draw_text_box(0, SCREEN_HEIGHT-16, SCREEN_WIDTH, 16, SCREEN_BLACK);
+        case MS_MESSAGE: {
+            // Draw message spanning the whole bottom
+            pw_screen_draw_from_eeprom(
+                0, SCREEN_HEIGHT-16,
+                SCREEN_WIDTH, 16,
+                // TODO: change this to MENU_MESSAGES
+                PW_EEPROM_ADDR_TEXT_NEED_WATTS + PW_EEPROM_SIZE_TEXT_NEED_WATTS*(s->menu.message-1),
+                PW_EEPROM_SIZE_TEXT_NEED_WATTS
+            );
+            pw_screen_draw_text_box(0, SCREEN_HEIGHT-16, SCREEN_WIDTH, 16, SCREEN_BLACK);
+            break;
+        }
+        case MS_CLICKED: { break; }
+        case MS_SPLASH: { break; } // none, we should immediately change states
+        default: break; // shouldn't get here
     }
 
 }
