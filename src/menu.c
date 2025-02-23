@@ -91,6 +91,14 @@ void pw_menu_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf) 
             }
         }
 
+        if(health_data_cache.current_watts < MENU_COSTS[s->menu.cursor]) {
+            s->menu.message = MSG_NEED_WATTS;
+            return;
+        } else {
+            printf("subtracting %d watts from %d", MENU_COSTS[s->menu.cursor], health_data_cache.current_watts);
+            health_data_cache.current_watts -= MENU_COSTS[s->menu.cursor];
+        }
+
         p->sid = MENU_ENTRIES[s->menu.cursor];
         break;
     }
