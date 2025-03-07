@@ -91,12 +91,26 @@ void pw_menu_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf) 
             }
         }
 
+        if(MENU_ENTRIES[s->menu.cursor] == STATE_DOWSING || MENU_ENTRIES[s->menu.cursor] == STATE_POKE_RADAR ) {
+            route_info_t ri;
+            pw_eeprom_read(
+                PW_EEPROM_ADDR_ROUTE_INFO,
+                (uint8_t*)&ri,
+                PW_EEPROM_SIZE_ROUTE_INFO
+            );
+
+            if(ri.pokemon_summary.le_species == 0xffff || ri.pokemon_summary.le_species == 0x0000) {
+                s->menu.message = MSG_NO_POKEMON_HELD;
+                s->menu.substate = MS_MESSAGE;
+                return;
+            }
+        }
+
         if(health_data_cache.current_watts < MENU_COSTS[s->menu.cursor]) {
             s->menu.message = MSG_NEED_WATTS;
             s->menu.substate = MS_MESSAGE;
             return;
         } else {
-            printf("subtracting %d watts from %d", MENU_COSTS[s->menu.cursor], health_data_cache.current_watts);
             health_data_cache.current_watts -= MENU_COSTS[s->menu.cursor];
         }
 
