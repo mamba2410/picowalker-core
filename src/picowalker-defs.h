@@ -210,5 +210,24 @@ pw_battery_status_t pw_power_get_battery_status();
 void pw_power_enter_sleep();
 bool pw_power_should_sleep();
 
+
+/*
+ *  ==================================================================================
+ *  TIME
+ *  ==================================================================================
+ */
+
+/*
+ * Types and defines
+ */
+
+/*
+ * Functions defined by the driver
+ */
+uint32_t pw_time_get_us();
+uint32_t pw_time_get_ms();
+uint32_t pw_rtc_get_time();
+void pw_rtc_set_time(uint32_t time);
+
 #endif /* PW_PICOWALKER_INCLUDE_H */
 
