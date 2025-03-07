@@ -26,6 +26,8 @@ add_library(picowalker-core
     src/accel.c
     src/accel.h
     src/power.c
+    src/timer.c
+    src/timer.h
     src/ir/compression.c
     src/ir/compression.h
     src/ir/ir.c
