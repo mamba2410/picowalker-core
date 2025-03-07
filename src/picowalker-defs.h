@@ -220,6 +220,12 @@ bool pw_power_should_sleep();
 /*
  * Types and defines
  */
+#define RTC_EVENT_EVERY_DAY     (1<<0)
+#define RTC_EVENT_EVERY_HOUR    (1<<1)
+#define RTC_EVENT_EVERY_MINUTE  (1<<2)
+#define RTC_EVENT_EVERY_SECOND  (1<<3)
+
+typedef uint8_t pw_rtc_events_t;
 
 /*
  * Functions defined by the driver
@@ -228,6 +234,7 @@ uint32_t pw_time_get_us();
 uint32_t pw_time_get_ms();
 uint32_t pw_rtc_get_time();
 void pw_rtc_set_time(uint32_t time);
+pw_rtc_events_t pw_rtc_get_events();
 
 #endif /* PW_PICOWALKER_INCLUDE_H */
 

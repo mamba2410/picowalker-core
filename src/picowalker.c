@@ -111,6 +111,8 @@ void walker_loop() {
         PW_CLR_REQUEST(current_state->requests, PW_REQUEST_REDRAW);
     }
 
+    pw_rtc_regular_processing();
+
     // Check if we should sleep
     if(pw_power_should_sleep()) {
         printf("[Debug] Sleep timeout hit, entering sleep\n");
