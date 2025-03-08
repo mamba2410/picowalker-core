@@ -126,8 +126,6 @@ ir_err_t pw_ir_send_advertising_packet();
 uint16_t pw_ir_checksum_seeded(uint8_t *data, size_t len, uint16_t seed);
 uint16_t pw_ir_checksum(pw_packet_t *packet, size_t len);
 
-void pw_ir_delay_ms(size_t ms);
-
 ir_err_t pw_ir_get_session_id(uint8_t session_id[SESSION_ID_SIZE]);
 ir_err_t pw_ir_set_session_id(uint8_t session_id[SESSION_ID_SIZE]);
 ir_err_t pw_ir_mix_session_id(uint8_t session_id[SESSION_ID_SIZE]);
