@@ -75,9 +75,7 @@ void pw_trainer_card_init_display(pw_state_t *s, const screen_flags_t *sf) {
         PW_EEPROM_SIZE_IMG_TIME_FRAME
     );
 
-    uint32_t rtc = pw_rtc_get_time();
-    pw_dhms_t dhms;
-    pw_time_seconds_to_dhms(&dhms, rtc);
+    pw_dhms_t dhms = pw_rtc_get_dhms();
     pw_screen_draw_time(dhms.hours, dhms.minutes, dhms.seconds, 32, 48);
 }
 
@@ -204,9 +202,7 @@ void pw_trainer_card_draw_update(pw_state_t *s, const screen_flags_t *sf) {
 
     if(s->trainer_card.current_cursor <= 0) {
         // redraw time, possibly able to optimise
-        uint32_t rtc = pw_rtc_get_time();
-        pw_dhms_t dhms;
-        pw_time_seconds_to_dhms(&dhms, rtc);
+        pw_dhms_t dhms = pw_rtc_get_dhms();
         pw_screen_draw_time(dhms.hours, dhms.minutes, dhms.seconds, 32, 48);
     }
 

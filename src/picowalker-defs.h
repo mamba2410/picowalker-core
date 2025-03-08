@@ -227,11 +227,19 @@ bool pw_power_should_sleep();
 
 typedef uint8_t pw_rtc_events_t;
 
+typedef struct pw_dhms_s {
+    uint16_t days;
+    uint8_t hours;
+    uint8_t minutes;
+    uint8_t seconds;
+} pw_dhms_t;
+
 /*
  * Functions defined by the driver
  */
 uint32_t pw_time_get_us();
 uint32_t pw_time_get_ms();
+pw_dhms_t pw_rtc_get_dhms();
 uint32_t pw_rtc_get_time();
 void pw_rtc_set_time(uint32_t time);
 pw_rtc_events_t pw_rtc_get_events();

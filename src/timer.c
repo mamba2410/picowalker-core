@@ -35,20 +35,6 @@ void pw_time_delay_us_blocking(uint32_t us) {
 
 
 /**
- * Converts an RTC seconds timestamp to hours, minutes and seconds
- */
-void pw_time_seconds_to_dhms(pw_dhms_t *dhms, uint32_t rtc) {
-    dhms->seconds = rtc%60;
-    rtc = rtc/60;
-    dhms->minutes = rtc%60;
-    rtc = rtc/60;
-    dhms->hours = rtc%24;
-    rtc = rtc/24;
-    dhms->days = rtc;
-}
-
-
-/**
  * Called regularly from main loop, checks if any RTC events have occurred,
  * and if they have, perform the corresponding action.
  *
