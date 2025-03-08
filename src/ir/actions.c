@@ -872,6 +872,10 @@ void pw_ir_start_walk() {
     pw_eeprom_write_walker_info(info);
     info = 0;
 
+    // Write current time
+    // TODO: Check endianness of these
+    pw_time_set_rtc(peer_info_cache.be_last_sync);
+    health_data_cache.last_sync = peer_info_cache.be_last_sync;
 
     // make walk start event
 

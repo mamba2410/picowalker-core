@@ -56,6 +56,8 @@ void walker_setup() {
         pending_state->sid = STATE_FIRST_COMMS;
     }
 
+    pw_time_init_rtc(health_data_cache.last_sync);
+
     walker_timings.now = pw_time_get_us();
     walker_timings.prev_accel_check = 0;
 
