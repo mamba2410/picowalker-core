@@ -9,39 +9,13 @@
 
 
 /**
- * Delays for approx `ms` milliseconds by polling `pw_time_get_ms()`.
- *
- * Maximum delay is 2^32 ms ~= 4 million seconds
- *
- * @param ms milliseconds to delay
- */
-void pw_time_delay_ms_blocking(uint32_t ms) {
-    uint64_t start = pw_time_get_ms();
-    while( (pw_time_get_ms() - start) < ms) { }
-}
-
-
-/**
- * Delays for approx `us` microseconds by polling `pw_time_get_us()`.
- *
- * Maximum delay is 2^32 us ~= 4 thousand seconds, just over an hour
- *
- * @param us microseconds to delay
- */
-void pw_time_delay_us_blocking(uint32_t us) {
-    uint64_t start = pw_time_get_us();
-    while( (pw_time_get_us() - start) < us) { }
-}
-
-
-/**
  * Called regularly from main loop, checks if any RTC events have occurred,
  * and if they have, perform the corresponding action.
  *
  * Polls the driver for which RTC events have happened.
  */
 void pw_rtc_regular_processing() {
-    pw_rtc_events_t events = pw_rtc_get_events();
+    pw_rtc_events_t events = pw_time_get_rtc_events();
 
     //printf("[Debug] events: 0x%04x\n", events);
     if(events & RTC_EVENT_EVERY_HOUR) {

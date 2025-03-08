@@ -107,7 +107,7 @@ ir_err_t pw_action_try_find_peer(app_comms_t *comms, pw_packet_t *packet, size_t
 
             // combine keys
             pw_ir_mix_session_id(session_id_master);
-            pw_time_delay_ms_blocking(ACTION_DELAY_MS);
+            pw_time_delay_ms(ACTION_DELAY_MS);
 
             if(comms->first_comms) {
                 comms->current_substate = COMM_SUBSTATE_FIRST_SLAVE_PERFORM_REQUEST;
@@ -163,7 +163,7 @@ ir_err_t pw_action_slave_perform_request(app_comms_t *comms, pw_packet_t *packet
             return IR_ERR_BAD_DATA;
         }
 
-        pw_time_delay_ms_blocking(ACTION_DELAY_MS);
+        pw_time_delay_ms(ACTION_DELAY_MS);
 
         err = pw_ir_send_packet(packet, 8+sizeof(walker_info_t), &n_rw);
 
@@ -182,7 +182,7 @@ ir_err_t pw_action_slave_perform_request(app_comms_t *comms, pw_packet_t *packet
     case CMD_EEPROM_WRITE_RAW_80: {
         err = pw_ir_eeprom_do_write(packet, len);
 
-        pw_time_delay_ms_blocking(ACTION_DELAY_MS);
+        pw_time_delay_ms(ACTION_DELAY_MS);
         packet->cmd = CMD_EEPROM_WRITE_ACK;
         packet->extra = EXTRA_BYTE_FROM_WALKER;
         pw_ir_send_packet(packet, 8, &n_rw);
@@ -196,7 +196,7 @@ ir_err_t pw_action_slave_perform_request(app_comms_t *comms, pw_packet_t *packet
         packet->extra = EXTRA_BYTE_FROM_WALKER;
         pw_eeprom_read(addr, packet->payload, len);
 
-        pw_time_delay_ms_blocking(ACTION_DELAY_MS);
+        pw_time_delay_ms(ACTION_DELAY_MS);
 
         err = pw_ir_send_packet(packet, 8+len, &n_rw);
         break;
@@ -205,7 +205,7 @@ ir_err_t pw_action_slave_perform_request(app_comms_t *comms, pw_packet_t *packet
         packet->cmd = CMD_PONG;
         packet->extra = EXTRA_BYTE_FROM_WALKER;
 
-        pw_time_delay_ms_blocking(ACTION_DELAY_MS);
+        pw_time_delay_ms(ACTION_DELAY_MS);
 
         err = pw_ir_send_packet(packet, 8, &n_rw);
         break;
@@ -213,7 +213,7 @@ ir_err_t pw_action_slave_perform_request(app_comms_t *comms, pw_packet_t *packet
     case CMD_CONNECT_COMPLETE: {
         packet->cmd = CMD_CONNECT_COMPLETE_ACK;
         packet->cmd = EXTRA_BYTE_FROM_WALKER;
-        pw_time_delay_ms_blocking(ACTION_DELAY_MS);
+        pw_time_delay_ms(ACTION_DELAY_MS);
 
         err = pw_ir_send_packet(packet, 8, &n_rw);
         comms->current_substate = COMM_SUBSTATE_COMPLETED;
@@ -222,7 +222,7 @@ ir_err_t pw_action_slave_perform_request(app_comms_t *comms, pw_packet_t *packet
     case CMD_WALK_END_REQ: {
         packet->cmd = CMD_WALK_END_ACK;
         packet->extra = EXTRA_BYTE_FROM_WALKER;
-        pw_time_delay_ms_blocking(ACTION_DELAY_MS);
+        pw_time_delay_ms(ACTION_DELAY_MS);
         err = pw_ir_send_packet(packet, 8, &n_rw);
 
         pw_ir_end_walk();
@@ -236,7 +236,7 @@ ir_err_t pw_action_slave_perform_request(app_comms_t *comms, pw_packet_t *packet
     case CMD_WALK_START: {
         // keep cmd
         packet->extra = EXTRA_BYTE_FROM_WALKER;
-        pw_time_delay_ms_blocking(ACTION_DELAY_MS);
+        pw_time_delay_ms(ACTION_DELAY_MS);
         err = pw_ir_send_packet(packet, 8, &n_rw);
         pw_ir_start_walk();
 
@@ -260,7 +260,7 @@ ir_err_t pw_action_slave_perform_request(app_comms_t *comms, pw_packet_t *packet
     }
     case CMD_WALKER_RESET_1: {
         packet->extra = EXTRA_BYTE_FROM_WALKER;
-        pw_time_delay_ms_blocking(ACTION_DELAY_MS);
+        pw_time_delay_ms(ACTION_DELAY_MS);
         pw_eeprom_reliable_read(
             PW_EEPROM_ADDR_UNIQUE_IDENTITY_DATA_1,
             PW_EEPROM_ADDR_UNIQUE_IDENTITY_DATA_2,
@@ -276,7 +276,7 @@ ir_err_t pw_action_slave_perform_request(app_comms_t *comms, pw_packet_t *packet
         // TODO: Check if we can play, if not send CMD_PEER_PLAY_SEEN
         packet->cmd = CMD_PEER_PLAY_RSP;
         packet->extra = EXTRA_BYTE_FROM_WALKER;
-        pw_time_delay_ms_blocking(ACTION_DELAY_MS);
+        pw_time_delay_ms(ACTION_DELAY_MS);
         pw_eeprom_reliable_read(
             PW_EEPROM_ADDR_IDENTITY_DATA_1,
             PW_EEPROM_ADDR_IDENTITY_DATA_2,
@@ -628,7 +628,7 @@ ir_err_t pw_action_send_large_raw_data_from_eeprom(uint16_t src, uint16_t dst, s
     if( (cur_write_addr&0x07) > 0) return IR_ERR_UNALIGNED_WRITE;
     //if( (final_write_size&0x07) > 0) return IR_ERR_UNALIGNED_WRITE;   // walker can handle this
 
-    pw_time_delay_ms_blocking(ACTION_DELAY_MS);
+    pw_time_delay_ms(ACTION_DELAY_MS);
 
     if( cur_write_size < final_write_size) {
         packet->cmd = (uint8_t)(cur_write_addr&0xff) + 2; // Need +2 to make it raw write command
@@ -672,7 +672,7 @@ ir_err_t pw_action_read_large_raw_data_from_eeprom(uint16_t src, uint16_t dst, s
     err = pw_ir_send_packet(packet, 8+3, &n_read);
     if(err != IR_OK) return err;
 
-    pw_time_delay_ms_blocking(ACTION_DELAY_MS);
+    pw_time_delay_ms(ACTION_DELAY_MS);
 
     err = pw_ir_recv_packet(packet, read_size+8, &n_read);
     if(err != IR_OK) return err;
@@ -710,7 +710,7 @@ ir_err_t pw_action_send_large_raw_data_from_pointer(uint8_t *src, uint16_t dst, 
     if( (cur_write_addr&0x07) > 0) return IR_ERR_UNALIGNED_WRITE;
     //if( (final_write_size&0x07) > 0) return IR_ERR_UNALIGNED_WRITE;   // walker can handle this
 
-    pw_time_delay_ms_blocking(ACTION_DELAY_MS);
+    pw_time_delay_ms(ACTION_DELAY_MS);
 
     if( cur_write_size < final_write_size) {
         packet->cmd = (uint8_t)(cur_write_addr&0xff) + 2; // Need +2 to make it raw write command
@@ -933,7 +933,7 @@ ir_err_t pw_ir_identity_ack(pw_packet_t *packet) {
     //TODO: set the rtc, that's it
     walker_info_cache.be_last_sync = peer_info_cache.be_last_sync;
 
-    pw_time_delay_ms_blocking(ACTION_DELAY_MS);
+    pw_time_delay_ms(ACTION_DELAY_MS);
 
     ir_err_t err = pw_ir_send_packet(packet, 8, &n_rw);
     return err;

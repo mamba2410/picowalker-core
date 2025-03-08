@@ -237,12 +237,15 @@ typedef struct pw_dhms_s {
 /*
  * Functions defined by the driver
  */
-uint32_t pw_time_get_us();
-uint32_t pw_time_get_ms();
-pw_dhms_t pw_rtc_get_dhms();
-uint32_t pw_rtc_get_time();
-void pw_rtc_set_time(uint32_t time);
-pw_rtc_events_t pw_rtc_get_events();
+uint32_t pw_time_get_us(); // since boot
+uint32_t pw_time_get_ms(); // since boot
+pw_dhms_t pw_time_get_dhms(); // RTC
+void pw_time_init_rtc(uint32_t time); // RTC
+uint32_t pw_time_get_rtc(); // RTC
+void pw_time_set_rtc(uint32_t time); // RTC
+pw_rtc_events_t pw_time_get_rtc_events();
+void pw_time_delay_ms(uint32_t ms);
+void pw_time_delay_us(uint32_t us);
 
 #endif /* PW_PICOWALKER_INCLUDE_H */
 
