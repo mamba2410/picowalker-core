@@ -243,15 +243,15 @@ typedef struct pw_dhms_s {
 } pw_dhms_t;
 
 /*
- * Functions defined by the driver
+ *  Functions defined by driver
  */
-uint32_t pw_time_get_us(); // since boot
-uint32_t pw_time_get_ms(); // since boot
-pw_dhms_t pw_time_get_dhms(); // RTC
-void pw_time_init_rtc(uint32_t time); // RTC
-uint32_t pw_time_get_rtc(); // RTC
-void pw_time_set_rtc(uint32_t time); // RTC
+void pw_time_init_rtc(uint32_t last_sync);   // From RTC
+void pw_time_set_rtc(uint32_t last_sync);    // From RTC
+uint32_t pw_time_get_rtc();     // From RTC
+pw_dhms_t pw_time_get_dhms();   // From RTC
 pw_rtc_events_t pw_time_get_rtc_events();
+uint64_t pw_time_get_us();  // Since boot
+uint64_t pw_time_get_ms();  // Since boot
 void pw_time_delay_ms(uint32_t ms);
 void pw_time_delay_us(uint32_t us);
 
