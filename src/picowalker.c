@@ -20,9 +20,9 @@
 #include "power.h"
 
 struct {
-    uint64_t now;
-    uint64_t prev_screen_redraw;
-    uint64_t prev_accel_check;
+    uint32_t now;
+    uint32_t prev_screen_redraw;
+    uint32_t prev_accel_check;
 } walker_timings;
 
 pw_state_t a1, a2;
@@ -56,7 +56,7 @@ void walker_setup() {
         pending_state->sid = STATE_FIRST_COMMS;
     }
 
-    walker_timings.now = pw_now_us();
+    walker_timings.now = pw_time_get_us();
     walker_timings.prev_accel_check = 0;
 
     // Initialise the first states
@@ -70,7 +70,7 @@ void walker_loop() {
     uint64_t td;
 
     // TODO: Things to do regardless of state (eg check steps, battery etc.)
-    walker_timings.now = pw_now_us();
+    walker_timings.now = pw_time_get_us();
     td = (walker_timings.prev_accel_check>walker_timings.now)?(walker_timings.prev_accel_check-walker_timings.now):(walker_timings.now-walker_timings.prev_accel_check);
     if(td > ACCEL_NORMAL_SAMPLE_TIME_US) {
         walker_timings.prev_accel_check = walker_timings.now;
@@ -101,7 +101,7 @@ void walker_loop() {
     }
 
     // Update screen since (presumably) we aren't doing anything time-critical
-    walker_timings.now = pw_now_us();
+    walker_timings.now = pw_time_get_us();
     td = (walker_timings.prev_screen_redraw>walker_timings.now)?(walker_timings.prev_screen_redraw-walker_timings.now):(walker_timings.now-walker_timings.prev_screen_redraw);
 
     if(td > SCREEN_REDRAW_DELAY_US || PW_GET_REQUEST(current_state->requests, PW_REQUEST_REDRAW)) {

@@ -9,22 +9,6 @@
 
 
 /**
- * Deprecated
- */
-uint64_t pw_now_us() {
-    return pw_time_get_us();
-}
-
-
-/**
- * Deprecated
- */
-void pw_timer_delay_ms(uint64_t ms) {
-    pw_time_delay_ms_blocking(ms);
-}
-
-
-/**
  * Delays for approx `ms` milliseconds by polling `pw_time_get_ms()`.
  *
  * Maximum delay is 2^32 ms ~= 4 million seconds

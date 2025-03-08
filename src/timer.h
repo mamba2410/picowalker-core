@@ -15,15 +15,11 @@ typedef struct pw_dhms_s {
     uint8_t seconds;
 } pw_dhms_t;
 
-// Deprecated
-uint64_t pw_now_us();
-void pw_timer_delay_ms(uint64_t ms);
-
 // Waits and delays
 void pw_time_delay_ms_blocking(uint32_t ms);
 void pw_time_delay_us_blocking(uint32_t us);
 
 void pw_time_seconds_to_dhms(pw_dhms_t *dhms, uint32_t rtc);
-void pw_time_regular_processing();
+void pw_rtc_regular_processing();
 
 #endif /* PW_TIMER_H */
