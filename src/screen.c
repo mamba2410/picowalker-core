@@ -20,7 +20,7 @@ void pw_screen_draw_from_eeprom(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint
     pw_screen_draw_img(&img, x, y);
 }
 
-void pw_screen_draw_integer(uint32_t n, size_t right_x, size_t y) {
+size_t pw_screen_draw_integer(uint32_t n, size_t right_x, size_t y) {
 
     size_t x = right_x;
     uint32_t m = n;
@@ -35,6 +35,8 @@ void pw_screen_draw_integer(uint32_t n, size_t right_x, size_t y) {
             PW_EEPROM_SIZE_IMG_CHAR
         );
     } while(m>0);
+
+    return x;
 }
 
 void pw_screen_draw_time(uint8_t hour, uint8_t minute, uint8_t second, size_t x, size_t y) {
