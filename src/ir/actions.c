@@ -873,9 +873,10 @@ void pw_ir_start_walk() {
     info = 0;
 
     // Write current time
-    // TODO: Check endianness of these
-    pw_time_set_rtc(peer_info_cache.be_last_sync);
-    health_data_cache.last_sync = peer_info_cache.be_last_sync;
+    // Should be redundant since we set it with command 0x32 and co.
+    uint32_t last_sync = swap_bytes_u32(peer_info_cache.be_last_sync);
+    pw_time_set_rtc(last_sync);
+    health_data_cache.last_sync = last_sync;
 
     // make walk start event
 
@@ -934,8 +935,15 @@ ir_err_t pw_ir_identity_ack(pw_packet_t *packet) {
 
     packet->extra = EXTRA_BYTE_TO_WALKER;
 
-    //TODO: set the rtc, that's it
-    walker_info_cache.be_last_sync = peer_info_cache.be_last_sync;
+    // Set the rtc, that's it
+    if(peer_info_cache.be_last_sync != 0) {
+        uint32_t last_sync = swap_bytes_u32(peer_info_cache.be_last_sync);
+        walker_info_cache.be_last_sync = last_sync;
+        health_data_cache.last_sync = last_sync;
+        pw_time_set_rtc(health_data_cache.last_sync);
+    } else {
+        printf("[Debug] peeer info last sync was zero\n");
+    }
 
     pw_time_delay_ms(ACTION_DELAY_MS);
 
