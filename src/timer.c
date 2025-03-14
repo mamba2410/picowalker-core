@@ -7,6 +7,7 @@
 #include "timer.h"
 #include "utils.h"
 
+pw_dhms_t last_check = {0,};
 
 /**
  * Called regularly from main loop, checks if any RTC events have occurred,
@@ -69,5 +70,40 @@ void pw_rtc_regular_processing() {
 
     }
 
+}
+
+
+/**
+ * Returns flags of what periodic events need to be handled
+ */
+pw_rtc_events_t pw_time_get_rtc_events() {
+    pw_rtc_events_t events = 0;
+
+    pw_dhms_t now = pw_time_get_dhms();
+    if(last_check.days == 0) {
+        last_check = now;
+        return events;
+    }
+
+    if(now.seconds != last_check.seconds) {
+        events |= RTC_EVENT_EVERY_SECOND;
+    }
+
+    if(now.minutes != last_check.minutes) {
+        events |= RTC_EVENT_EVERY_MINUTE;
+    }
+
+    if(now.hours != last_check.hours) {
+        events |= RTC_EVENT_EVERY_HOUR;
+    }
+
+    uint8_t end_of_day_hour = walker_info_cache.flags >> 3;
+    if(now.days != last_check.days && now.hours == end_of_day_hour) {
+        events |= RTC_EVENT_EVERY_DAY;
+    }
+
+    last_check = now;
+
+    return events;
 }
 
