@@ -157,7 +157,18 @@ ir_err_t pw_action_slave_perform_request(app_comms_t *comms, pw_packet_t *packet
         packet->cmd = CMD_IDENTITY_RSP;
         packet->extra = EXTRA_BYTE_FROM_WALKER;
 
+        // Put our info into the reply packet and update total step count
+        // Update our ram cache to reflect
         int r = pw_eeprom_read_walker_info((walker_info_t*)packet->payload);
+        ((walker_info_t*)packet->payload)->be_step_count = swap_bytes_u32(health_data_cache.total_steps);
+        walker_info_cache = *(walker_info_t*)packet->payload;
+
+        // Write health data to eeprom
+        pw_eeprom_write_health_data(&health_data_cache);
+
+        // Write current watts to a special area so master can read it later
+        uint16_t current_watts = swap_bytes_u16(health_data_cache.current_watts);
+        pw_eeprom_write(0xce8a, (uint8_t*)&current_watts, 2);
 
         if(r < 0) {
             return IR_ERR_BAD_DATA;
@@ -233,6 +244,7 @@ ir_err_t pw_action_slave_perform_request(app_comms_t *comms, pw_packet_t *packet
         break;
     }
     case CMD_WALK_START_INIT:
+        health_data_cache.today_steps = 0;
     case CMD_WALK_START: {
         // keep cmd
         packet->extra = EXTRA_BYTE_FROM_WALKER;

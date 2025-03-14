@@ -78,6 +78,9 @@ void pw_comms_init(pw_state_t *s, const screen_flags_t *sf) {
     s->comms.final_anim_frame = 0;
     //s->comms.final_anim_frame = WALK_END_ANIM_FRAMES;
 
+    pw_eeprom_write_walker_info(&walker_info_cache);
+    pw_eeprom_write_health_data(&health_data_cache);
+
     // TODO: Turn on IR hardware if in normal comms state
     // delegate to "finding peer" if in first comms state
     // Go through an "init hardware" state before finding peer?
