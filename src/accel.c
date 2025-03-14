@@ -14,6 +14,9 @@ void pw_accel_process_steps() {
     health_data_cache.today_steps += new_steps;
     if(health_data_cache.today_steps > TODAY_STEPS_MAX) health_data_cache.today_steps = TODAY_STEPS_MAX;
 
+    health_data_cache.total_steps += new_steps;
+    if(health_data_cache.total_steps > TOTAL_STEPS_MAX) health_data_cache.total_steps = TOTAL_STEPS_MAX;
+
     health_data_cache.current_watts += new_watts;
     if(health_data_cache.current_watts > CURRENT_WATTS_MAX) health_data_cache.current_watts = CURRENT_WATTS_MAX;
 
