@@ -29,6 +29,11 @@ pw_state_t a1, a2;
 pw_state_t *current_state = &a1, *pending_state = &a2;
 screen_flags_t screen_flags;
 
+void (*current_loop)(void);
+
+void pw_sleep_loop();
+void walker_loop();
+
 void walker_setup() {
     // Setup IR uart and rx interrupts
     pw_power_init();
@@ -65,6 +70,8 @@ void walker_setup() {
     pw_screen_clear();
     STATE_FUNCS[current_state->sid].init(current_state, &screen_flags);
     STATE_FUNCS[current_state->sid].draw_init(current_state, &screen_flags);
+
+    current_loop = walker_loop;
 }
 
 
@@ -118,14 +125,70 @@ void walker_loop() {
     // Check if we should sleep
     if(pw_power_should_sleep()) {
         printf("[Debug] Sleep timeout hit, entering sleep\n");
+        current_loop = pw_sleep_loop;
+
+        // Put peripherals to sleep
+        pw_screen_sleep();
 
         // Pass control to "driver" and enter sleep
         // Driver should bring all clocks, hardware etc back to how it was left
         pw_power_enter_sleep();
 
         // Re-draw the screen
-        STATE_FUNCS[current_state->sid].draw_init(current_state, &screen_flags);
+        //STATE_FUNCS[current_state->sid].draw_init(current_state, &screen_flags);
     }
+}
+
+
+/**
+ * Loop to be run when we are in sleep mode
+ * Start as if we just woke up because in some scenarios (rp2350) this is what happens
+ */
+void pw_sleep_loop() {
+
+    pw_wake_reason_t wake_reason = pw_power_get_wake_reason();
+
+    if(wake_reason & PW_WAKE_REASON_RTC) {
+        printf("[Debug] Wake because RTC\n");
+        pw_rtc_regular_processing();
+        pw_battery_status_t bs = pw_power_get_battery_status();
+        printf("[Debug] RTC wake checked battery: %d%%, 0x%02x\n", bs.percent, bs.flags);
+
+        // TODO: Move this into its own function in `power.c`
+        if(bs.flags & PW_BATTERY_STATUS_FLAGS_FAULT || bs.percent < PW_BATTERY_CRITICAL_THRESHOLD) {
+            // TODO: stop the whole system to prevent battery from going bad
+            printf("[Warn] Battery faulted or is critically low\n");
+        }
+    }
+
+    if(wake_reason & PW_WAKE_REASON_BATTERY) {
+        pw_battery_status_t bs = pw_power_get_battery_status();
+        printf("[Debug] Wake because battery: %d%%, 0x%02x\n", bs.percent, bs.flags);
+        
+        // TODO: Move this into its own function in `power.c`
+        if(bs.flags & PW_BATTERY_STATUS_FLAGS_FAULT || bs.percent < PW_BATTERY_CRITICAL_THRESHOLD) {
+            // TODO: stop the whole system to prevent battery from going bad
+            printf("[Warn] Battery faulted or is critically low\n");
+        }
+    }
+
+    if(wake_reason & PW_WAKE_REASON_ACCEL) {
+        printf("[Debug] Wake because accel\n");
+        pw_accel_process_steps();
+    }
+
+    if(wake_reason & PW_WAKE_REASON_BUTTON) {
+        printf("[Debug] Wake because button\n");
+        pw_screen_wake();
+
+        // Re-draw the screen
+        STATE_FUNCS[current_state->sid].draw_init(current_state, &screen_flags);
+        current_loop = walker_loop;
+        return;
+    }
+
+    // If nothing else to do, we go back to sleep
+    pw_power_enter_sleep();
 }
 
 void pw_state_handle_input(uint8_t b) {
@@ -143,7 +206,8 @@ void walker_entry() {
     // Event loop
     // BEWARE: Could (WILL) receive interrupts during this time
     while(true) {
-        walker_loop();
+        //walker_loop();
+        current_loop();
     }
 
 }
