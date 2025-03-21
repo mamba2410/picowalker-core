@@ -22,6 +22,17 @@ void pw_trainer_card_init(pw_state_t *s, const screen_flags_t *sf) {
     s->trainer_card.current_cursor = 0;
     s->trainer_card.previous_cursor = -1;
     s->trainer_card.current_substate = TC_NORMAL;
+
+    pw_eeprom_read(
+        PW_EEPROM_ADDR_HISTORIC_STEP_COUNT,
+        (uint8_t*)prev_step_counts,
+        PW_EEPROM_SIZE_HISTORIC_STEP_COUNT
+    );
+
+    for(size_t i = 0; i < 7; i++) {
+        prev_step_counts[i] = swap_bytes_u32(prev_step_counts[i]);
+    }
+
 }
 
 void pw_trainer_card_init_display(pw_state_t *s, const screen_flags_t *sf) {
@@ -191,7 +202,7 @@ void pw_trainer_card_draw_update(pw_state_t *s, const screen_flags_t *sf) {
             uint16_t const total_days  = health_data_cache.total_days;
             pw_trainer_card_draw_dayview(
                 s->trainer_card.current_cursor,
-                swap_bytes_u32(prev_step_counts[s->trainer_card.current_cursor-1]),
+                prev_step_counts[s->trainer_card.current_cursor-1],
                 total_steps,
                 //total_steps+today_steps,
                 total_days
