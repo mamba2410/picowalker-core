@@ -28,6 +28,7 @@ void pw_rtc_regular_processing() {
             }
         }
 
+        health_data_cache.last_sync = pw_time_get_rtc();
         pw_eeprom_write_health_data(&health_data_cache);
 
         route_info_t ri;
@@ -56,8 +57,10 @@ void pw_rtc_regular_processing() {
 
         for(size_t i = 6; i > 0; i--) {
             historic_steps[i] = historic_steps[i-1];
+            printf("[Debug] Today -%d: 0x%08x\n", i+1, historic_steps[i]);
         }
         historic_steps[0] = swap_bytes_u32(health_data_cache.today_steps);
+        printf("[Debug] Today -1: 0x%08x\n", historic_steps[0]);
         health_data_cache.today_steps = 0;
 
         pw_eeprom_write(
