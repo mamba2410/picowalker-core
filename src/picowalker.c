@@ -129,6 +129,7 @@ void walker_loop() {
 
         // Put peripherals to sleep
         pw_screen_sleep();
+        pw_ir_sleep();
 
         // Pass control to "driver" and enter sleep
         // Driver should bring all clocks, hardware etc back to how it was left
@@ -136,6 +137,8 @@ void walker_loop() {
 
         // Re-draw the screen
         //STATE_FUNCS[current_state->sid].draw_init(current_state, &screen_flags);
+
+        // We are very unlikely to return
     }
 }
 
@@ -179,7 +182,13 @@ void pw_sleep_loop() {
 
     if(wake_reason & PW_WAKE_REASON_BUTTON) {
         printf("[Debug] Wake because button\n");
+        pw_accel_process_steps();
         pw_screen_wake();
+        pw_screen_clear();
+
+        if(current_state->sid == STATE_COMMS || current_state->sid == STATE_FIRST_COMMS) {
+            pw_ir_wake();
+        }
 
         // Re-draw the screen
         STATE_FUNCS[current_state->sid].draw_init(current_state, &screen_flags);
