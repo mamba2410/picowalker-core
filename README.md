@@ -4,53 +4,46 @@
 
 **Core files for the picowalker**
 
-Sister project: [picowalker](https://github.com/mamba2410/picowalker).
+Drivers for the picowalker custom hardware that use this code: [picowalker](https://github.com/mamba2410/picowalker).
 
-Windows/linux port: [picowalker-sdl](https://github.com/mamba2410/picowalker-sdl).
+Windows/linux port (with limited connectivity): [picowalker-sdl](https://github.com/mamba2410/picowalker-sdl).
 
-This project aims to recreate a Pokewalker from Pokemon HeartGold/SoulSilver using custom hardware based around the Raspberry Pi Pico.
-People should be able to build their own fully functioning device which can interact with the original HG/SS games as the Pokewalker did.
-We will try to stay faithful to the original use and intent of the Pokewalker, but on a new, relatively easily buildable device, since working, original Pokewalkers are becoming more and more rare.
+The overall Picowalker project aims to recreate a Pokewalker from Pokemon HeartGold/SoulSilver using custom hardware based around the Raspberry Pi Pico/rp2040 series of chips.
+This includes custom hardware, software and drivers, with some modern convenience features added in as well.
+Users should also be able to build their own based on a Raspberry Pi Pico, given that they write the drivers for it.
 
-There are other projects based around emulating the code that is on the Pokewalker, however this project aims to create a new drop-in replacement which is capable of emulating all of the features of the original Pokewalker, with room for improvement.
+This repo contains the "core" code, a (hopefully) platform-agnostic set of code which needs to be compiled and linked with [driver code](https://github.com/mamba2410/picowalker) for it to work.
 
-The project is written in C and is meant to be platform agnostic and will try to remain faithful to the original pokewalker code, with some more modern and high level approaches.
+This code has been tested on a Pico, Pico 2, custom hardware based on the RP2350, Windows and Linux.
 
-Most of the functionality is tested with a raspberry pi pico (arm cortex-m0+).
+All issues related to the picowalker project software will be in this repo, unless its really specific.
 
 ## Project state
 
 What's working (tested with rpi pico):
 
-- Screen functions
-- Most of the common IR functionality
-- Button functions (interrupts)
-- Splash screen
-- Apps: battle (including catching), dowsing, IR (including pairing/erasing, walk start/end, peer play), trainer card, inventory and settings.
-- EEPROM functions
-- Accelerometer
+- Screen
+- Most of the IR functionality
+- All Apps: battle (including catching), dowsing, IR (including pairing/erasing, walk start/end, peer play), trainer card, inventory and settings (doesn't do anything yet).
+- EEPROM save data
+- Accelerometer for step counting
+- RTC for resetting and logging steps daily
 
 Still to do:
 
-- RTC
-- Battery
-- Sound
-- Pokewalker event logging
-- Random events (eg smiley faces, random watts, pokemon joined etc)
-- Add the animations for send/receive etc.
+- Battery monitoring for reporting the level and safely shutting down.
+- Sound.
+- Pokewalker event logging (for walk summary when returned from a walk).
+- Random events (eg smiley faces, random watts, pokemon joined etc).
+- More obscure IR functions like adding stamps.
+- Support for colour images on a colour screen.
 
-## Help Wanted
+## Contributing
 
-This is a very large project and I can't do it alone, so extra hands would be extremely welcome and appreciated.
+If you'd like to contribute, any form is welcome!
+Issues, suggestions, code contributions etc.
 
-Help is needed to:
-
-- Translate and modernise the code on the original Pokewalker to the Pico.
-- Find hardware that can be used as the peripherals which are able to be controlled by the Pico.
-- Write drivers/interface code for the hardware chosen.
-- Design the physical layout and connections of the hardware.
-- Design shells/casing for the end product.
-- Find/create a good license that won't get us in trouble. (see License section)
+The one large outstanding thing to do is to license this project.
 
 If you would like to try out the current implementation or contribute to the project, please read
 the [design doc](./docs/DESIGN.md).
@@ -62,7 +55,6 @@ For things that need doing, see the [todo doc](./docs/TODO.md).
 ### Pokewalker
 
 - [Original pokewalker hack by Dmitry.GR](http://dmitry.gr/?r=05.Projects&proj=28.%20pokewalker)
-- [H8/300h Series software manual (for looking at the original disassembly)](https://www.renesas.com/us/en/document/mah/h8300h-series-software-manual)
 
 ## Building
 
@@ -90,7 +82,8 @@ cmake --build build/x86-windows
 
 ## License
 
-As this is technically not an original project, I am unsure about the license.
-I would like as much of this project to be as free and open source as possible, with the exception of being able to sell this as a product, since that will probably get everyone in trouble with Nintendo licensing and nobody wants that.
+As this is heavily inspired by an existing product, I am unsure about the license.
+I would like as much of this project to be as free and open source as possible.
 
 Licensing suggestions would be welcome. In the meantime, I guess this is fully copyrighted to the contributors.
+
