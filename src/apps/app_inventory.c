@@ -131,8 +131,13 @@ static void pw_inventory_move_cursor(pw_state_t *s, int8_t m) {
             s->inventory.current_substate = SUBSTATE_GO_TO_MENU;
         }
         if(s->inventory.current_cursor > 9) {
-            s->inventory.current_substate = SUBSCREEN_PRESENTS;  // change to presents screen
-            s->inventory.current_cursor = 0;
+            if(gbrief.n_peer_play_items > 0) {
+                s->inventory.current_substate = SUBSCREEN_PRESENTS;  // change to presents screen
+                s->inventory.current_cursor = 0;
+            } else {
+                s->inventory.current_cursor = 9;
+                pw_inventory_move_cursor(s, -1);   // laziest way of setting cursor to last non-empty slot
+            }
         }
         break;
     }
@@ -142,10 +147,9 @@ static void pw_inventory_move_cursor(pw_state_t *s, int8_t m) {
             s->inventory.current_substate = SUBSCREEN_FOUND;
             s->inventory.current_cursor = 10;
             pw_inventory_move_cursor(s, -1);   // laziest way of setting cursor to last non-empty slot
-        }
-
-        if(s->inventory.current_cursor >= gbrief.n_peer_play_items)
+        } else if(s->inventory.current_cursor >= gbrief.n_peer_play_items) {
             s->inventory.current_cursor = gbrief.n_peer_play_items-1;
+        }
 
         break;
     }
