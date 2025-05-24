@@ -117,9 +117,30 @@ void pw_screen_draw_message(screen_pos_t y, uint8_t message_index, screen_pos_t 
 }
 
 void pw_screen_overlay_text_box(pw_img_t *img, screen_pos_t w, screen_pos_t h, screen_colour_t c) {
-    if(w > img->width || h > img->height) {
-        printf("[Error] Trying to draw a %dx%d box over a %dx%d image\n", w, h, img->width, img->height);
-        return;
+    // If dimensions are too small, extend source image.
+    // TODO: this assumes there's enough space in the buffer. this is bad.
+    if(w > img->width) {
+        //printf("[Debug] Increased text box size from %dx%d to %dx%d\n", img->width, img->height, w, img->height);
+        // Need to copy from the back to not override data
+        for(int i = img->height/8-1; i >= 0; i--) {
+            //memcpy(&img->data[i*2*w], &img->data[i*2*img->width], 2*img->width);
+            // Still need to memcpy backwards
+            for(int j = 2*img->width - 1; j >= 0; j--) {
+                img->data[i*2*w+j] = img->data[i*2*img->width + j];
+            }
+            if(i > 0) {
+                memset(&img->data[i*2*img->width], 0, 2*(w-img->width));
+            }
+        }
+        img->width = w;
+        img->size = img->height * img->width;
+    }
+
+    if(h > img->height) {
+        //printf("[Debug] Increased text box size from %dx%d to %dx%d\n", img->width, img->height, img->width, h);
+        memset(&img->data[(img->height/8)*2*img->width], 0, 2*img->width*(h-img->height));
+        img->height = h;
+        img->size = img->height * img->width;
     }
 
     uint8_t top_mask = ~(1);

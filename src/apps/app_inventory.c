@@ -254,8 +254,9 @@ static void draw_name(pw_state_t *s, const screen_flags_t *sf) {
         };
     }
 
+    pw_screen_overlay_text_box(&sprite, SCREEN_WIDTH, 16, SCREEN_BLACK);
     pw_screen_draw_img(&sprite, 0, SCREEN_HEIGHT-16);
-    pw_screen_draw_text_box(0, SCREEN_HEIGHT-16, SCREEN_WIDTH, 16, SCREEN_BLACK);
+    //pw_screen_draw_text_box(0, SCREEN_HEIGHT-16, SCREEN_WIDTH, 16, SCREEN_BLACK);
 
 }
 
