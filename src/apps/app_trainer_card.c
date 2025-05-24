@@ -141,8 +141,8 @@ void pw_trainer_card_draw_dayview(uint8_t day, uint32_t day_steps,
         PW_EEPROM_ADDR_IMG_STEPS_FRAME,
         PW_EEPROM_SIZE_IMG_STEPS_FRAME
     );
-    pw_screen_clear_area(0, 16, SCREEN_WIDTH-40, 16);
-    pw_screen_draw_integer(day_steps, SCREEN_WIDTH-40, 16);
+    screen_pos_t until = pw_screen_draw_integer(day_steps, SCREEN_WIDTH-40, 16);
+    pw_screen_clear_area(0, 16, until, 16);
 
     pw_screen_draw_from_eeprom(
         0, 32,
@@ -150,8 +150,8 @@ void pw_trainer_card_draw_dayview(uint8_t day, uint32_t day_steps,
         PW_EEPROM_ADDR_IMG_TOTAL_DAYS_FRAME,
         PW_EEPROM_SIZE_IMG_TOTAL_DAYS_FRAME
     );
-    pw_screen_clear_area(64, 32, SCREEN_WIDTH-64, 16);
-    pw_screen_draw_integer(total_days, SCREEN_WIDTH, 32); // shift x by -1?
+    until = pw_screen_draw_integer(total_days, SCREEN_WIDTH, 32); // shift x by -1?
+    pw_screen_clear_area(64, 32, until-64, 16);
 
     pw_screen_draw_from_eeprom(
         SCREEN_WIDTH-40, 48,
@@ -159,8 +159,8 @@ void pw_trainer_card_draw_dayview(uint8_t day, uint32_t day_steps,
         PW_EEPROM_ADDR_IMG_STEPS_FRAME,
         PW_EEPROM_SIZE_IMG_STEPS_FRAME
     );
-    pw_screen_clear_area(0, 48, SCREEN_WIDTH-40, 16);
-    pw_screen_draw_integer(total_steps, SCREEN_WIDTH-40, 48);
+    until = pw_screen_draw_integer(total_steps, SCREEN_WIDTH-40, 48);
+    pw_screen_clear_area(0, 48, until, 16);
 
 }
 
