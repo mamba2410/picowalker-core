@@ -20,6 +20,14 @@ void pw_screen_draw_from_eeprom(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint
     pw_screen_draw_img(&img, x, y);
 }
 
+void pw_screen_draw_from_eeprom_with_text_box(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint16_t addr, size_t len, screen_colour_t c) {
+    pw_img_t img = {.height=h, .width=w, .data=eeprom_buf, .size=len};
+    pw_eeprom_read(addr, eeprom_buf, len);
+    pw_screen_overlay_text_box(&img, w, h, c);
+    pw_screen_draw_img(&img, x, y);
+}
+
+
 size_t pw_screen_draw_integer(uint32_t n, size_t right_x, size_t y) {
 
     size_t x = right_x;
