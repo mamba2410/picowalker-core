@@ -160,32 +160,37 @@ static void pw_inventory_move_cursor(pw_state_t *s, int8_t m) {
     PW_SET_REQUEST(s->requests, PW_REQUEST_REDRAW);
 }
 
-static void draw_cursor(pw_state_t *s, const screen_flags_t *sf) {
-    uint8_t cx=0, cy=0;
+
+static void get_cursor_coords(pw_state_t *s, screen_pos_t *cx, screen_pos_t *cy) {
     uint8_t xs[] = {8, 24, 32, 40, 48};
     const uint8_t yp = 24, yi = 40;
     uint8_t x0 = 16, y0 = 24;
 
     switch(s->inventory.current_substate) {
     case SUBSCREEN_FOUND: {
-        cx = xs[ (s->inventory.current_cursor)%5 ];
-        cy = (s->inventory.current_cursor>5)?yi:yp;
-        cy -= 8;
+        *cx = xs[ (s->inventory.current_cursor)%5 ];
+        *cy = (s->inventory.current_cursor>5)?yi:yp;
+        *cy -= 8;
 
         break;
     }
     case SUBSCREEN_PRESENTS: {
-        cx = x0 + 8*(s->inventory.current_cursor%5);
-        cy = y0 + 16*(s->inventory.current_cursor/5) - 8;
+        *cx = x0 + 8*(s->inventory.current_cursor%5);
+        *cy = y0 + 16*(s->inventory.current_cursor/5) - 8;
 
         break;
     }
     default:
         break;
     }
+}
+
+static void draw_cursor(pw_state_t *s, const screen_flags_t *sf) {
 
     uint16_t addr = (sf->frame&ANIM_FRAME_NORMAL_TIME)?PW_EEPROM_ADDR_IMG_ARROW_DOWN_NORMAL:PW_EEPROM_ADDR_IMG_ARROW_DOWN_OFFSET;
 
+    screen_pos_t cx=0, cy=0;
+    get_cursor_coords(s, &cx, &cy);
     pw_screen_draw_from_eeprom(
         cx, cy,
         8, 8,
@@ -389,8 +394,18 @@ static void pw_inventory_draw_screen2(pw_state_t *s, const screen_flags_t *sf) {
 
 
 static void pw_inventory_update_screen1(pw_state_t *s, const screen_flags_t *sf) {
-    pw_screen_clear_area(0, 16, 56, 8);
-    pw_screen_clear_area(0, 32, 56, 8);
+    screen_pos_t cx=0, cy=0;
+    get_cursor_coords(s, &cx, &cy);
+
+    if(cy == 16) {
+        pw_screen_clear_area(0, 16, cx, 8);
+        pw_screen_clear_area(cx+8, 16, 56-(cx+8), 8);
+        pw_screen_clear_area(0, 32, 56, 8);
+    } else if(cy == 32) {
+        pw_screen_clear_area(0, 16, 56, 8);
+        pw_screen_clear_area(0, 32, cx, 8);
+        pw_screen_clear_area(cx+8, 32, 56-(cx+8), 8);
+    }
 
     draw_cursor(s, sf);
     draw_name(s, sf);
@@ -401,9 +416,19 @@ static void pw_inventory_update_screen1(pw_state_t *s, const screen_flags_t *sf)
 
 static void pw_inventory_update_screen2(pw_state_t *s, const screen_flags_t *sf) {
 
+    screen_pos_t cx=0, cy=0;
+    get_cursor_coords(s, &cx, &cy);
     uint8_t x0 = 16, y0 = 24;
-    pw_screen_clear_area(x0, y0-8, 40, 8);
-    pw_screen_clear_area(x0, y0-8+16, 40, 8);
+
+    if(cy == 16) {
+        pw_screen_clear_area(x0, y0-8, cx, 8);
+        pw_screen_clear_area(cx+8, y0-8, 40-(cx+8), 8);
+        pw_screen_clear_area(x0, y0-8+16, 40, 8);
+    } else if(cy == 32) {
+        pw_screen_clear_area(x0, y0-8, 40, 8);
+        pw_screen_clear_area(x0, y0-8+16, cx, 8);
+        pw_screen_clear_area(cx+8, y0-8+16, 40-(cx+8), 8);
+    }
 
 
     // don't draw this if we don't have presents
