@@ -97,3 +97,51 @@ void pw_screen_draw_message(screen_pos_t y, uint8_t message_index, screen_pos_t 
     pw_screen_draw_img(&img, 0, y);
 }
 
+void pw_screen_overlay_text_box(pw_img_t *img, screen_pos_t w, screen_pos_t h, screen_colour_t c) {
+    if(w > img->width || h > img->height) {
+        printf("[Error] Trying to draw a %dx%d box over a %dx%d image\n", w, h, img->width, img->height);
+        return;
+    }
+
+    uint8_t top_mask = ~(1);
+    uint8_t c_upper_top = (c&0x02)>>1;
+    uint8_t c_lower_top = (c&0x01)>>0;
+
+    uint8_t bottom_mask = ~(1<<7);
+    uint8_t c_upper_bottom = (c&0x02)<<6;
+    uint8_t c_lower_bottom = (c&0x01)<<7;
+
+    // Fill in top line
+    for(size_t i = 0; i < w; i++) {
+        img->data[2*i+0] = (img->data[2*i+0] & top_mask) | c_upper_top;
+        img->data[2*i+1] = (img->data[2*i+1] & top_mask) | c_lower_top;
+    }
+
+    // Fill in bottom line
+    size_t offs = 2*(img->height/8-1);
+    for(size_t i = 0; i < w; i++) {
+        img->data[offs*img->width+2*i+0] = (img->data[offs*img->width+2*i+0] & bottom_mask) | c_upper_bottom;
+        img->data[offs*img->width+2*i+1] = (img->data[offs*img->width+2*i+1] & bottom_mask) | c_lower_bottom;
+    }
+
+    uint8_t upper_splat = (c&0x02)>>1;
+    upper_splat |= upper_splat << 1;
+    upper_splat |= upper_splat << 2;
+    upper_splat |= upper_splat << 4;
+
+    uint8_t lower_splat = c&0x01;
+    lower_splat |= lower_splat << 1;
+    lower_splat |= lower_splat << 2;
+    lower_splat |= lower_splat << 4;
+
+    // Fill in sides
+    for(size_t i = 0; i < img->height/8; i++) {
+        img->data[i*2*img->width+0] = upper_splat;
+        img->data[i*2*img->width+1] = lower_splat;
+
+        img->data[(i+1)*2*img->width-2] = upper_splat;
+        img->data[(i+1)*2*img->width-1] = lower_splat;
+    }
+
+}
+
