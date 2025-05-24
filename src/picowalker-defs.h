@@ -195,8 +195,8 @@ void pw_accel_wake();
  */
 #define PW_BATTERY_STATUS_FLAGS_CHARGING    (1<<0)
 #define PW_BATTERY_STATUS_FLAGS_FAULT       (1<<1)
-#define PW_BATTERY_LOW_THRESHOLD            (10)
-#define PW_BATTERY_CRITICAL_THRESHOLD       (5)
+#define PW_BATTERY_LOW_THRESHOLD            (20)
+#define PW_BATTERY_CRITICAL_THRESHOLD       (10)
 
 typedef struct pw_battery_status_s {
     uint8_t  percent;
@@ -218,6 +218,7 @@ pw_battery_status_t pw_power_get_battery_status();
 void pw_power_enter_sleep();
 bool pw_power_should_sleep();
 pw_wake_reason_t pw_power_get_wake_reason();
+void pw_battery_shutdown();
 
 
 /*

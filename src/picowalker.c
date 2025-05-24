@@ -85,7 +85,7 @@ void walker_loop() {
         walker_timings.prev_accel_check = walker_timings.now;
         pw_accel_process_steps();
 
-        pw_power_get_battery_status();
+        (void)pw_power_process_battery();
     }
 
     // Run current state's event loop
@@ -118,6 +118,20 @@ void walker_loop() {
         STATE_FUNCS[current_state->sid].draw_update(current_state, &screen_flags);
         screen_flags.frame = (screen_flags.frame+1)%4;
         PW_CLR_REQUEST(current_state->requests, PW_REQUEST_REDRAW);
+
+        // Draw low battery 
+        if(power_context.show_battery_low_icon) {
+            if((screen_flags.frame/2) == 0) {
+                pw_screen_draw_from_eeprom(
+                    0, 0,
+                    8, 8,
+                    PW_EEPROM_ADDR_IMG_LOW_BATTERY,
+                    PW_EEPROM_SIZE_IMG_LOW_BATTERY
+                );
+            } else {
+                pw_screen_clear_area(0, 0, 8, 8);
+            }
+        }
     }
 
     pw_rtc_regular_processing();
@@ -154,25 +168,14 @@ void pw_sleep_loop() {
     if(wake_reason & PW_WAKE_REASON_RTC) {
         printf("[Debug] Wake because RTC\n");
         pw_rtc_regular_processing();
-        pw_battery_status_t bs = pw_power_get_battery_status();
-        printf("[Debug] RTC wake checked battery: %d%%, 0x%02x\n", bs.percent, bs.flags);
-
-        // TODO: Move this into its own function in `power.c`
-        if(bs.flags & PW_BATTERY_STATUS_FLAGS_FAULT || bs.percent < PW_BATTERY_CRITICAL_THRESHOLD) {
-            // TODO: stop the whole system to prevent battery from going bad
-            printf("[Warn] Battery faulted or is critically low\n");
-        }
+        uint8_t battery_level = pw_power_process_battery();
+        printf("[Debug] RTC wake checked battery: %d%%\n", battery_level);
     }
 
     if(wake_reason & PW_WAKE_REASON_BATTERY) {
-        pw_battery_status_t bs = pw_power_get_battery_status();
-        printf("[Debug] Wake because battery: %d%%, 0x%02x\n", bs.percent, bs.flags);
+        printf("[Debug] Wake because battery\n");
+        (void)pw_power_process_battery();
         
-        // TODO: Move this into its own function in `power.c`
-        if(bs.flags & PW_BATTERY_STATUS_FLAGS_FAULT || bs.percent < PW_BATTERY_CRITICAL_THRESHOLD) {
-            // TODO: stop the whole system to prevent battery from going bad
-            printf("[Warn] Battery faulted or is critically low\n");
-        }
     }
 
     if(wake_reason & PW_WAKE_REASON_ACCEL) {
