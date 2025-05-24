@@ -39,6 +39,25 @@ size_t pw_screen_draw_integer(uint32_t n, size_t right_x, size_t y) {
     return x;
 }
 
+
+size_t pw_screen_draw_integer_with_overline(uint32_t n, size_t right_x, size_t y, screen_colour_t c) {
+
+    size_t x = right_x;
+    uint32_t m = n;
+    do {
+        size_t idx = m%10;
+        m = m/10;
+        x -= 8;
+
+        pw_img_t img = {.width=8, .height=16, .data=eeprom_buf, .size=PW_EEPROM_SIZE_IMG_CHAR};
+        pw_eeprom_read(PW_EEPROM_ADDR_IMG_DIGITS+PW_EEPROM_SIZE_IMG_CHAR*idx, eeprom_buf, PW_EEPROM_SIZE_IMG_CHAR);
+        pw_screen_overlay_overline(&img, 8, c);
+        pw_screen_draw_img(&img, x, y);
+    } while(m>0);
+
+    return x;
+}
+
 void pw_screen_draw_time(uint8_t hour, uint8_t minute, uint8_t second, size_t x, size_t y) {
     pw_screen_draw_subtime(hour, x, y, true);
     x += 24;
@@ -143,5 +162,22 @@ void pw_screen_overlay_text_box(pw_img_t *img, screen_pos_t w, screen_pos_t h, s
         img->data[(i+1)*2*img->width-1] = lower_splat;
     }
 
+}
+
+void pw_screen_overlay_overline(pw_img_t *img, screen_pos_t w, screen_colour_t c) {
+    if(w > img->width) {
+        printf("[Error] Trying to draw a %d pixel line over a %dx%d image\n", w, img->width, img->height);
+        return;
+    }
+
+    uint8_t top_mask = ~(1);
+    uint8_t c_upper_top = (c&0x02)>>1;
+    uint8_t c_lower_top = (c&0x01)>>0;
+
+    for(size_t i = 0; i < w; i++) {
+        img->data[2*i+0] = (img->data[2*i+0] & top_mask) | c_upper_top;
+        img->data[2*i+1] = (img->data[2*i+1] & top_mask) | c_lower_top;
+    }
+    
 }
 
