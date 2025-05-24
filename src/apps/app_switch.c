@@ -157,6 +157,7 @@ void pw_switch_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b) 
     case BUTTON_L: {
         if(s->switches.cursor == 0) {
             s->switches.current_substate = SWITCHES_TO_SPLASH;
+            break;
         }
         s->switches.cursor = (s->switches.cursor-1+3)%3;
         break;
