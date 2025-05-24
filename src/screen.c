@@ -124,6 +124,52 @@ void pw_screen_draw_message(screen_pos_t y, uint8_t message_index, screen_pos_t 
     pw_screen_draw_img(&img, 0, y);
 }
 
+// always draws at x=0
+void pw_screen_draw_message_with_text_box(screen_pos_t y, uint8_t message_index, screen_pos_t h, screen_colour_t c) {
+    if(h != 16 && h != 32) {
+        return;    // can only do 16 or 32 height messages
+    }
+
+    eeprom_addr_t addr = PW_EEPROM_ADDR_TEXT_CONNECTING + message_index * PW_EEPROM_SIZE_TEXT_CONNECTING;
+    size_t sz = PW_EEPROM_SIZE_TEXT_CONNECTING*h/16;
+
+    pw_eeprom_read(addr, eeprom_buf, sz);
+
+    pw_img_t img = {
+        .width=SCREEN_WIDTH, .height=h,
+        .data=eeprom_buf,
+        .size=sz
+    };
+    pw_screen_overlay_text_box(&img, SCREEN_WIDTH, h, c);
+
+    pw_screen_draw_img(&img, 0, y);
+}
+
+void pw_screen_draw_pokemon_name_and_message(uint16_t poke_addr, uint16_t message_addr, screen_colour_t c) {
+    pw_img_t img = {.width=SCREEN_WIDTH, .height=32, .data=eeprom_buf, .size=2*PW_EEPROM_SIZE_TEXT_APPEARED};
+    pw_eeprom_read(
+        poke_addr,
+        img.data,
+        PW_EEPROM_SIZE_TEXT_POKEMON_NAME
+    );
+    pw_eeprom_read(
+        message_addr,
+        img.data + PW_EEPROM_SIZE_TEXT_APPEARED,
+        PW_EEPROM_SIZE_TEXT_APPEARED
+    );
+    for(int i = 1; i >= 0; i--) {
+        for(int j = 2*80 - 1; j >= 0; j--) {
+            img.data[i*2*SCREEN_WIDTH+j] = img.data[i*2*80 + j];
+        }
+        if(i > 0) {
+            memset(&img.data[i*2*80], 0, 2*(16));
+        }
+    }
+    memset(img.data+PW_EEPROM_SIZE_TEXT_POKEMON_NAME, 0, PW_EEPROM_SIZE_TEXT_ATTACKED - PW_EEPROM_SIZE_TEXT_POKEMON_NAME);
+    pw_screen_overlay_text_box(&img, SCREEN_WIDTH, 32, SCREEN_BLACK);
+    pw_screen_draw_img(&img, 0, SCREEN_HEIGHT-32);
+}
+
 void pw_screen_overlay_text_box(pw_img_t *img, screen_pos_t w, screen_pos_t h, screen_colour_t c) {
     // If dimensions are too small, extend source image.
     // TODO: this assumes there's enough space in the buffer. this is bad.
