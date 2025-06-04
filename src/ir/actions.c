@@ -785,6 +785,10 @@ void pw_ir_end_walk() {
 
     walker_info_cache = info;
 
+    health_data_cache.current_watts = 0;
+    health_data_cache.event_log_index = 0;
+    pw_eeprom_write_health_data(&health_data_cache);
+
     pw_eeprom_set_area(PW_EEPROM_ADDR_CAUGHT_POKEMON_SUMMARY, 0, 0x64);
     pw_eeprom_set_area(PW_EEPROM_ADDR_EVENT_LOG, 0, PW_EEPROM_SIZE_EVENT_LOG);
     pw_eeprom_set_area(PW_EEPROM_ADDR_RECEIVED_BITFIELD, 0, 0x6c8);
