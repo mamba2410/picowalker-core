@@ -22,11 +22,11 @@ void pw_rtc_regular_processing() {
     if(events & RTC_EVENT_EVERY_HOUR) {
         printf("[Debug] every hour\n");
         // idk why we do this
-        if(health_data_cache.total_steps < 9999999) {
-            if(health_data_cache.today_steps < 9999999) {
-                health_data_cache.today_steps += 1;
-            }
-        }
+        //if(health_data_cache.total_steps < 9999999) {
+        //    if(health_data_cache.today_steps < 9999999) {
+        //        health_data_cache.today_steps += 1;
+        //    }
+        //}
 
         health_data_cache.last_sync = pw_time_get_rtc();
         pw_eeprom_write_health_data(&health_data_cache);
