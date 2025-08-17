@@ -14,10 +14,16 @@ uint8_t pw_power_process_battery() {
         pw_battery_shutdown();
     }
 
+    if(bs.flags & PW_BATTERY_STATUS_FLAGS_TIMEOUT) {
+        printf("[Warn ] Battery measurement timed out\n");
+        return 0xff;
+    }
+
     if( (bs.percent < PW_BATTERY_CRITICAL_THRESHOLD) && !(bs.flags & PW_BATTERY_STATUS_FLAGS_CHARGING) ) {
         printf("[Error] Battery is too low, shutting down\n");
         pw_battery_shutdown();
     }
+
 
     // TODO: simplify logic
 
