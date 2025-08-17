@@ -44,6 +44,8 @@ void walker_setup() {
     pw_screen_init();
     pw_srand(0x12345678);
 
+    printf("[Info ] Peripherals initialised!\n");
+
     if(!pw_eeprom_check_for_nintendo()) {
         printf("No nintendo found!\n");
         pw_eeprom_reset(true, true);
@@ -72,6 +74,7 @@ void walker_setup() {
     STATE_FUNCS[current_state->sid].draw_init(current_state, &screen_flags);
 
     current_loop = walker_loop;
+    printf("[Info ] Setup done, starting loop\n");
 }
 
 
