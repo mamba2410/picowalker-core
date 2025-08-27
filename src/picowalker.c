@@ -78,17 +78,23 @@ void walker_setup() {
 }
 
 
+bool is_in_time_sensitive_state(pw_state_id_t state) {
+    return (state == STATE_COMMS || state == STATE_FIRST_COMMS);
+}
+
 void walker_loop() {
     uint64_t td;
 
-    // TODO: Things to do regardless of state (eg check steps, battery etc.)
-    walker_timings.now = pw_time_get_us();
-    td = (walker_timings.prev_accel_check>walker_timings.now)?(walker_timings.prev_accel_check-walker_timings.now):(walker_timings.now-walker_timings.prev_accel_check);
-    if(td > ACCEL_NORMAL_SAMPLE_TIME_US) {
-        walker_timings.prev_accel_check = walker_timings.now;
-        pw_accel_process_steps();
+    // Skip accel/battery checks if we can't afford to hang around
+    if(!is_in_time_sensitive_state(current_state->sid)) {
+        walker_timings.now = pw_time_get_us();
+        td = (walker_timings.prev_accel_check>walker_timings.now)?(walker_timings.prev_accel_check-walker_timings.now):(walker_timings.now-walker_timings.prev_accel_check);
+        if(td > ACCEL_NORMAL_SAMPLE_TIME_US) {
+            walker_timings.prev_accel_check = walker_timings.now;
+            pw_accel_process_steps();
 
-        (void)pw_power_process_battery();
+            (void)pw_power_process_battery();
+        }
     }
 
     // Run current state's event loop
@@ -208,6 +214,9 @@ void pw_sleep_loop() {
 
 void pw_state_handle_input(uint8_t b) {
     STATE_FUNCS[current_state->sid].input(current_state, &screen_flags, b);
+}
+
+void pw_ir_loop() {
 }
 
 
