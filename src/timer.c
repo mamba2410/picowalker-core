@@ -1,5 +1,7 @@
 #include <stdint.h>
 
+#include <stdio.h>
+
 #include "picowalker-defs.h"
 #include "eeprom.h"
 #include "eeprom_map.h"

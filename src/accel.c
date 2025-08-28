@@ -5,6 +5,8 @@
 #include "globals.h"
 #include "utils.h"
 
+#include "picowalker-defs.h"
+
 void pw_accel_process_steps() {
     uint32_t new_steps = pw_accel_get_new_steps();
     uint32_t watt_steps = new_steps + health_data_cache.steps_this_watt;

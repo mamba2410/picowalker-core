@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include <stdio.h>
+
 #include "picowalker.h"
 #include "picowalker-defs.h"
 #include "buttons.h"

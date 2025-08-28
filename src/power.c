@@ -2,6 +2,8 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+#include <stdio.h>
+
 #include "power.h"
 #include "picowalker-defs.h"
 
