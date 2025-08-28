@@ -268,6 +268,7 @@ void pw_screen_get_blank_image(pw_img_t *img, screen_pos_t w, screen_pos_t h) {
         img->width = w;
         img->height = h;
         img->size = w*h*2/8;
+        memset(img->data, 0, img->size);
     }
 }
 
@@ -368,7 +369,7 @@ static void overlay_img_unaligned(pw_img_t *base, pw_img_t *img, int8_t x, int8_
  * Overlay image `img` on top of the image `base`.
  *
  */
-void pw_screen_overlay_image(pw_img_t *base, pw_img_t *img, screen_pos_t x, screen_pos_t y) {
+void pw_screen_overlay_img(pw_img_t *base, pw_img_t *img, screen_pos_t x, screen_pos_t y) {
     // Dimension checks
     screen_pos_t visible_width = get_overlapping_dimension(img->width, base->width, x);
     screen_pos_t visible_height = get_overlapping_dimension(img->height, base->height, y);
