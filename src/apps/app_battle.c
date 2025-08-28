@@ -180,6 +180,8 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
              * if we evade and they "crit" then they flee
              * if we attack and they "crit" then we have a crit hit
              *
+             * We update HP as things happen because its easier to render that way.
+             *
              */
             if(our_action == ACTION_EVADE) {
                 switch(their_action) {
@@ -412,18 +414,11 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
             s->battle.substate_queue_index++;
             s->battle.anim_frame = 0;
             pw_battle_switch_substate(s, substate_queue[s->battle.substate_queue_index-1]);
-
         }
         break;
     }
     case BATTLE_POKEMON_CAUGHT: {
-        if(s->battle.anim_frame >= MESSAGE_DISPLAY_ANIM_LENGTH) {
-            /*
-             *  TODO:
-             *  - check if switch screen needed
-             *  - actually store pokemon caught
-             */
-        }
+        if(s->battle.anim_frame >= MESSAGE_DISPLAY_ANIM_LENGTH) { }
         break;
     }
     case BATTLE_PROCESS_CAUGHT_POKEMON: {
@@ -622,16 +617,6 @@ void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
             break;
         }
         case ACTION_SPECIAL: {
-            //pw_img_t img = {.width=SCREEN_WIDTH, .height=32, .data=eeprom_buf, .size=2*PW_EEPROM_SIZE_TEXT_CRITICAL_HIT};
-            //pw_eeprom_read(
-            //    PW_EEPROM_ADDR_TEXT_CRITICAL_HIT,
-            //    img.data,
-            //    PW_EEPROM_SIZE_TEXT_CRITICAL_HIT
-            //);
-            //memset(img.data+PW_EEPROM_SIZE_TEXT_CRITICAL_HIT, 0, PW_EEPROM_SIZE_TEXT_CRITICAL_HIT);
-            //pw_screen_overlay_text_box(&img, SCREEN_WIDTH, 32, SCREEN_BLACK);
-            //pw_screen_draw_img(&img, 0, SCREEN_HEIGHT-32);
-
             pw_screen_clear_area(0, SCREEN_HEIGHT-32, SCREEN_WIDTH, 16);
             pw_screen_draw_message_with_text_box(SCREEN_HEIGHT-16, 37, 16, SCREEN_BLACK); // "critical hit"
             break;
@@ -809,8 +794,6 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
         battle_draw_hp_bars(&battle_buffer, s);
 
         pw_screen_draw_img(&battle_buffer, 0, 0);
-        //pw_screen_draw_img(&their_sprite, 8, 0);
-        //pw_screen_draw_img(&our_sprite, SCREEN_WIDTH/2+8, 8);
         break;
     }
     case BATTLE_CHOOSING: {
@@ -819,41 +802,23 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
         battle_draw_hp_bars(&battle_buffer, s);
 
         pw_screen_draw_img(&battle_buffer, 0, 0);
-        //pw_screen_draw_img(&their_sprite, 8, 0);
-        //pw_screen_draw_img(&our_sprite, SCREEN_WIDTH/2+8, 8);
         break;
     }
     case BATTLE_OUR_ACTION: {
         uint8_t our_action = (s->battle.actions&OUR_ACTION_MASK)>>OUR_ACTION_OFFSET;
         uint8_t their_action = (s->battle.actions&THEIR_ACTION_MASK)>>THEIR_ACTION_OFFSET;
 
-        //pw_screen_clear_area(0, 0, SCREEN_WIDTH/2+8, 24); // clear artefacts
-        //pw_screen_clear_area(SCREEN_WIDTH/2-8, 8, SCREEN_WIDTH/2+8, 24);
-        //pw_screen_draw_img(&our_sprite, OUR_ATTACK_XS[0][s->battle.anim_frame], 8);
-        //pw_screen_draw_img(&their_sprite, OUR_ATTACK_XS[1][s->battle.anim_frame], 0);
         pw_screen_overlay_img(&battle_buffer, &our_sprite, OUR_ATTACK_XS[0][s->battle.anim_frame], 8);
         pw_screen_overlay_img(&battle_buffer, &their_sprite, OUR_ATTACK_XS[1][s->battle.anim_frame], 0);
         battle_draw_hp_bars(&battle_buffer, s);
 
         if(s->battle.anim_frame == (ATTACK_ANIM_LENGTH+1)/2) {
             if(their_action == ACTION_SPECIAL) {
-                //pw_screen_draw_from_eeprom(
-                //    (SCREEN_WIDTH-16)/2, 0,
-                //    16, 32,
-                //    PW_EEPROM_ADDR_IMG_RADAR_CRITICAL_HIT,
-                //    PW_EEPROM_SIZE_IMG_RADAR_CRITICAL_HIT
-                //);
                 pw_img_t crit_hit = {.width = 16, .height = 32, .data=decompression_buf, .size=PW_EEPROM_SIZE_IMG_RADAR_CRITICAL_HIT};
                 pw_eeprom_read(PW_EEPROM_ADDR_IMG_RADAR_CRITICAL_HIT, crit_hit.data, PW_EEPROM_SIZE_IMG_RADAR_CRITICAL_HIT);
                 pw_screen_overlay_img(&battle_buffer, &crit_hit, (SCREEN_WIDTH-16)/2, 0);
 
             } else if(their_action != ACTION_EVADE) {
-                //pw_screen_draw_from_eeprom(
-                //    (SCREEN_WIDTH-16)/2, 0,
-                //    16, 32,
-                //    PW_EEPROM_ADDR_IMG_RADAR_ATTACK_HIT,
-                //    PW_EEPROM_SIZE_IMG_RADAR_ATTACK_HIT
-                //);
                 pw_img_t normal_hit = {.width = 16, .height = 32, .data=decompression_buf, .size=PW_EEPROM_SIZE_IMG_RADAR_ATTACK_HIT};
                 pw_eeprom_read(PW_EEPROM_ADDR_IMG_RADAR_ATTACK_HIT, normal_hit.data, PW_EEPROM_SIZE_IMG_RADAR_ATTACK_HIT);
                 pw_screen_overlay_img(&battle_buffer, &normal_hit, (SCREEN_WIDTH-16)/2, 0);
@@ -869,30 +834,16 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
         uint8_t our_action = (s->battle.actions&OUR_ACTION_MASK)>>OUR_ACTION_OFFSET;
         uint8_t their_action = (s->battle.actions&THEIR_ACTION_MASK)>>THEIR_ACTION_OFFSET;
 
-        //pw_screen_clear_area(0, 0, SCREEN_WIDTH/2+8, 24); // clear artefacts
-        //pw_screen_clear_area(SCREEN_WIDTH/2-8, 8, SCREEN_WIDTH/2+8, 24);
-        //pw_screen_draw_img(&our_sprite,   THEIR_ATTACK_XS[0][s->battle.anim_frame], 8);
-        //pw_screen_draw_img(&their_sprite, THEIR_ATTACK_XS[1][s->battle.anim_frame], 0);
         pw_screen_overlay_img(&battle_buffer, &our_sprite, THEIR_ATTACK_XS[0][s->battle.anim_frame], 8);
         pw_screen_overlay_img(&battle_buffer, &their_sprite, THEIR_ATTACK_XS[1][s->battle.anim_frame], 0);
         battle_draw_hp_bars(&battle_buffer, s);
 
         if(s->battle.anim_frame == (ATTACK_ANIM_LENGTH+1)/2) {
             if(our_action != ACTION_EVADE) {
-                //pw_screen_draw_from_eeprom(
-                //    (SCREEN_WIDTH-16)/2, 0,
-                //    16, 32,
-                //    PW_EEPROM_ADDR_IMG_RADAR_ATTACK_HIT,
-                //    PW_EEPROM_SIZE_IMG_RADAR_ATTACK_HIT
-                //);
                 pw_img_t normal_hit = {.width = 16, .height = 32, .data=decompression_buf, .size=PW_EEPROM_SIZE_IMG_RADAR_ATTACK_HIT};
                 pw_eeprom_read(PW_EEPROM_ADDR_IMG_RADAR_ATTACK_HIT, normal_hit.data, PW_EEPROM_SIZE_IMG_RADAR_ATTACK_HIT);
                 pw_screen_overlay_img(&battle_buffer, &normal_hit, (SCREEN_WIDTH-16)/2, 0);
             }
-
-            //uint8_t hp = (s->battle.current_hp&OUR_HP_MASK)>>OUR_HP_OFFSET;
-            //pw_screen_clear_area(SCREEN_WIDTH/2+8*(hp+1), 0, 8*(4-hp), 8);
-
         }
 
         pw_screen_draw_img(&battle_buffer, 0, 0);
@@ -907,8 +858,6 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
         break;
     }
     case BATTLE_STAREDOWN: {
-        //pw_screen_draw_img(&our_sprite,   THEIR_ATTACK_XS[0][0], 8);
-        //pw_screen_draw_img(&their_sprite, THEIR_ATTACK_XS[1][0], 0);
         pw_screen_overlay_img(&battle_buffer, &our_sprite, THEIR_ATTACK_XS[0][0], 8);
         pw_screen_overlay_img(&battle_buffer, &their_sprite, THEIR_ATTACK_XS[1][0], 0);
         battle_draw_hp_bars(&battle_buffer, s);
@@ -917,24 +866,13 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
         break;
     }
     case BATTLE_THREW_BALL: {
-        //if(s->battle.anim_frame > 0) {
-        //    pw_screen_clear_area(
-        //        POKEBALL_THROW_XS[s->battle.anim_frame-1], POKEBALL_THROW_YS[s->battle.anim_frame-1],
-        //        8, 8
-        //    );
-        //}
-        //pw_screen_draw_from_eeprom(
-        //    POKEBALL_THROW_XS[s->battle.anim_frame], POKEBALL_THROW_YS[s->battle.anim_frame],
-        //    8, 8,
-        //    PW_EEPROM_ADDR_IMG_BALL,
-        //    PW_EEPROM_SIZE_IMG_BALL
-        //);
         pw_screen_overlay_img(&battle_buffer, &our_sprite, THEIR_ATTACK_XS[0][0], 8);
         pw_screen_overlay_img(&battle_buffer, &their_sprite, THEIR_ATTACK_XS[1][0], 0);
 
         pw_img_t ball = {.width=8, .height=8, .size=16, .data=decompression_buf};
         pw_eeprom_read(PW_EEPROM_ADDR_IMG_BALL, ball.data, PW_EEPROM_SIZE_IMG_BALL);
         pw_screen_overlay_img(&battle_buffer, &ball, POKEBALL_THROW_XS[s->battle.anim_frame], POKEBALL_THROW_YS[s->battle.anim_frame]);
+
         pw_screen_draw_img(&battle_buffer, 0, 0);
         s->battle.anim_frame++;
         break;
@@ -968,24 +906,18 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
 
         pw_screen_overlay_img(&battle_buffer, &our_sprite, THEIR_ATTACK_XS[0][0], 8);
 
-        //pw_screen_clear_area(left, 16, right-left+8, 8);
-        //pw_screen_draw_from_eeprom(
-        //    x, 16,
-        //    8, 8,
-        //    PW_EEPROM_ADDR_IMG_BALL,
-        //    PW_EEPROM_SIZE_IMG_BALL
-        //);
         pw_img_t ball = {.width=8, .height=8, .size=16, .data=decompression_buf};
         pw_eeprom_read(PW_EEPROM_ADDR_IMG_BALL, ball.data, PW_EEPROM_SIZE_IMG_BALL);
         pw_screen_overlay_img(&battle_buffer, &ball, x, 16);
+
         pw_screen_draw_img(&battle_buffer, 0, 0);
         s->battle.anim_frame++;
         break;
     }
     case BATTLE_ALMOST_HAD_IT: {
-        //pw_screen_draw_img(&their_sprite, THEIR_NORMAL_X, THEIR_NORMAL_Y);
         pw_screen_overlay_img(&battle_buffer, &our_sprite, THEIR_ATTACK_XS[0][0], 8);
         pw_screen_overlay_img(&battle_buffer, &their_sprite, THEIR_ATTACK_XS[0][0], 8);
+
         pw_screen_draw_img(&battle_buffer, 0, 0);
         s->battle.anim_frame++;
         break;
@@ -1000,12 +932,7 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
         pw_img_t ball = {.width=8, .height=8, .size=16, .data=decompression_buf};
         pw_eeprom_read(PW_EEPROM_ADDR_IMG_BALL, ball.data, PW_EEPROM_SIZE_IMG_BALL);
         pw_screen_overlay_img(&battle_buffer, &ball, THEIR_NORMAL_X+8, 16);
-        //pw_screen_draw_from_eeprom(
-        //    THEIR_NORMAL_X, THEIR_NORMAL_Y+8-s->battle.anim_frame,
-        //    8, 8,
-        //    PW_EEPROM_ADDR_IMG_RADAR_CATCH_EFFECT,
-        //    PW_EEPROM_SIZE_IMG_RADAR_CATCH_EFFECT
-        //);
+
         pw_screen_draw_img(&battle_buffer, 0, 0);
         s->battle.anim_frame++;
         break;
