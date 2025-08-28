@@ -138,7 +138,7 @@ void pw_eeprom_reset(bool clear_events, bool clear_steps) {
         pw_eeprom_set_area(0xce80, 0, 0xd4c);
     } else {
         pw_eeprom_set_area(PW_EEPROM_ADDR_CAUGHT_POKEMON_SUMMARY, 0, 0x64);
-        pw_eeprom_set_area(PW_EEPROM_ADDR_EVENT_LOG, 0, PW_EEPROM_SIZE_EVENT_LOG);
+        pw_eeprom_set_area(PW_EEPROM_ADDR_EVENT_LOG, 0xff, PW_EEPROM_SIZE_EVENT_LOG);
         pw_eeprom_set_area(PW_EEPROM_ADDR_HISTORIC_STEP_COUNT, 0, PW_EEPROM_SIZE_HISTORIC_STEP_COUNT);
     }
 
