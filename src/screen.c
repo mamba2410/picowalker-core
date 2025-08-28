@@ -2,6 +2,8 @@
 #include <string.h>
 #include <stdbool.h>
 
+#include <stdio.h>
+
 #include "screen.h"
 #include "eeprom.h"
 #include "eeprom_map.h"
@@ -284,6 +286,85 @@ static screen_pos_t get_overlapping_dimension(screen_pos_t img, screen_pos_t bas
 }
 
 
+/**
+ * Specifically for images with y offset aligned to 8 bytes
+ */
+static void overlay_img_aligned(pw_img_t *base, pw_img_t *img, int8_t x, int8_t y, screen_pos_t visible_width, screen_pos_t visible_height) {
+
+    // Split y
+    uint8_t chunk_spans = visible_height / 8;
+    uint8_t x_read_offset = (x < 0) ? -2*x : 0; // Ignore first -2x bytes if its off the screen in the left x direction
+    size_t base_write_offset = (base->width*y/8 + (x<0?0:x)) * 2;
+
+    // Things this does not do:
+    // - Images overlapping the edge of the screen in the y direction
+
+    // This method should Just Work(TM) with 8-aligned and misaligned y-offsets
+    for(size_t chunk = 0; chunk < chunk_spans; chunk++) {
+        for(size_t b = 0; b < 2*visible_width; b++) {
+            uint8_t adjusted_byte = img->data[2*img->width*chunk + x_read_offset + b];
+            base->data[2*base->width*chunk + base_write_offset + b] = adjusted_byte;
+        }
+    }
+}
+
+
+/**
+ * Specifically for images with y offset aligned to 8 bytes
+ */
+static void overlay_img_unaligned(pw_img_t *base, pw_img_t *img, int8_t x, int8_t y, screen_pos_t visible_width, screen_pos_t visible_height) {
+
+    // Split y
+    uint8_t chunk_spans = (visible_height / 8) + ((y + base->height)%8 + (8-1))/8;
+    uint8_t y_shift = (y + base->height)%8;
+    uint8_t top_shift = (y_shift > 0) ? 8-y_shift : 0;
+    int8_t x_read_offset = (x < 0) ? -2*x : 0; // Ignore first -2x bytes if its off the screen in the left x direction
+    size_t base_write_offset = (base->width*(y/8) + (x<0?0:x)) * 2;
+
+    // Things this does not do:
+    // - Images overlapping the edge of the screen in the y direction
+
+
+    // This method should Just Work(TM) with 8-aligned and misaligned y-offsets
+    size_t chunk = 0;
+
+    // First chunk, top is zeros, bottom is top of current chunk
+    for(size_t b = 0; b < 2*visible_width; b++) {
+        uint8_t top_byte = 0;
+        uint8_t bot_byte = img->data[2*img->width*(chunk+0) + x_read_offset + b];
+
+        uint8_t adjusted_byte = (top_byte >> top_shift) | (bot_byte << y_shift);
+        base->data[2*base->width*chunk + base_write_offset + b] = adjusted_byte;
+    }
+    chunk++;
+
+    // Middle chunks, top is bottom of previous chunk, bottom is top of current chunk
+    for(; chunk < chunk_spans-1; chunk++) {
+        for(size_t b = 0; b < 2*visible_width; b++) {
+            uint8_t top_byte = img->data[2*img->width*(chunk-1) + x_read_offset + b];
+            uint8_t bot_byte = img->data[2*img->width*(chunk+0) + x_read_offset + b];
+
+            uint8_t adjusted_byte = (top_byte >> top_shift) | (bot_byte << y_shift);
+            base->data[2*base->width*chunk + base_write_offset + b] = adjusted_byte;
+        }
+    }
+
+    // Final chunk, top is bottom of last chunk, bottom is zeros
+    for(size_t b = 0; b < 2*visible_width; b++) {
+        uint8_t top_byte = img->data[2*img->width*(chunk-1) + x_read_offset + b];
+        uint8_t bot_byte = 0;
+
+        uint8_t adjusted_byte = (top_byte >> top_shift) | (bot_byte << y_shift);
+        base->data[2*base->width*chunk +  base_write_offset + b] = adjusted_byte;
+    }
+    chunk++;
+}
+
+
+/**
+ * Overlay image `img` on top of the image `base`.
+ *
+ */
 void pw_screen_overlay_image(pw_img_t *base, pw_img_t *img, screen_pos_t x, screen_pos_t y) {
     // Dimension checks
     screen_pos_t visible_width = get_overlapping_dimension(img->width, base->width, x);
@@ -300,49 +381,11 @@ void pw_screen_overlay_image(pw_img_t *base, pw_img_t *img, screen_pos_t x, scre
     // Now we know that i + visible_width <= base->height for all 0 <= i <= x. Same for y.
     // This means we can stop worrying about OOB reads/writes.
 
-    // Split y
-    uint8_t chunk_spans = (visible_height / 8) + ((y + base->height)%8)/8;
-    uint8_t y_shift = (y + base->height)%8;
-    uint8_t x_read_offset = (x < 0) ? -2*x : 0; // Ignore first -2x bytes if its off the screen in the left x direction
-    size_t base_write_offset = (base->width*y/8 + (x<0?0:x)) * 2;
-
-    // Things this does not do:
-    // - Images overlapping the edge of the screen in the y direction
-
-
-    // This method should Just Work(TM) with 8-aligned and misaligned y-offsets
-    size_t chunk = 0;
-
-    // First chunk, top is zeros, bottom is top of current chunk
-    for(size_t b = 0; b < visible_width; b++) {
-        uint8_t top_byte = 0;
-        uint8_t bot_byte = img->data[2*img->width*(chunk+0) + x_read_offset + b];
-
-        uint8_t adjusted_byte = (top_byte << (8-y_shift)) | (bot_byte >> y_shift);
-        base->data[2*base->width*chunk + base_write_offset + b] |= adjusted_byte;
+    if( (y%8) != 0) {
+        overlay_img_unaligned(base, img, x, y, visible_width, visible_height);
+    } else {
+        overlay_img_aligned(base, img, x, y, visible_width, visible_height);
     }
-    chunk++;
-
-    // Middle chunks, top is bottom of previous chunk, bottom is top of current chunk
-    for(; chunk < chunk_spans-1; chunk++) {
-        for(size_t b = 0; b < visible_width; b++) {
-            uint8_t top_byte = img->data[2*img->width*(chunk-1) + b];
-            uint8_t bot_byte = img->data[2*img->width*(chunk+0) + b];
-
-            uint8_t adjusted_byte = (top_byte << (8-y_shift)) | (bot_byte >> y_shift);
-            base->data[2*base->width*chunk + base_write_offset + b] |= adjusted_byte;
-        }
-    }
-
-    // Final chunk, top is bottom of last chunk, bottom is zeros
-    for(size_t b = 0; b < visible_width; b++) {
-        uint8_t top_byte = img->data[2*img->width*(chunk+0) + b];
-        uint8_t bot_byte = 0;
-
-        uint8_t adjusted_byte = (top_byte << (8-y_shift)) | (bot_byte >> y_shift);
-        base->data[2*base->width*chunk +  base_write_offset + b] |= adjusted_byte;
-    }
-    chunk++;
 
 }
 
