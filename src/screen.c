@@ -299,11 +299,11 @@ static void overlay_img_aligned(pw_img_t *base, pw_img_t *img, int8_t x, int8_t 
     // Things this does not do:
     // - Images overlapping the edge of the screen in the y direction
 
-    // This method should Just Work(TM) with 8-aligned and misaligned y-offsets
+    // 8-aligned is pretty simple as all chunks are treated equally
     for(size_t chunk = 0; chunk < chunk_spans; chunk++) {
         for(size_t b = 0; b < 2*visible_width; b++) {
             uint8_t adjusted_byte = img->data[2*img->width*chunk + x_read_offset + b];
-            base->data[2*base->width*chunk + base_write_offset + b] = adjusted_byte;
+            base->data[2*base->width*chunk + base_write_offset + b] |= adjusted_byte;
         }
     }
 }
@@ -325,7 +325,7 @@ static void overlay_img_unaligned(pw_img_t *base, pw_img_t *img, int8_t x, int8_
     // - Images overlapping the edge of the screen in the y direction
 
 
-    // This method should Just Work(TM) with 8-aligned and misaligned y-offsets
+    // Chunks need to be treated differently since one input chunk spans multiple output chunks
     size_t chunk = 0;
 
     // First chunk, top is zeros, bottom is top of current chunk
@@ -333,8 +333,9 @@ static void overlay_img_unaligned(pw_img_t *base, pw_img_t *img, int8_t x, int8_
         uint8_t top_byte = 0;
         uint8_t bot_byte = img->data[2*img->width*(chunk+0) + x_read_offset + b];
 
+        // LSB is top
         uint8_t adjusted_byte = (top_byte >> top_shift) | (bot_byte << y_shift);
-        base->data[2*base->width*chunk + base_write_offset + b] = adjusted_byte;
+        base->data[2*base->width*chunk + base_write_offset + b] |= adjusted_byte;
     }
     chunk++;
 
@@ -344,8 +345,9 @@ static void overlay_img_unaligned(pw_img_t *base, pw_img_t *img, int8_t x, int8_
             uint8_t top_byte = img->data[2*img->width*(chunk-1) + x_read_offset + b];
             uint8_t bot_byte = img->data[2*img->width*(chunk+0) + x_read_offset + b];
 
+            // LSB is top
             uint8_t adjusted_byte = (top_byte >> top_shift) | (bot_byte << y_shift);
-            base->data[2*base->width*chunk + base_write_offset + b] = adjusted_byte;
+            base->data[2*base->width*chunk + base_write_offset + b] |= adjusted_byte;
         }
     }
 
@@ -354,8 +356,9 @@ static void overlay_img_unaligned(pw_img_t *base, pw_img_t *img, int8_t x, int8_
         uint8_t top_byte = img->data[2*img->width*(chunk-1) + x_read_offset + b];
         uint8_t bot_byte = 0;
 
+        // LSB is top
         uint8_t adjusted_byte = (top_byte >> top_shift) | (bot_byte << y_shift);
-        base->data[2*base->width*chunk +  base_write_offset + b] = adjusted_byte;
+        base->data[2*base->width*chunk +  base_write_offset + b] |= adjusted_byte;
     }
     chunk++;
 }
