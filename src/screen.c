@@ -11,9 +11,6 @@
  *  Most of the heavy lifting is done by the driver code
  */
 
-// TODO: move to global buffers.h
-//static uint8_t *eeprom_buf = 0;
-
 void pw_screen_draw_from_eeprom(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint16_t addr, size_t len) {
     pw_img_t img = {.height=h, .width=w, .data=eeprom_buf, .size=len};
     pw_eeprom_read(addr, eeprom_buf, len);
@@ -254,5 +251,98 @@ void pw_screen_overlay_overline(pw_img_t *img, screen_pos_t w, screen_colour_t c
         img->data[2*i+1] = (img->data[2*i+1] & top_mask) | c_lower_top;
     }
     
+}
+
+
+void pw_screen_get_blank_image(pw_img_t *img, screen_pos_t w, screen_pos_t h) {
+    bool invalid = (w > SCREEN_WIDTH) || (h > SCREEN_HEIGHT) || (img == NULL);
+    if(invalid) {
+        img->data = NULL;
+        img->width = 0;
+        img->height = 0;
+        img->size = 0;
+    } else {
+        img->data = screen_buf;
+        img->width = w;
+        img->height = h;
+        img->size = w*h*2/8;
+    }
+}
+
+
+/*
+ * Gives the visible dimension (width/height) of a smaller image when overlapping with a larger one.
+ * Effectively the convolution of two unit top-hat functions of widths img and base.
+ */
+static screen_pos_t get_overlapping_dimension(screen_pos_t img, screen_pos_t base, int8_t pos) {
+    if(img > base) return 0;
+    if(pos < (int8_t)(-img)) return 0;
+    if(pos < 0) return img + pos;
+    if(pos <= base - img) return img;
+    if(pos < base) return base - pos;
+    return 0;
+}
+
+
+void pw_screen_overlay_image(pw_img_t *base, pw_img_t *img, screen_pos_t x, screen_pos_t y) {
+    // Dimension checks
+    screen_pos_t visible_width = get_overlapping_dimension(img->width, base->width, x);
+    screen_pos_t visible_height = get_overlapping_dimension(img->height, base->height, y);
+    if(visible_width == 0 || visible_height == 0) {
+        printf("[Error] Visible width/height of overlapping image is zero.");
+        return;
+    }
+
+    if(y < 0 || y > base->height - img->height) {
+        printf("[Error] Overlays which puts an image off the top or bottom edge of a screen are not supported\n");
+        return;
+    }
+    // Now we know that i + visible_width <= base->height for all 0 <= i <= x. Same for y.
+    // This means we can stop worrying about OOB reads/writes.
+
+    // Split y
+    uint8_t chunk_spans = (visible_height / 8) + ((y + base->height)%8)/8;
+    uint8_t y_shift = (y + base->height)%8;
+    uint8_t x_read_offset = (x < 0) ? -2*x : 0; // Ignore first -2x bytes if its off the screen in the left x direction
+    size_t base_write_offset = (base->width*y/8 + (x<0?0:x)) * 2;
+
+    // Things this does not do:
+    // - Images overlapping the edge of the screen in the y direction
+
+
+    // This method should Just Work(TM) with 8-aligned and misaligned y-offsets
+    size_t chunk = 0;
+
+    // First chunk, top is zeros, bottom is top of current chunk
+    for(size_t b = 0; b < visible_width; b++) {
+        uint8_t top_byte = 0;
+        uint8_t bot_byte = img->data[2*img->width*(chunk+0) + x_read_offset + b];
+
+        uint8_t adjusted_byte = (top_byte << (8-y_shift)) | (bot_byte >> y_shift);
+        base->data[2*base->width*chunk + base_write_offset + b] |= adjusted_byte;
+    }
+    chunk++;
+
+    // Middle chunks, top is bottom of previous chunk, bottom is top of current chunk
+    for(; chunk < chunk_spans-1; chunk++) {
+        for(size_t b = 0; b < visible_width; b++) {
+            uint8_t top_byte = img->data[2*img->width*(chunk-1) + b];
+            uint8_t bot_byte = img->data[2*img->width*(chunk+0) + b];
+
+            uint8_t adjusted_byte = (top_byte << (8-y_shift)) | (bot_byte >> y_shift);
+            base->data[2*base->width*chunk + base_write_offset + b] |= adjusted_byte;
+        }
+    }
+
+    // Final chunk, top is bottom of last chunk, bottom is zeros
+    for(size_t b = 0; b < visible_width; b++) {
+        uint8_t top_byte = img->data[2*img->width*(chunk+0) + b];
+        uint8_t bot_byte = 0;
+
+        uint8_t adjusted_byte = (top_byte << (8-y_shift)) | (bot_byte >> y_shift);
+        base->data[2*base->width*chunk +  base_write_offset + b] |= adjusted_byte;
+    }
+    chunk++;
+
 }
 
