@@ -128,6 +128,7 @@ void pw_battle_init(pw_state_t *s, const screen_flags_t *sf) {
     s->battle.anim_frame = 4;
     s->battle.current_hp = (4<<OUR_HP_OFFSET) | (4<<THEIR_HP_OFFSET);
     s->battle.wobbles = 0;
+    s->battle.update_hp = 0;
 }
 
 /**
@@ -183,7 +184,7 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
             if(our_action == ACTION_EVADE) {
                 switch(their_action) {
                 case ACTION_ATTACK: {
-                    their_hp -= 1;
+                    //their_hp -= 1;
                     substate_queue[0] = BATTLE_THEIR_ACTION;
                     substate_queue[1] = BATTLE_OUR_ACTION;
                     substate_queue[2] = BATTLE_CHOOSING;
@@ -206,21 +207,21 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
 
                 switch(their_action) {
                 case ACTION_ATTACK: {
-                    our_hp -= 1;
-                    their_hp -= 1;
+                    //our_hp -= 1;
+                    //their_hp -= 1;
                     s->battle.actions &= ~CHOICE_INDEX_MASK;
                     s->battle.actions |= 1<<CHOICE_INDEX_OFFSET; // taken from walker
                     break;
                 }
                 case ACTION_EVADE: {
-                    our_hp -= 1;
+                    //our_hp -= 1;
                     s->battle.actions &= ~CHOICE_INDEX_MASK;
                     s->battle.actions |= 3<<CHOICE_INDEX_OFFSET; // taken from walker
                     break;
                 }
                 case ACTION_SPECIAL: {
-                    our_hp -= 1;
-                    their_hp -= 2;
+                    //our_hp -= 1;
+                    //their_hp -= 2;
                     s->battle.actions &= ~CHOICE_INDEX_MASK;
                     s->battle.actions |= 2<<CHOICE_INDEX_OFFSET; // taken from walker
                     break;
@@ -229,6 +230,7 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
             }
 
             s->battle.current_hp = our_hp<<OUR_HP_OFFSET | their_hp<<THEIR_HP_OFFSET;
+            s->battle.update_hp = 0x03;
 
             pw_battle_switch_substate(s, substate_queue[s->battle.substate_queue_index-1]);
             s->battle.anim_frame = 0;
@@ -236,6 +238,24 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
         break;
     }
     case BATTLE_THEIR_ACTION: {
+        if(s->battle.anim_frame == (ATTACK_ANIM_LENGTH+1)/2 && s->battle.update_hp & 0x01) {
+            uint8_t our_action   = (s->battle.actions&OUR_ACTION_MASK)>>OUR_ACTION_OFFSET;
+            uint8_t their_action = (s->battle.actions&THEIR_ACTION_MASK)>>THEIR_ACTION_OFFSET;
+            uint8_t our_hp   = (s->battle.current_hp&OUR_HP_MASK)>>OUR_HP_OFFSET;
+            uint8_t their_hp = (s->battle.current_hp&THEIR_HP_MASK)>>THEIR_HP_OFFSET;
+
+            if(our_action != ACTION_EVADE) {
+                switch(their_action) {
+                    case ACTION_ATTACK: our_hp -= 1; break;
+                    case ACTION_SPECIAL: our_hp -= 1; break;
+                    case ACTION_EVADE: our_hp -= 1; break;
+                }
+            }
+
+            s->battle.update_hp &= ~0x01;
+            s->battle.current_hp = our_hp<<OUR_HP_OFFSET | their_hp<<THEIR_HP_OFFSET;
+        }
+
         if(s->battle.anim_frame == ATTACK_ANIM_LENGTH) {
             uint8_t our_hp = (s->battle.current_hp&OUR_HP_MASK)>>OUR_HP_OFFSET;
             if(our_hp == 0 || our_hp > 4) {
@@ -251,6 +271,27 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
         break;
     }
     case BATTLE_OUR_ACTION: {
+
+        // Update HP in sync with animation
+        if(s->battle.anim_frame == (ATTACK_ANIM_LENGTH+1)/2 && s->battle.update_hp & 0x02) {
+            uint8_t our_action   = (s->battle.actions&OUR_ACTION_MASK)>>OUR_ACTION_OFFSET;
+            uint8_t their_action = (s->battle.actions&THEIR_ACTION_MASK)>>THEIR_ACTION_OFFSET;
+            uint8_t our_hp   = (s->battle.current_hp&OUR_HP_MASK)>>OUR_HP_OFFSET;
+            uint8_t their_hp = (s->battle.current_hp&THEIR_HP_MASK)>>THEIR_HP_OFFSET;
+
+            if(our_action == ACTION_EVADE) {
+                if(their_action == ACTION_ATTACK) their_hp -= 1;
+            } else {
+                switch(their_action) {
+                    case ACTION_ATTACK: their_hp -= 1; break;
+                    case ACTION_SPECIAL: their_hp -= 2; break;
+                }
+            }
+
+            s->battle.update_hp &= ~0x02;
+            s->battle.current_hp = our_hp<<OUR_HP_OFFSET | their_hp<<THEIR_HP_OFFSET;
+        }
+
         if(s->battle.anim_frame == ATTACK_ANIM_LENGTH) {
             uint8_t their_hp = (s->battle.current_hp&THEIR_HP_MASK)>>THEIR_HP_OFFSET;
             if(their_hp == 0 || their_hp > 4) {
@@ -693,20 +734,34 @@ void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
 }
 
 
-void battle_draw_hp_bars(pw_img_t *battle_buffer, pw_state_t *s) {
-
+static void draw_our_hp_bar(pw_img_t *battle_buffer, uint8_t hp) {
     pw_img_t hp_sprite = {.width=8, .height=8, .data=decompression_buf, .size=PW_EEPROM_SIZE_IMG_RADAR_HP_BLIP};
     pw_eeprom_read(PW_EEPROM_ADDR_IMG_RADAR_HP_BLIP, hp_sprite.data, PW_EEPROM_SIZE_IMG_RADAR_HP_BLIP);
 
-    uint8_t their_hp = (s->battle.current_hp&THEIR_HP_MASK)>>THEIR_HP_OFFSET;
-    for(uint8_t i = 0; i < their_hp; i++) {
+    for(uint8_t i = 0; i < hp; i++) {
+        pw_screen_overlay_img(battle_buffer, &hp_sprite, SCREEN_WIDTH/2+8*(i+1), 0);
+    }
+
+}
+
+static void draw_their_hp_bar(pw_img_t *battle_buffer, uint8_t hp) {
+    pw_img_t hp_sprite = {.width=8, .height=8, .data=decompression_buf, .size=PW_EEPROM_SIZE_IMG_RADAR_HP_BLIP};
+    pw_eeprom_read(PW_EEPROM_ADDR_IMG_RADAR_HP_BLIP, hp_sprite.data, PW_EEPROM_SIZE_IMG_RADAR_HP_BLIP);
+
+    for(uint8_t i = 0; i < hp; i++) {
         pw_screen_overlay_img(battle_buffer, &hp_sprite, 8*(i+1), 24);
     }
 
+}
+
+void battle_draw_hp_bars(pw_img_t *battle_buffer, pw_state_t *s) {
+
+    uint8_t their_hp = (s->battle.current_hp&THEIR_HP_MASK)>>THEIR_HP_OFFSET;
+    draw_their_hp_bar(battle_buffer, their_hp);
+
     uint8_t our_hp = (s->battle.current_hp&OUR_HP_MASK)>>OUR_HP_OFFSET;
-    for(uint8_t i = 0; i < our_hp; i++) {
-        pw_screen_overlay_img(battle_buffer, &hp_sprite, SCREEN_WIDTH/2+8*(i+1), 0);
-    }
+    draw_our_hp_bar(battle_buffer, our_hp);
+
 }
 
 /*
