@@ -9,11 +9,16 @@
 
 #include "../states.h"
 #include "../screen.h"
+#include "../eeprom.h"
 #include "../eeprom_map.h"
 #include "../globals.h"
 #include "../buttons.h"
 #include "../rand.h"
 #include "../utils.h"
+#include "../types.h"
+#include "../event_log.h"
+
+#include "../picowalker-defs.h"
 
 /** @file apps/app_battle.c
  *
@@ -318,12 +323,23 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
     }
     case BATTLE_THEY_FLED: {
         if(s->battle.anim_frame >= MESSAGE_DISPLAY_ANIM_LENGTH) {
+            event_log_item_t *event_log = (event_log_item_t*)(decompression_buf);
+            route_info_t *route_info = (route_info_t*)(decompression_buf + sizeof(event_log_item_t));
+            pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO, (uint8_t*)route_info, sizeof(route_info_t));
+            // TODO: Read special route flag
+            pw_log_event(event_log, route_info, EVENT_TYPE_POKEMON_RAN, 0, false, s->battle.chosen_pokemon);
+
             p->sid = STATE_SPLASH;
         }
         break;
     }
     case BATTLE_WE_LOST: {
         if(s->battle.anim_frame >= MESSAGE_DISPLAY_ANIM_LENGTH) {
+            event_log_item_t *event_log = (event_log_item_t*)(decompression_buf);
+            route_info_t *route_info = (route_info_t*)(decompression_buf + sizeof(event_log_item_t));
+            pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO, (uint8_t*)route_info, sizeof(route_info_t));
+            // TODO: Read special route flag
+            pw_log_event(event_log, route_info, EVENT_TYPE_POKEMON_LOST, 0, false, 0);
             p->sid = STATE_SPLASH;
         }
         break;
@@ -413,6 +429,13 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
         if(s->battle.anim_frame >= MESSAGE_DISPLAY_ANIM_LENGTH) {
             s->battle.substate_queue_index++;
             s->battle.anim_frame = 0;
+
+            event_log_item_t *event_log = (event_log_item_t*)(decompression_buf);
+            route_info_t *route_info = (route_info_t*)(decompression_buf + sizeof(event_log_item_t));
+            pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO, (uint8_t*)route_info, sizeof(route_info_t));
+            // TODO: Read special route flag
+            pw_log_event(event_log, route_info, EVENT_TYPE_POKEMON_RAN, 0, false, s->battle.chosen_pokemon);
+
             pw_battle_switch_substate(s, substate_queue[s->battle.substate_queue_index-1]);
         }
         break;
@@ -423,8 +446,12 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
     }
     case BATTLE_PROCESS_CAUGHT_POKEMON: {
 
+
+        event_log_type_t event_log_type = EVENT_TYPE_EMPTY_ENTRY;
+
         if(s->battle.chosen_pokemon >= 3) {
             // event mon
+            event_log_type = EVENT_TYPE_SPECIAL_POKEMON_CAUGHT;
             pokemon_summary_t *caught_poke = (pokemon_summary_t*)eeprom_buf;
             pw_eeprom_read(
                 PW_EEPROM_ADDR_EVENT_POKEMON_BASIC_DATA,
@@ -490,6 +517,7 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
 
         } else {
             // normal mon
+            event_log_type = EVENT_TYPE_POKEMON_CAUGHT;
             pokemon_summary_t caught_pokes[3];
             pw_eeprom_read(
                 PW_EEPROM_ADDR_CAUGHT_POKEMON_SUMMARY,
@@ -507,7 +535,7 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
                 p->sid = STATE_SWITCHES;
                 p->switches.switch_type = SWITCH_TYPE_POKEMON;
                 p->switches.switch_id = s->battle.chosen_pokemon;
-                return;
+                //return;
             } else {
                 route_info_t ri;
                 pw_eeprom_read(
@@ -524,6 +552,16 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
                 p->sid = STATE_SPLASH;
             }
         }
+
+        // Log pokemon caught event
+        // TODO: Determine if we do this even if we're full (currently not)
+        event_log_item_t *event_log = (event_log_item_t*)(decompression_buf);
+        route_info_t *route_info = (route_info_t*)(decompression_buf + sizeof(event_log_item_t));
+        pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO, (uint8_t*)route_info, sizeof(route_info_t));
+
+
+        // TODO: Read special route flag
+        pw_log_event(event_log, route_info, EVENT_TYPE_SPECIAL_POKEMON_CAUGHT, 0, false, s->battle.chosen_pokemon);
         break;
     }
     case BATTLE_CATCH_STARS: {
@@ -986,7 +1024,8 @@ void pw_battle_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b) 
     }
     case BATTLE_THEY_FLED:
     case BATTLE_WE_LOST: {
-        s->battle.current_substate = BATTLE_GO_TO_SPLASH;
+        s->battle.anim_frame = 99; // Make sure to run things before leaving
+        //s->battle.current_substate = BATTLE_GO_TO_SPLASH;
         break;
     }
     default:
