@@ -2,20 +2,32 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#include <stdio.h>
+#include <string.h> // for memset
+
+#include "eeprom.h"
 #include "eeprom_map.h"
 #include "event_log.h"
 #include "globals.h"
 #include "types.h"
+#include "utils.h"
+
+#include "picowalker-defs.h"
 
 void pw_log_event(event_log_item_t *item, route_info_t *ri, event_log_type_t event_type, uint16_t extra, bool special_route, uint8_t pokemon_idx) {
     uint8_t next_idx = health_data_cache.event_log_index;
+
+    printf("[Debug] Writing event log for event 0x%02x at index %d...", event_type, next_idx);
 
 
     event_log_type_t stored_event_type = EVENT_TYPE_EMPTY_ENTRY;
     pw_eeprom_read(PW_EEPROM_ADDR_EVENT_LOG + next_idx*sizeof(event_log_item_t), (uint8_t*)(&stored_event_type), sizeof(event_log_type_t));
 
     // Only write "fell asleep" if there's no other event there
-    if((event_type == EVENT_TYPE_FELL_ASLEEP) && (stored_event_type != EVENT_TYPE_EMPTY_ENTRY)) return;
+    if((event_type == EVENT_TYPE_FELL_ASLEEP) && (stored_event_type != EVENT_TYPE_EMPTY_ENTRY)) {
+        printf(" aborted\n");
+        return;
+    }
 
     // Don't overwrite the "walk start" event
     if(stored_event_type == EVENT_TYPE_WALK_STARTED) {
@@ -62,19 +74,19 @@ void pw_log_event(event_log_item_t *item, route_info_t *ri, event_log_type_t eve
         }
         case 4: {
             if( (event_type == EVENT_TYPE_POKEMON_RAN) || (event_type == EVENT_TYPE_POKEMON_LOST) ) {
-                pw_eeprom_read(0xbf08, item->le_other_species, 2); // TODO: magnic number
+                pw_eeprom_read(0xbf08, (uint8_t*)&item->le_other_species, 2); // TODO: magnic number
 
             } else {
-                pw_eeprom_read(0xba44, item->le_other_species, 2); // TODO: magnic number
+                pw_eeprom_read(0xba44, (uint8_t*)&item->le_other_species, 2); // TODO: magnic number
             }
-            pw_eeprom_read(0xbf0d, item->other_pokemon_flags, 1); // TODO: magic number 
+            pw_eeprom_read(0xbf0d, (uint8_t*)&item->other_pokemon_flags, 1); // TODO: magic number 
                                                                   // TODO: flag shenanegans
             break;
         }
         default: break;
     }
 
-    printf("[Debug] Writing event log for event 0x%02x at index %d\n", event_type, next_idx);
+    printf(" complete\n");
     pw_eeprom_write(PW_EEPROM_ADDR_EVENT_LOG + next_idx*sizeof(event_log_item_t), (uint8_t*)item, sizeof(event_log_item_t));
     health_data_cache.event_log_index = (next_idx+1)%EVENT_LOG_COUNT;
     pw_eeprom_write_health_data(&health_data_cache);
