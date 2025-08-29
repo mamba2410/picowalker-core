@@ -954,7 +954,7 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
     }
     case BATTLE_ALMOST_HAD_IT: {
         pw_screen_overlay_img(&battle_buffer, &our_sprite, THEIR_ATTACK_XS[0][0], 8);
-        pw_screen_overlay_img(&battle_buffer, &their_sprite, THEIR_ATTACK_XS[0][0], 8);
+        pw_screen_overlay_img(&battle_buffer, &their_sprite, THEIR_ATTACK_XS[1][0], 8);
 
         pw_screen_draw_img(&battle_buffer, 0, 0);
         s->battle.anim_frame++;
