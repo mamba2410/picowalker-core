@@ -11,6 +11,7 @@
 #include "../types.h"
 #include "../globals.h"
 #include "app_switch.h"
+#include "../event_log.h"
 
 /** @file app_dowsing.c
  *
@@ -469,6 +470,13 @@ void pw_dowsing_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *s
             s->dowsing.current_substate = DOWSING_AWAIT_INPUT;
             s->dowsing.next_substate = DOWSING_QUITTING;
         }
+
+        event_log_item_t *event_log = (event_log_item_t*)(decompression_buf);
+        route_info_t *route_info = (route_info_t*)(decompression_buf + sizeof(event_log_item_t));
+        pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO, (uint8_t*)route_info, sizeof(route_info_t));
+        // TODO: Read special route flag
+        pw_log_event(event_log, route_info, EVENT_TYPE_ITEM_DOWSED, s->dowsing.chosen_item, false, 0);
+
         break;
     }
     case DOWSING_REVEAL_ITEM: {
