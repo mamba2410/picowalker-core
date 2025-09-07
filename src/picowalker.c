@@ -145,7 +145,12 @@ void walker_loop() {
         }
     }
 
-    pw_rtc_regular_processing();
+    // TODO: Make this a dedicated RTC poll rather than relying on the sleep infrastructure
+    pw_wake_reason_t wake_reason = pw_power_get_wake_reason();
+    if(wake_reason & PW_WAKE_REASON_RTC) {
+        pw_power_clear_wake_reason(PW_WAKE_REASON_RTC);
+        pw_rtc_regular_processing();
+    }
 
     // Check if we should sleep
     if(pw_power_should_sleep()) {
