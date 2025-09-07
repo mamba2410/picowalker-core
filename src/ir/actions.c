@@ -929,10 +929,12 @@ void pw_ir_start_walk() {
     // TODO: Remove this
     // testing more log items
 
+    /*
     pw_log_event(event_item, route_info, EVENT_TYPE_POKEMON_CAUGHT, 0, false, 1);
     pw_log_event(event_item, route_info, EVENT_TYPE_MOOD_HAPPY, 0, false, 0);
     pw_log_event(event_item, route_info, EVENT_TYPE_ITEM_DOWSED, 51, false, 0); // 51 = PP up
     pw_log_event(event_item, route_info, EVENT_TYPE_POKEMON_RAN, route_info->route_pokemon[0].le_species, false, 2);
+    */
 
 
     free(event_item);
