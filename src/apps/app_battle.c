@@ -327,7 +327,7 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
             route_info_t *route_info = (route_info_t*)(decompression_buf + sizeof(event_log_item_t));
             pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO, (uint8_t*)route_info, sizeof(route_info_t));
             // TODO: Read special route flag
-            pw_log_event(event_log, route_info, EVENT_TYPE_POKEMON_RAN, 0, false, s->battle.chosen_pokemon);
+            pw_log_event(event_log, route_info, EVENT_TYPE_POKEMON_RAN, 0, false, s->battle.chosen_pokemon+1);
 
             p->sid = STATE_SPLASH;
         }
@@ -434,7 +434,7 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
             route_info_t *route_info = (route_info_t*)(decompression_buf + sizeof(event_log_item_t));
             pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO, (uint8_t*)route_info, sizeof(route_info_t));
             // TODO: Read special route flag
-            pw_log_event(event_log, route_info, EVENT_TYPE_POKEMON_RAN, 0, false, s->battle.chosen_pokemon);
+            pw_log_event(event_log, route_info, EVENT_TYPE_POKEMON_RAN, 0, false, s->battle.chosen_pokemon+1);
 
             pw_battle_switch_substate(s, substate_queue[s->battle.substate_queue_index-1]);
         }
@@ -561,7 +561,7 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
 
 
         // TODO: Read special route flag
-        pw_log_event(event_log, route_info, EVENT_TYPE_SPECIAL_POKEMON_CAUGHT, 0, false, s->battle.chosen_pokemon);
+        pw_log_event(event_log, route_info, EVENT_TYPE_SPECIAL_POKEMON_CAUGHT, 0, false, s->battle.chosen_pokemon+1);
         break;
     }
     case BATTLE_CATCH_STARS: {
