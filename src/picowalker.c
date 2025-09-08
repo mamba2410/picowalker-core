@@ -93,6 +93,7 @@ void walker_loop() {
     uint64_t td;
 
     // Skip accel/battery checks if we can't afford to hang around
+    /*
     if(!is_in_time_sensitive_state(current_state->sid)) {
         walker_timings.now = pw_time_get_us();
         td = (walker_timings.prev_accel_check>walker_timings.now)?(walker_timings.prev_accel_check-walker_timings.now):(walker_timings.now-walker_timings.prev_accel_check);
@@ -103,6 +104,7 @@ void walker_loop() {
             (void)pw_power_process_battery();
         }
     }
+    */
 
     // Run current state's event loop
     STATE_FUNCS[current_state->sid].loop(current_state, pending_state, &screen_flags);
@@ -155,6 +157,12 @@ void walker_loop() {
     if(wake_reason & PW_WAKE_REASON_RTC) {
         pw_power_clear_wake_reason(PW_WAKE_REASON_RTC);
         pw_rtc_regular_processing();
+        pw_accel_process_steps();
+        pw_power_start_battery_measurement();
+    }
+
+    if(pw_power_battery_measurement_available()) {
+        (void)pw_power_process_battery();
     }
 
     // Check if we should sleep
@@ -189,6 +197,8 @@ void pw_sleep_loop() {
     if(wake_reason & PW_WAKE_REASON_RTC) {
         printf("[Debug] Wake because RTC\n");
         pw_rtc_regular_processing();
+        pw_power_start_battery_measurement();
+        while(!pw_power_battery_measurement_available());
         uint8_t battery_level = pw_power_process_battery();
         printf("[Debug] RTC wake checked battery: %d%%\n", battery_level);
     }

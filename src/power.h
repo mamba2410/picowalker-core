@@ -21,7 +21,9 @@ typedef struct pw_power_context_s {
 
 extern volatile pw_power_context_t power_context;
 
-uint8_t pw_power_process_battery();
+extern uint8_t pw_power_process_battery();
+extern void pw_power_start_battery_measurement();
+extern bool pw_power_battery_measurement_available();
 
 #endif /* PW_POWER_H */
 
