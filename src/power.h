@@ -6,7 +6,8 @@
 #include <stdbool.h>
 
 // 10 seconds for debug testing
-#define PW_POWER_SLEEP_TIMEOUT_MS   (10000)
+//#define PW_POWER_SLEEP_TIMEOUT_MS   (10000)
+#define PW_POWER_SLEEP_TIMEOUT_MS   (30000) // 30 s
 
 /**
  *  Power context of the Pokewalker.

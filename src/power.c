@@ -9,6 +9,9 @@
 
 volatile pw_power_context_t power_context = { };
 
+void walker_loop();
+extern void (*current_loop)(void);
+
 uint8_t pw_power_process_battery() {
     pw_battery_status_t bs = pw_power_get_battery_status();
     if(bs.flags & PW_BATTERY_STATUS_FLAGS_FAULT) {
@@ -41,5 +44,10 @@ uint8_t pw_power_process_battery() {
     }
 
     return bs.percent;
+}
+
+
+int pw_power_get_mode() {
+    return (current_loop == walker_loop)? 0: 1;
 }
 

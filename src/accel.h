@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 
+//#define ACCEL_NORMAL_SAMPLE_TIME_US     5000000 // 5s
 //#define ACCEL_NORMAL_SAMPLE_TIME_US     15000000 // 15s
 #define ACCEL_NORMAL_SAMPLE_TIME_US     30000000 // 30s
 #define TOTAL_STEPS_MAX                 9999999
