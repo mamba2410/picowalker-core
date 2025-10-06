@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include "picowalker-defs.h"
+#include "accel.h"
 #include "eeprom.h"
 #include "eeprom_map.h"
 #include "globals.h"
@@ -47,6 +48,8 @@ void pw_rtc_regular_processing() {
     if(events & RTC_EVENT_EVERY_DAY) {
         printf("[Debug] every day\n");
         health_data_cache.total_days += 1;
+
+        pw_accel_process_steps();
 
         pw_eeprom_write_health_data(&health_data_cache);
 
