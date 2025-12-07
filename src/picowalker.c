@@ -106,6 +106,9 @@ void walker_loop() {
     }
     */
 
+    // Update power management
+    pw_power_update();
+
     // Run current state's event loop
     STATE_FUNCS[current_state->sid].loop(current_state, pending_state, &screen_flags);
 
@@ -158,13 +161,6 @@ void walker_loop() {
         pw_power_clear_wake_reason(PW_WAKE_REASON_RTC);
         pw_rtc_regular_processing();
         pw_accel_process_steps();
-        if(!is_in_time_sensitive_state(current_state->sid)) {
-            pw_power_start_battery_measurement();
-        }
-    }
-
-    if(pw_power_battery_measurement_available()) {
-        (void)pw_power_process_battery();
     }
 
     // Check if we should sleep
@@ -199,19 +195,23 @@ void pw_sleep_loop() {
     if(wake_reason & PW_WAKE_REASON_RTC) {
         printf("[Debug] Wake because RTC\n");
         pw_rtc_regular_processing();
-        pw_power_start_battery_measurement();
+        pw_power_start_measurement();
+        power_context.last_bat_check = pw_now_us();
         // Wait until its finished
         // TODO: Figure out how to go to sleep until its done
-        while(!pw_power_battery_measurement_available());
-        uint8_t battery_level = pw_power_process_battery();
-        printf("[Debug] RTC wake checked battery: %d%%\n", battery_level);
+        while(!pw_power_result_available());
+        pw_power_update();
+        //uint8_t battery_level = pw_power_process_battery();
+        //printf("[Debug] RTC wake checked battery: %d%%\n", battery_level);
     }
 
     if(wake_reason & PW_WAKE_REASON_BATTERY) {
         printf("[Debug] Wake because battery\n");
-        pw_power_start_battery_measurement();
-        while(!pw_power_battery_measurement_available());
-        uint8_t battery_level = pw_power_process_battery();
+        pw_power_start_measurement();
+        power_context.last_bat_check = pw_now_us();
+        while(!pw_power_result_available());
+        pw_power_update();
+        //uint8_t battery_level = pw_power_process_battery();
     }
 
     if(wake_reason & PW_WAKE_REASON_ACCEL) {
