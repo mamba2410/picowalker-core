@@ -192,35 +192,36 @@ void pw_sleep_loop() {
 
     pw_wake_reason_t wake_reason = pw_power_get_wake_reason();
 
+    if(wake_reason & PW_WAKE_REASON_BATTERY) {
+        //printf("[Debug] Wake because battery\n");
+        //pw_power_start_measurement();
+        //power_context.last_bat_check = pw_now_us();
+        //while(!pw_power_result_available());
+        pw_power_update();
+        //uint8_t battery_level = pw_power_process_battery();
+    }
+
+
     if(wake_reason & PW_WAKE_REASON_RTC) {
-        printf("[Debug] Wake because RTC\n");
+        //printf("[Debug] Wake because RTC\n");
         pw_rtc_regular_processing();
         pw_power_start_measurement();
         power_context.last_bat_check = pw_now_us();
         // Wait until its finished
         // TODO: Figure out how to go to sleep until its done
-        while(!pw_power_result_available());
-        pw_power_update();
+        //while(!pw_power_result_available());
+        //pw_power_update();
         //uint8_t battery_level = pw_power_process_battery();
         //printf("[Debug] RTC wake checked battery: %d%%\n", battery_level);
     }
 
-    if(wake_reason & PW_WAKE_REASON_BATTERY) {
-        printf("[Debug] Wake because battery\n");
-        pw_power_start_measurement();
-        power_context.last_bat_check = pw_now_us();
-        while(!pw_power_result_available());
-        pw_power_update();
-        //uint8_t battery_level = pw_power_process_battery();
-    }
-
     if(wake_reason & PW_WAKE_REASON_ACCEL) {
-        printf("[Debug] Wake because accel\n");
+        //printf("[Debug] Wake because accel\n");
         pw_accel_process_steps();
     }
 
     if(wake_reason & PW_WAKE_REASON_BUTTON) {
-        printf("[Debug] Wake because button\n");
+        //printf("[Debug] Wake because button\n");
         pw_accel_process_steps();
         pw_screen_wake();
         pw_screen_set_brightness((health_data_cache.settings&SETTINGS_SHADE_MASK)>>SETTINGS_SHADE_OFFSET);

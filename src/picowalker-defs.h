@@ -196,6 +196,8 @@ void pw_accel_wake();
 #define PW_POWER_STATUS_FLAGS_CHARGING    (1<<0)
 #define PW_POWER_STATUS_FLAGS_FAULT       (1<<1)
 #define PW_POWER_STATUS_FLAGS_TIMEOUT     (1<<2)
+#define PW_POWER_STATUS_FLAGS_MEASUREMENT (1<<3)
+#define PW_POWER_STATUS_FLAGS_CHARGE_ENDED    (1<<4)
 #define PW_POWER_LOW_THRESHOLD            (20)
 #define PW_POWER_CRITICAL_THRESHOLD       (10)
 

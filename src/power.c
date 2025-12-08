@@ -19,11 +19,6 @@ void pw_power_update() {
         power_context.last_bat_check = pw_time_get_ms();
     }
 
-    if(!pw_power_result_available()) {
-        // Nothing to do, leave early
-        return;
-    }
-
     // Read measurement/flags
     pw_power_status_t bs = pw_power_get_status();
 
@@ -34,17 +29,31 @@ void pw_power_update() {
     }
 
     if(bs.flags & PW_POWER_STATUS_FLAGS_CHARGING) {
+        printf("[Info ] Charging\n");
+    }
+
+    if(bs.flags & PW_POWER_STATUS_FLAGS_CHARGE_ENDED) {
+        printf("[Info ] Discharging\n");
+    }
+
+
+    if(bs.flags & PW_POWER_STATUS_FLAGS_CHARGING) {
         power_context.show_battery_low_icon = false;
         power_context.show_battery_charging_icon = true;
-    } else {
+    } else if(bs.flags & PW_POWER_STATUS_FLAGS_CHARGE_ENDED){
         power_context.show_battery_charging_icon = false;
     }
 
     if(bs.flags & PW_POWER_STATUS_FLAGS_TIMEOUT) {
         printf("[Warn ] Battery measurement timed out\n");
         // Battery percent invalid, so we skip it
+    }
+
+    if(!(bs.flags & PW_POWER_STATUS_FLAGS_MEASUREMENT)) {
         return;
     }
+
+    // If we got here, we have power measurements
 
     if( (bs.percent < PW_POWER_CRITICAL_THRESHOLD) && !(bs.flags & PW_POWER_STATUS_FLAGS_CHARGING) ) {
         printf("[Error] Battery is too low, shutting down\n");
