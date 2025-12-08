@@ -29,13 +29,20 @@ void pw_power_update() {
     }
 
     if(bs.flags & PW_POWER_STATUS_FLAGS_CHARGING) {
-        printf("[Info ] Charging\n");
+        //printf("[Info ] Charging\n");
     }
 
     if(bs.flags & PW_POWER_STATUS_FLAGS_CHARGE_ENDED) {
-        printf("[Info ] Discharging\n");
+        //printf("[Info ] Discharging\n");
     }
 
+    if(bs.flags & PW_POWER_STATUS_FLAGS_PLUGGED) {
+        printf("[Info ] Plugged in\n");
+    }
+
+    if(bs.flags & PW_POWER_STATUS_FLAGS_UNPLUGGED) {
+        printf("[Info ] Unplugged\n");
+    }
 
     if(bs.flags & PW_POWER_STATUS_FLAGS_CHARGING) {
         power_context.show_battery_low_icon = false;
