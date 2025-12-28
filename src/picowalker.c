@@ -60,6 +60,7 @@ void walker_setup() {
     read_res = pw_eeprom_read_health_data(&health_data_cache);
 
     pw_audio_volume = (health_data_cache.settings&SETTINGS_SOUND_MASK)>>SETTINGS_SOUND_OFFSET;
+    pw_screen_set_brightness((health_data_cache.settings&SETTINGS_SHADE_MASK)>>SETTINGS_SHADE_OFFSET);
 
     if(walker_info_cache.flags & WALKER_INFO_FLAG_INIT) {
         current_state->sid = STATE_SPLASH;
@@ -207,6 +208,7 @@ void pw_sleep_loop() {
         printf("[Debug] Wake because button\n");
         pw_accel_process_steps();
         pw_screen_wake();
+        pw_screen_set_brightness((health_data_cache.settings&SETTINGS_SHADE_MASK)>>SETTINGS_SHADE_OFFSET);
         pw_screen_clear();
 
         if(current_state->sid == STATE_COMMS || current_state->sid == STATE_FIRST_COMMS) {

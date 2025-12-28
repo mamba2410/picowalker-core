@@ -116,6 +116,7 @@ typedef struct {
     uint8_t previous_substate;
     int8_t main_cursor;
     int8_t sub_cursor;
+    int8_t last_sub_cursor;
 } app_settings_t;
 
 typedef struct {
