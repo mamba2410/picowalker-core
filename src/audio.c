@@ -33,3 +33,14 @@ void pw_audio_play_sound(uint8_t sound_id) {
 	}
     }
 }
+
+
+void pw_audio_set_volume(uint8_t vol) {
+    if(vol > VOLUME_FULL) {
+        printf("[Warn ] Attempted to set volume level %d\n", vol);
+        return;
+    }
+
+    pw_audio_volume = vol;
+}
+

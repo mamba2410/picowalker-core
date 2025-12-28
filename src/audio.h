@@ -39,5 +39,6 @@ extern pw_volume_t pw_audio_volume;
 extern uint8_t PW_AUDIO_PERIODTAB[];
 
 void pw_audio_play_sound(uint8_t sound_id);
+void pw_audio_set_volume(uint8_t vol);
 
 #endif /* PW_AUDIO_H */
