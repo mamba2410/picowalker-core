@@ -205,12 +205,12 @@ void pw_sleep_loop() {
     if(wake_reason & PW_WAKE_REASON_RTC) {
         //printf("[Debug] Wake because RTC\n");
         pw_rtc_regular_processing();
+        pw_power_update();
         pw_power_start_measurement();
         power_context.last_bat_check = pw_now_us();
         // Wait until its finished
         // TODO: Figure out how to go to sleep until its done
         //while(!pw_power_result_available());
-        //pw_power_update();
         //uint8_t battery_level = pw_power_process_battery();
         //printf("[Debug] RTC wake checked battery: %d%%\n", battery_level);
     }
