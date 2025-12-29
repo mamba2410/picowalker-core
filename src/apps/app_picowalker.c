@@ -91,16 +91,16 @@ void pw_picowalker_settings_init_display(pw_state_t *s, const screen_flags_t *sf
     );
 
     // Draw battery percentage
-    y = 32;
+    y = 16;
     x = 16;
     pw_screen_draw_from_eeprom(
-        x, y,
+        x, y+4,
         8, 8,
         PW_EEPROM_ADDR_IMG_LOW_BATTERY,
         PW_EEPROM_SIZE_IMG_LOW_BATTERY
     );
     uint8_t percent = 100;
-    x = SCREEN_WIDTH-16;
+    x = SCREEN_WIDTH-8;
     x = pw_screen_draw_integer(percent, x, y);
     pw_screen_draw_from_eeprom(
         SCREEN_WIDTH-8, y,
@@ -112,6 +112,20 @@ void pw_picowalker_settings_init_display(pw_state_t *s, const screen_flags_t *sf
 
 
 void pw_picowalker_settings_update_display(pw_state_t *s, const screen_flags_t *sf) {
-
+    eeprom_addr_t addr = sf->frame&ANIM_FRAME_NORMAL_TIME?PW_EEPROM_ADDR_IMG_ARROW_RIGHT_NORMAL:
+                         PW_EEPROM_ADDR_IMG_ARROW_RIGHT_OFFSET;
+    pw_screen_draw_from_eeprom(
+        0, 16+s->picowalker.cursor*16,
+        8, 8,
+        addr,
+        PW_EEPROM_SIZE_IMG_ARROW
+    );
+    for(size_t i = 0; i < N_ENTRIES; i++) {
+        if(i == s->picowalker.cursor) continue;
+        pw_screen_clear_area(
+            0, 16+i*16,
+            8, 8
+        );
+    }
 }
 

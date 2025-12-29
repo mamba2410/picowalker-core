@@ -9,10 +9,11 @@
 #include "../buttons.h"
 #include "../globals.h"
 #include "../eeprom.h"
+#include "../pico_roms.h"
 
 #define FALLTHROUGH __attribute__((fallthrough))
 
-#define N_MAIN_OPTIONS 2
+#define N_MAIN_OPTIONS 3
 #define N_SOUND_OPTIONS 3
 #define N_SHADE_OPTIONS 10
 
@@ -22,6 +23,13 @@ enum {
     SETTINGS_SHADE,
     SETTINGS_GO_TO_MENU,
     SETTINGS_GO_TO_SPLASH,
+    SETTINGS_GO_TO_PICOWALKER,
+};
+
+static screen_pos_t cursor_positions[N_MAIN_OPTIONS][2] = {
+    {0, 20},
+    {48, 20},
+    {0, 44}
 };
 
 void pw_settings_init(pw_state_t *s, const screen_flags_t *sf) {
@@ -73,6 +81,10 @@ void pw_settings_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *
         p->menu.cursor = 5;
         break;
     }
+    case SETTINGS_GO_TO_PICOWALKER: {
+        p->sid = STATE_PICOWALKER;
+        break;
+    }
     }
 }
 
@@ -103,9 +115,18 @@ void pw_settings_init_display(pw_state_t *s, const screen_flags_t *sf) {
             PW_EEPROM_ADDR_IMG_SHADE_FRAME,
             PW_EEPROM_SIZE_IMG_SHADE_FRAME
         );
+
+        pw_img_t img = (pw_img_t){
+            .width = 88,
+            .height = 16,
+            .data = picowalker_text,
+            .size = 88*16/4
+        };
+        pw_screen_draw_img(&img, 8, 40);
         break;
     }
     case SETTINGS_SOUND: {
+        pw_screen_clear_area(0, 32, SCREEN_WIDTH, SCREEN_HEIGHT/2);
         pw_screen_draw_from_eeprom(
             s->settings.main_cursor*48, 16+4,
             8, 8,
@@ -188,8 +209,10 @@ void pw_settings_update_display(pw_state_t *s, const screen_flags_t *sf) {
     case SETTINGS_TOP_LEVEL: {
         pw_eeprom_addr_t addr = sf->frame&ANIM_FRAME_NORMAL_TIME?PW_EEPROM_ADDR_IMG_ARROW_RIGHT_NORMAL:
                              PW_EEPROM_ADDR_IMG_ARROW_RIGHT_OFFSET;
+        uint8_t c = s->settings.main_cursor;
         pw_screen_draw_from_eeprom(
-            s->settings.main_cursor*48, 16+4,
+            //s->settings.main_cursor*48, 16+4,
+            cursor_positions[c][0], cursor_positions[c][1],
             8, 8,
             addr,
             PW_EEPROM_SIZE_IMG_ARROW
@@ -197,7 +220,8 @@ void pw_settings_update_display(pw_state_t *s, const screen_flags_t *sf) {
         for(int i = 0; i < 2; i++) {
             if(i == s->settings.main_cursor) continue;
             pw_screen_clear_area(
-                i*48, 16+4,
+                //i*48, 16+4,
+                cursor_positions[i][0], cursor_positions[i][1],
                 8, 8
             );
         }
@@ -260,20 +284,17 @@ void pw_settings_handle_input(pw_state_t *s, const screen_flags_t *sf, pw_button
             // fall through otherwise
             FALLTHROUGH;
         }
-        case PW_BUTTON_R: {
-            s->settings.main_cursor = (s->settings.main_cursor+1)%2;
-	        pw_audio_play_sound(SOUND_CURSOR_MOVE);
-            break;
-        }
         case PW_BUTTON_M: {
             if(s->settings.main_cursor == 0) {
                 s->settings.current_substate = SETTINGS_SOUND;
                 s->settings.sub_cursor = (health_data_cache.settings&SETTINGS_SOUND_MASK)>>SETTINGS_SOUND_OFFSET;
                 s->settings.last_sub_cursor = (health_data_cache.settings&SETTINGS_SOUND_MASK)>>SETTINGS_SOUND_OFFSET;
-            } else {
+            } else if(s->settings.main_cursor == 1) {
                 s->settings.current_substate = SETTINGS_SHADE;
                 s->settings.sub_cursor = (health_data_cache.settings&SETTINGS_SHADE_MASK)>>SETTINGS_SHADE_OFFSET;
                 s->settings.last_sub_cursor = (health_data_cache.settings&SETTINGS_SHADE_MASK)>>SETTINGS_SHADE_OFFSET;
+            } else if(s->settings.main_cursor == 2) {
+                s->settings.current_substate = SETTINGS_GO_TO_PICOWALKER;
             }
             PW_SET_REQUEST(s->requests, PW_REQUEST_REDRAW);
             break;
