@@ -25,6 +25,7 @@ typedef struct pw_power_context_s {
 extern volatile pw_power_context_t power_context;
 
 void pw_power_update();
+uint8_t pw_power_get_battery();
 
 // Driver functions
 extern void pw_power_start_measurement();

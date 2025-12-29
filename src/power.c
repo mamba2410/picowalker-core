@@ -62,6 +62,8 @@ void pw_power_update() {
 
     // If we got here, we have power measurements
 
+    power_context.battery_percent = bs.percent;
+
     if( (bs.percent < PW_POWER_CRITICAL_THRESHOLD) && !(bs.flags & PW_POWER_STATUS_FLAGS_CHARGING) ) {
         printf("[Error] Battery is too low, shutting down\n");
         pw_battery_shutdown();
@@ -76,5 +78,10 @@ void pw_power_update() {
 
 int pw_power_get_mode() {
     return (current_loop == walker_loop)? 0: 1;
+}
+
+
+uint8_t pw_power_get_battery() {
+    return power_context.battery_percent;
 }
 
