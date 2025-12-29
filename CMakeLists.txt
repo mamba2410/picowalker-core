@@ -58,6 +58,8 @@ add_library(picowalker-core
     src/apps/app_settings.h
     src/apps/app_switch.c
     src/apps/app_switch.h
+    src/apps/app_picowalker.c
+    src/apps/app_picowalker.h
 )
 
 if (MSVC)

@@ -17,6 +17,7 @@
 #include "apps/app_first_comms.h"
 #include "apps/app_settings.h"
 #include "apps/app_switch.h"
+#include "apps/app_picowalker.h"
 
 const char* const state_strings[N_STATES] = {
     [STATE_SCREENSAVER]     = "Screensaver",
@@ -30,7 +31,8 @@ const char* const state_strings[N_STATES] = {
     [STATE_SETTINGS]        = "Settings",
     [STATE_ERROR]           = "Error",
     [STATE_FIRST_COMMS]     = "First connect",
-    [STATE_SWITCHES]        = "Switch?"
+    [STATE_SWITCHES]        = "Switch?",
+    [STATE_PICOWALKER]      = "Picowalker settings"
 };
 
 // TODO: change function sigs
@@ -138,7 +140,14 @@ state_funcs_t const STATE_FUNCS[N_STATES] = {
         .draw_init=pw_switch_init_display,
         .draw_update=pw_switch_update_display,
         .deinit=pw_empty_event,
-
+    },
+    [STATE_PICOWALKER] = {
+        .init=pw_picowalker_settings_init,
+        .loop=pw_picowalker_settings_event_loop,
+        .input=pw_picowalker_settings_handle_input,
+        .draw_init=pw_picowalker_settings_init_display,
+        .draw_update=pw_picowalker_settings_update_display,
+        .deinit=pw_empty_event,
     },
 };
 

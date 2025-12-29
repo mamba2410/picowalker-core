@@ -28,6 +28,7 @@ typedef enum {
     STATE_FIRST_COMMS,
     STATE_BATTLE,
     STATE_SWITCHES,
+    STATE_PICOWALKER,
     N_STATES,
 } pw_state_id_t;
 
@@ -143,6 +144,11 @@ typedef struct {
     uint8_t  inv_indices[3];// index of item/pokemon in route list
 } app_switch_t;
 
+
+typedef struct {
+    int8_t cursor;
+} app_picowalker_t;
+
 typedef struct {
     uint8_t sid;
     uint8_t requests;   // [0]=redraw
@@ -158,6 +164,7 @@ typedef struct {
         app_battle_t battle;
         app_settings_t settings;
         app_switch_t switches;
+        app_picowalker_t picowalker;
     };
 } pw_state_t;
 
