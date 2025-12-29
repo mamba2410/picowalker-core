@@ -217,7 +217,7 @@ void pw_settings_update_display(pw_state_t *s, const screen_flags_t *sf) {
             addr,
             PW_EEPROM_SIZE_IMG_ARROW
         );
-        for(int i = 0; i < 2; i++) {
+        for(int i = 0; i < N_MAIN_OPTIONS; i++) {
             if(i == s->settings.main_cursor) continue;
             pw_screen_clear_area(
                 //i*48, 16+4,

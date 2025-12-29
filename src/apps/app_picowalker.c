@@ -7,6 +7,7 @@
 #include "app_picowalker.h"
 #include "../eeprom_map.h"
 #include "../picowalker-defs.h"
+#include "../power.h"
 #include "../screen.h"
 #include "../states.h"
 
@@ -99,7 +100,7 @@ void pw_picowalker_settings_init_display(pw_state_t *s, const screen_flags_t *sf
         PW_EEPROM_ADDR_IMG_LOW_BATTERY,
         PW_EEPROM_SIZE_IMG_LOW_BATTERY
     );
-    uint8_t percent = 100;
+    uint8_t percent = pw_power_get_battery();
     x = SCREEN_WIDTH-8;
     x = pw_screen_draw_integer(percent, x, y);
     pw_screen_draw_from_eeprom(
@@ -115,7 +116,7 @@ void pw_picowalker_settings_update_display(pw_state_t *s, const screen_flags_t *
     eeprom_addr_t addr = sf->frame&ANIM_FRAME_NORMAL_TIME?PW_EEPROM_ADDR_IMG_ARROW_RIGHT_NORMAL:
                          PW_EEPROM_ADDR_IMG_ARROW_RIGHT_OFFSET;
     pw_screen_draw_from_eeprom(
-        0, 16+s->picowalker.cursor*16,
+        0, 16+4+s->picowalker.cursor*16,
         8, 8,
         addr,
         PW_EEPROM_SIZE_IMG_ARROW
