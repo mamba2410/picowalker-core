@@ -6,6 +6,7 @@
 
 #include "app_picowalker.h"
 #include "../eeprom_map.h"
+#include "../pico_roms.h"
 #include "../picowalker-defs.h"
 #include "../power.h"
 #include "../screen.h"
@@ -78,12 +79,13 @@ void pw_picowalker_settings_handle_input(pw_state_t *s, const screen_flags_t *sf
 
 void pw_picowalker_settings_init_display(pw_state_t *s, const screen_flags_t *sf) {
     screen_pos_t x, y;
-    pw_screen_draw_from_eeprom(
-        8, 0,
-        80, 16,
-        PW_EEPROM_ADDR_IMG_MENU_TITLE_SETTINGS,
-        PW_EEPROM_SIZE_IMG_MENU_TITLE_SETTINGS
-    );
+    pw_img_t img = (pw_img_t){
+        .width = 80,
+        .height = 16,
+        .data = picowalker_border_text,
+        .size = 80*16/4
+    };
+    pw_screen_draw_img(&img, 8, 0);
     pw_screen_draw_from_eeprom(
         0, 0,
         8, 16,
@@ -93,22 +95,25 @@ void pw_picowalker_settings_init_display(pw_state_t *s, const screen_flags_t *sf
 
     // Draw battery percentage
     y = 16;
-    x = 16;
-    pw_screen_draw_from_eeprom(
-        x, y+4,
-        8, 8,
-        PW_EEPROM_ADDR_IMG_LOW_BATTERY,
-        PW_EEPROM_SIZE_IMG_LOW_BATTERY
-    );
+    x = 8;
+    img = (pw_img_t) {
+        .width = 48,
+        .height = 16,
+        .data = battery_fancy_text,
+        .size = 32*16/4
+    };
+    pw_screen_draw_img(&img, x, y);
     uint8_t percent = pw_power_get_battery();
     x = SCREEN_WIDTH-8;
     x = pw_screen_draw_integer(percent, x, y);
-    pw_screen_draw_from_eeprom(
-        SCREEN_WIDTH-8, y,
-        8, 16,
-        PW_EEPROM_ADDR_IMG_CHAR_SLASH,
-        PW_EEPROM_SIZE_IMG_CHAR
-    );
+
+    img = (pw_img_t) {
+        .width = 8,
+        .height = 16,
+        .data = percent_char,
+        .size = 8*16/4
+    };
+    pw_screen_draw_img(&img, SCREEN_WIDTH-8, y);
 }
 
 

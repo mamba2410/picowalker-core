@@ -119,7 +119,7 @@ void pw_settings_init_display(pw_state_t *s, const screen_flags_t *sf) {
         pw_img_t img = (pw_img_t){
             .width = 88,
             .height = 16,
-            .data = picowalker_text,
+            .data = picowalker_fancy_text,
             .size = 88*16/4
         };
         pw_screen_draw_img(&img, 8, 40);
