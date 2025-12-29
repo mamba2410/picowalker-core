@@ -146,6 +146,7 @@ typedef struct {
 
 
 typedef struct {
+    uint8_t current_substate;
     int8_t cursor;
 } app_picowalker_t;
 
