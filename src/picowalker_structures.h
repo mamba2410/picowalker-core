@@ -1,14 +1,11 @@
-#ifndef PICOWALKER_DRIVERS_H
-#define PICOWALKER_DRIVERS_H
+#ifndef PICOWALKER_STRUCTURES_H
+#define PICOWALKER_STRUCTURES_H
 
-/**
- * @file picowalker-driver.h
- *
- * This is the header file for picowalker-driver.
- * This contains a list of functions which `picowalker-driver` provides.
- * Core code can call these functions to interface with the device hardware.
- *
- */
+/// @file picowalker_structures.h
+
+#include <stdint.h>
+#include <stdbool.h>
+#include <stddef.h>
 
 /*
  *  ==================================================================================
@@ -123,7 +120,6 @@ typedef enum {
 void pw_flash_sleep();
 void pw_flash_wake();
 
-
 /*
  *  ==================================================================================
  *  BUTTONS
@@ -141,6 +137,10 @@ enum {
 
 #define DEBOUNCE_TIME_US    100000   // 100ms
 
+/*
+ *  Functions defined by the driver
+ */
+void pw_button_init();
 
 /*
  *  ==================================================================================
@@ -193,15 +193,20 @@ void pw_accel_wake();
 /*
  * Types and defines
  */
-#define PW_BATTERY_STATUS_FLAGS_CHARGING    (1<<0)
-#define PW_BATTERY_STATUS_FLAGS_FAULT       (1<<1)
-#define PW_BATTERY_LOW_THRESHOLD            (20)
-#define PW_BATTERY_CRITICAL_THRESHOLD       (10)
+#define PW_POWER_STATUS_FLAGS_CHARGING    (1<<0)
+#define PW_POWER_STATUS_FLAGS_FAULT       (1<<1)
+#define PW_POWER_STATUS_FLAGS_TIMEOUT     (1<<2)
+#define PW_POWER_STATUS_FLAGS_MEASUREMENT (1<<3)
+#define PW_POWER_STATUS_FLAGS_CHARGE_ENDED    (1<<4)
+#define PW_POWER_STATUS_FLAGS_PLUGGED     (1<<5)
+#define PW_POWER_STATUS_FLAGS_UNPLUGGED   (1<<6)
+#define PW_POWER_LOW_THRESHOLD            (20)
+#define PW_POWER_CRITICAL_THRESHOLD       (10)
 
-typedef struct pw_battery_status_s {
+typedef struct pw_power_status_s {
     uint8_t  percent;
     uint8_t flags;
-} pw_battery_status_t;
+} pw_power_status_t;
 
 #define PW_WAKE_REASON_RTC      (1<<0)
 #define PW_WAKE_REASON_BATTERY  (1<<1)
@@ -214,7 +219,7 @@ typedef uint8_t pw_wake_reason_t;
  *  Functions defined by driver
  */
 void pw_power_init();
-pw_battery_status_t pw_power_get_battery_status();
+pw_power_status_t pw_power_get_status();
 void pw_power_enter_sleep();
 bool pw_power_should_sleep();
 pw_wake_reason_t pw_power_get_wake_reason();
@@ -257,6 +262,5 @@ uint64_t pw_time_get_ms();  // Since boot
 void pw_time_delay_ms(uint32_t ms);
 void pw_time_delay_us(uint32_t us);
 
-
-#endif /* PICOWALKER_DRIVERS_H */
+#endif /* PW_PICOWALKER_INCLUDE_H */
 
