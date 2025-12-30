@@ -1,14 +1,15 @@
 #ifndef PICOWALKER_CORE_H
 #define PICOWALKER_CORE_H
 
+#include <stdint.h>
+#include <stdbool.h>
+#include <stddef.h>
+
 /**
  * @file picowalker_core.h
  *
  */
 
-#include <stdint.h>
-#include <stdbool.h>
-#include <stddef.h>
 
 /*
  *  ==================================================================================
@@ -16,64 +17,6 @@
  *  ==================================================================================
  */
 
-/*
- * Types and defines
- */
-typedef uint8_t screen_pos_t;       /// 0-95
-typedef uint8_t screen_colour_t;    /// 2-bits, pw style
-
-typedef struct {
-    screen_pos_t height, width;
-    uint8_t *data;
-    size_t size; /// bytes
-} pw_img_t;
-
-typedef struct {
-    screen_pos_t width, height;
-    screen_pos_t true_width, true_height;
-    screen_pos_t offset_x, offset_y;
-} screen_t;
-
-enum {
-    SCREEN_WHITE=0,
-    SCREEN_LGREY=1,
-    SCREEN_DGREY=2,
-    SCREEN_BLACK=3,
-};
-
-#define SCREEN_WIDTH    96
-#define SCREEN_HEIGHT   64
-
-/*
- * Functions defined by the driver
- */
-void pw_screen_init();
-void pw_screen_draw_img(
-    pw_img_t *img,
-    screen_pos_t x, screen_pos_t y
-);
-void pw_screen_clear_area(
-    screen_pos_t x, screen_pos_t y,
-    screen_pos_t width, screen_pos_t height
-);
-void pw_screen_draw_horiz_line(
-    screen_pos_t x, screen_pos_t y,
-    screen_pos_t len,
-    screen_colour_t colour
-);
-void pw_screen_draw_text_box(
-    screen_pos_t x1, screen_pos_t y1,
-    screen_pos_t x2, screen_pos_t y2,
-    screen_colour_t colour
-);
-void pw_screen_clear();
-void pw_screen_fill_area(
-    screen_pos_t x, screen_pos_t y,
-    screen_pos_t w, screen_pos_t h,
-    screen_colour_t colour
-);
-void pw_screen_sleep();
-void pw_screen_wake();
 
 
 /*

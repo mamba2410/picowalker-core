@@ -1,11 +1,17 @@
 #ifndef PICOWALKER_STRUCTURES_H
 #define PICOWALKER_STRUCTURES_H
 
-/// @file picowalker_structures.h
-
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+
+/**
+ * @file picowalker_structures.h
+ *
+ * Common data structures to share between the core and drivers.
+ * Drivers treat this as an API and build driver modules to this spec.
+ *
+ */
 
 /*
  *  ==================================================================================
@@ -13,64 +19,47 @@
  *  ==================================================================================
  */
 
-/*
- * Types and defines
- */
-typedef uint8_t screen_pos_t;       /// 0-95
-typedef uint8_t screen_colour_t;    /// 2-bits, pw style
+#define PW_SCREEN_WIDTH    96
+#define PW_SCREEN_HEIGHT   64
 
-typedef struct {
-    screen_pos_t height, width;
+/**
+ * Position of something on screen
+ * Can be negative, because images can be off screen on the left.
+ *
+ * Valid range: -PW_SCREEN_WIDTH to PW_SCREEN_WIDTH-1
+ */
+typedef int8_t pw_screen_pos_t;
+
+
+/**
+ * An image data structure for pokewalker images
+ * Will change when colour images are implemented
+ */
+typedef struct pw_img_s {
     uint8_t *data;
-    size_t size; /// bytes
+    size_t size;
+    screen_pos_t height, width;
 } pw_img_t;
 
-typedef struct {
-    screen_pos_t width, height;
-    screen_pos_t true_width, true_height;
-    screen_pos_t offset_x, offset_y;
-} screen_t;
 
-enum {
-    SCREEN_WHITE=0,
-    SCREEN_LGREY=1,
-    SCREEN_DGREY=2,
-    SCREEN_BLACK=3,
-};
-
-#define SCREEN_WIDTH    96
-#define SCREEN_HEIGHT   64
-
-/*
- * Functions defined by the driver
+/**
+ * Relates to the original pokewalker image.
+ * Give names to the pixel values.
+ * Since the original screen is an LCD, a value of 0 is white.
  */
-void pw_screen_init();
-void pw_screen_draw_img(
-    pw_img_t *img,
-    screen_pos_t x, screen_pos_t y
-);
-void pw_screen_clear_area(
-    screen_pos_t x, screen_pos_t y,
-    screen_pos_t width, screen_pos_t height
-);
-void pw_screen_draw_horiz_line(
-    screen_pos_t x, screen_pos_t y,
-    screen_pos_t len,
-    screen_colour_t colour
-);
-void pw_screen_draw_text_box(
-    screen_pos_t x1, screen_pos_t y1,
-    screen_pos_t x2, screen_pos_t y2,
-    screen_colour_t colour
-);
-void pw_screen_clear();
-void pw_screen_fill_area(
-    screen_pos_t x, screen_pos_t y,
-    screen_pos_t w, screen_pos_t h,
-    screen_colour_t colour
-);
-void pw_screen_sleep();
-void pw_screen_wake();
+typedef enum pw_screen_color_e {
+    PW_SCREEN_WHITE = 0,
+    PW_SCREEN_LGREY = 1,
+    PW_SCREEN_DGREY = 2,
+    PW_SCREEN_BLACK = 3,
+} pw_screen_color_t;
+
+
+/**
+ * There are ten brightness pips
+ * Value ranges from 0 to 9
+ */
+#define PW_SCREEN_MAX_BRIGHTNESS 9
 
 
 /*
