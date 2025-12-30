@@ -164,9 +164,9 @@ void pw_accel_wake();
  *  ==================================================================================
  */
 
-/*
- * Types and defines
- */
+#define PW_POWER_LOW_THRESHOLD            (20)
+#define PW_POWER_CRITICAL_THRESHOLD       (10)
+
 #define PW_POWER_STATUS_FLAGS_CHARGING    (1<<0)
 #define PW_POWER_STATUS_FLAGS_FAULT       (1<<1)
 #define PW_POWER_STATUS_FLAGS_TIMEOUT     (1<<2)
@@ -174,30 +174,27 @@ void pw_accel_wake();
 #define PW_POWER_STATUS_FLAGS_CHARGE_ENDED    (1<<4)
 #define PW_POWER_STATUS_FLAGS_PLUGGED     (1<<5)
 #define PW_POWER_STATUS_FLAGS_UNPLUGGED   (1<<6)
-#define PW_POWER_LOW_THRESHOLD            (20)
-#define PW_POWER_CRITICAL_THRESHOLD       (10)
 
+/**
+ * Status of the power driver
+ * `flags` contains various events that couold have happened
+ */
 typedef struct pw_power_status_s {
-    uint8_t  percent;
     uint8_t flags;
+    uint8_t percent;
 } pw_power_status_t;
+
 
 #define PW_WAKE_REASON_RTC      (1<<0)
 #define PW_WAKE_REASON_BATTERY  (1<<1)
 #define PW_WAKE_REASON_BUTTON   (1<<2)
 #define PW_WAKE_REASON_ACCEL    (1<<3)
 
-typedef uint8_t pw_wake_reason_t;
-
-/*
- *  Functions defined by driver
+/**
+ * Reason the pokewalker woke up
+ * Could be multiple values
  */
-void pw_power_init();
-pw_power_status_t pw_power_get_status();
-void pw_power_enter_sleep();
-bool pw_power_should_sleep();
-pw_wake_reason_t pw_power_get_wake_reason();
-void pw_battery_shutdown();
+typedef uint8_t pw_wake_reason_t;
 
 
 /*

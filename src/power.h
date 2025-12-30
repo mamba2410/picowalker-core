@@ -5,6 +5,8 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+#include "picowalker_structures.h"
+
 // 10 seconds for debug testing
 //#define PW_POWER_SLEEP_TIMEOUT_MS   (10000)
 #define PW_POWER_SLEEP_TIMEOUT_MS   (30000) // 30 s
@@ -27,10 +29,15 @@ extern volatile pw_power_context_t power_context;
 void pw_power_update();
 uint8_t pw_power_get_battery();
 
-// Driver functions
+/*
+ * Functions defined in the driver module
+ */
+
+extern void pw_power_init();
 extern void pw_power_start_measurement();
 extern bool pw_power_result_available();
-//extern pw_power_status_t pw_power_get_status();
+extern pw_power_status_t pw_power_get_status();
+extern void pw_battery_shutdown();
 
 #endif /* PW_POWER_H */
 

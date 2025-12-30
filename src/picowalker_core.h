@@ -65,36 +65,6 @@ extern void pw_button_callback(pw_buttons_t b);
  *  ==================================================================================
  */
 
-/*
- * Types and defines
- */
-#define PW_BATTERY_STATUS_FLAGS_CHARGING    (1<<0)
-#define PW_BATTERY_STATUS_FLAGS_FAULT       (1<<1)
-#define PW_BATTERY_LOW_THRESHOLD            (20)
-#define PW_BATTERY_CRITICAL_THRESHOLD       (10)
-
-typedef struct pw_battery_status_s {
-    uint8_t  percent;
-    uint8_t flags;
-} pw_battery_status_t;
-
-#define PW_WAKE_REASON_RTC      (1<<0)
-#define PW_WAKE_REASON_BATTERY  (1<<1)
-#define PW_WAKE_REASON_BUTTON   (1<<2)
-#define PW_WAKE_REASON_ACCEL    (1<<3)
-
-typedef uint8_t pw_wake_reason_t;
-
-/*
- *  Functions defined by driver
- */
-void pw_power_init();
-pw_battery_status_t pw_power_get_battery_status();
-void pw_power_enter_sleep();
-bool pw_power_should_sleep();
-pw_wake_reason_t pw_power_get_wake_reason();
-void pw_battery_shutdown();
-
 
 /*
  *  ==================================================================================
