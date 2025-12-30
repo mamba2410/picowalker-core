@@ -153,7 +153,7 @@ void pw_switch_update_display(pw_state_t *s, const screen_flags_t *sf) {
 
 }
 
-void pw_switch_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b) {
+void pw_switch_handle_input(pw_state_t *s, const screen_flags_t *sf, pw_buttons_t b) {
     (void)sf;
     switch(b) {
     case PW_BUTTON_L: {

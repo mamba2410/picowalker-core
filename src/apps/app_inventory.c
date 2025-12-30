@@ -81,7 +81,7 @@ void pw_inventory_update_display(pw_state_t *s, const screen_flags_t *sf) {
 }
 
 
-void pw_inventory_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b) {
+void pw_inventory_handle_input(pw_state_t *s, const screen_flags_t *sf, pw_buttons_t b) {
     switch(b) {
     case PW_BUTTON_L: {
         pw_inventory_move_cursor(s, -1);

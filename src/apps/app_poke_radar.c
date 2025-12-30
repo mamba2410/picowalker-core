@@ -174,7 +174,7 @@ void pw_poke_radar_update_display(pw_state_t *s, const screen_flags_t *sf) {
  * @param b Button input.
  *
  */
-void pw_poke_radar_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b) {
+void pw_poke_radar_handle_input(pw_state_t *s, const screen_flags_t *sf, pw_buttons_t b) {
     switch(s->radar.current_substate) {
     case RADAR_CHOOSING: {
         PW_SET_REQUEST(s->requests, PW_REQUEST_REDRAW);

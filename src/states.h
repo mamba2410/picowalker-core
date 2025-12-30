@@ -172,7 +172,7 @@ typedef struct {
 
 typedef void (*state_loop_func_t)(pw_state_t* s, pw_state_t *p, const screen_flags_t *sf);
 typedef void (*state_void_func_t)(pw_state_t* s, const screen_flags_t *sf);
-typedef void (*state_input_func_t)(pw_state_t* s, const screen_flags_t *sf, uint8_t b);
+typedef void (*state_input_func_t)(pw_state_t* s, const screen_flags_t *sf, pw_buttons_t b);
 
 typedef struct {
     state_loop_func_t loop;
@@ -198,7 +198,7 @@ extern const state_funcs_t STATE_FUNCS[];
 
 void pw_state_init();
 void pw_state_run_event_loop();
-void pw_state_handle_input(uint8_t b);
+void pw_state_handle_input(pw_buttons_t b);
 void pw_state_draw_init();
 void pw_state_draw_update();
 
@@ -206,7 +206,7 @@ void pw_state_draw_update();
  *  State functions
  */
 void pw_empty_event(pw_state_t *s, const screen_flags_t *sf);
-void pw_empty_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b);
+void pw_empty_input(pw_state_t *s, const screen_flags_t *sf, pw_buttons_t b);
 void pw_send_to_splash(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf);
 
 // STATE_ERROR

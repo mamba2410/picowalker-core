@@ -996,7 +996,7 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
  * Battle state input handler
  *
  */
-void pw_battle_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b) {
+void pw_battle_handle_input(pw_state_t *s, const screen_flags_t *sf, pw_buttons_t b) {
     switch(s->battle.current_substate) {
     case BATTLE_APPEARED: {
         pw_battle_switch_substate(s, BATTLE_CHOOSING);

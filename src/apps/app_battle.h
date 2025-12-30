@@ -33,7 +33,7 @@ enum battle_state {
 void pw_battle_init(pw_state_t *s, const screen_flags_t *sf);
 void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf);
 void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf);
-void pw_battle_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b);
+void pw_battle_handle_input(pw_state_t *s, const screen_flags_t *sf, pw_buttons_t b);
 void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf);
 
 #endif /* PW_APP_BATTLE_H */

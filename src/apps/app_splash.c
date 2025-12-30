@@ -25,7 +25,7 @@ void pw_splash_init(pw_state_t *s, const screen_flags_t *sf) {
     s->splash.current_substate = SPLASH_NORMAL;
 }
 
-void pw_splash_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b) {
+void pw_splash_handle_input(pw_state_t *s, const screen_flags_t *sf, pw_buttons_t b) {
     switch(b) {
     case PW_BUTTON_M: {
         s->splash.menu_cursor = (MENU_SIZE-1)/2;

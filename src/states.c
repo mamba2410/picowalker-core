@@ -147,13 +147,24 @@ state_funcs_t const STATE_FUNCS[N_STATES] = {
  *  State functions
  *  ========================================
  */
-void pw_empty_event(pw_state_t *s, const screen_flags_t *sf) {}
-void pw_empty_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b) {}
+void pw_empty_event(pw_state_t *s, const screen_flags_t *sf) {
+    (void)s;
+    (void)sf;
+}
+void pw_empty_input(pw_state_t *s, const screen_flags_t *sf, pw_buttons_t b) {
+    (void)s;
+    (void)sf;
+    (void)b;
+}
 void pw_send_to_splash(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf) {
+    (void)s;
+    (void)sf;
     p->sid = STATE_SPLASH;
 }
 
 void pw_error_init_display(pw_state_t *s, const screen_flags_t *sf) {
+    (void)s;
+    (void)sf;
     pw_img_t sad_pokewalker_img   = {.height=48, .width=48, .data=sad_pokewalker, .size=576};
     pw_screen_draw_img(&sad_pokewalker_img, 0, 0);
 

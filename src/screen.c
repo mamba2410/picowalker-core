@@ -13,13 +13,13 @@
  *  Most of the heavy lifting is done by the driver code
  */
 
-void pw_screen_draw_from_eeprom(pw_screen_pos_t x, pw_screen_pos_t y, pw_screen_pos_t w, pw_screen_pos_t h, pw_eeprom_addr_t addr, size_t len) {
+void pw_screen_draw_from_eeprom(pw_screen_pos_t x, pw_screen_pos_t y, pw_screen_dim_t w, pw_screen_dim_t h, pw_eeprom_addr_t addr, size_t len) {
     pw_img_t img = {.height=h, .width=w, .data=eeprom_buf, .size=len};
     pw_eeprom_read(addr, eeprom_buf, len);
     pw_screen_draw_img(&img, x, y);
 }
 
-void pw_screen_draw_from_eeprom_with_text_box(pw_screen_pos_t x, pw_screen_pos_t y, pw_screen_pos_t w, pw_screen_pos_t h, pw_eeprom_addr_t addr, size_t len, pw_screen_color_t c) {
+void pw_screen_draw_from_eeprom_with_text_box(pw_screen_pos_t x, pw_screen_pos_t y, pw_screen_dim_t w, pw_screen_dim_t h, pw_eeprom_addr_t addr, size_t len, pw_screen_color_t c) {
     pw_img_t img = {.height=h, .width=w, .data=eeprom_buf, .size=len};
     pw_eeprom_read(addr, eeprom_buf, len);
     pw_screen_overlay_text_box(&img, w, h, c);
@@ -104,7 +104,7 @@ void pw_screen_draw_subtime(uint8_t n, pw_screen_pos_t x, pw_screen_pos_t y, boo
 }
 
 // always draws at x=0
-void pw_screen_draw_message(pw_screen_pos_t y, uint8_t message_index, pw_screen_pos_t h) {
+void pw_screen_draw_message(pw_screen_pos_t y, uint8_t message_index, pw_screen_dim_t h) {
     if(h != 16 && h != 32) {
         return;    // can only do 16 or 32 height messages
     }
@@ -124,7 +124,7 @@ void pw_screen_draw_message(pw_screen_pos_t y, uint8_t message_index, pw_screen_
 }
 
 // always draws at x=0
-void pw_screen_draw_message_with_text_box(pw_screen_pos_t y, uint8_t message_index, pw_screen_pos_t h, pw_screen_color_t c) {
+void pw_screen_draw_message_with_text_box(pw_screen_pos_t y, uint8_t message_index, pw_screen_dim_t h, pw_screen_color_t c) {
     if(h != 16 && h != 32) {
         return;    // can only do 16 or 32 height messages
     }
@@ -165,11 +165,11 @@ void pw_screen_draw_pokemon_name_and_message(pw_eeprom_addr_t poke_addr, pw_eepr
         }
     }
     memset(img.data+PW_EEPROM_SIZE_TEXT_POKEMON_NAME, 0, PW_EEPROM_SIZE_TEXT_ATTACKED - PW_EEPROM_SIZE_TEXT_POKEMON_NAME);
-    pw_screen_overlay_text_box(&img, PW_SCREEN_WIDTH, 32, PW_SCREEN_BLACK);
+    pw_screen_overlay_text_box(&img, PW_SCREEN_WIDTH, 32, c);
     pw_screen_draw_img(&img, 0, PW_SCREEN_HEIGHT-32);
 }
 
-void pw_screen_overlay_text_box(pw_img_t *img, pw_screen_pos_t w, pw_screen_pos_t h, pw_screen_color_t c) {
+void pw_screen_overlay_text_box(pw_img_t *img, pw_screen_dim_t w, pw_screen_dim_t h, pw_screen_color_t c) {
     // If dimensions are too small, extend source image.
     // TODO: this assumes there's enough space in the buffer. this is bad.
     if(w > img->width) {
@@ -238,7 +238,7 @@ void pw_screen_overlay_text_box(pw_img_t *img, pw_screen_pos_t w, pw_screen_pos_
 
 }
 
-void pw_screen_overlay_overline(pw_img_t *img, pw_screen_pos_t w, pw_screen_color_t c) {
+void pw_screen_overlay_overline(pw_img_t *img, pw_screen_dim_t w, pw_screen_color_t c) {
     if(w > img->width) {
         printf("[Error] Trying to draw a %d pixel line over a %dx%d image\n", w, img->width, img->height);
         return;
@@ -256,7 +256,7 @@ void pw_screen_overlay_overline(pw_img_t *img, pw_screen_pos_t w, pw_screen_colo
 }
 
 
-void pw_screen_get_blank_image(pw_img_t *img, pw_screen_pos_t w, pw_screen_pos_t h) {
+void pw_screen_get_blank_image(pw_img_t *img, pw_screen_dim_t w, pw_screen_dim_t h) {
     bool invalid = (w > PW_SCREEN_WIDTH) || (h > PW_SCREEN_HEIGHT) || (img == NULL);
     if(invalid) {
         img->data = NULL;
@@ -290,7 +290,7 @@ static pw_screen_pos_t get_overlapping_dimension(pw_screen_pos_t img, pw_screen_
 /**
  * Specifically for images with y offset aligned to 8 bytes
  */
-static void overlay_img_aligned(pw_img_t *base, pw_img_t *img, pw_screen_pos_t x, pw_screen_pos_t y, pw_screen_pos_t visible_width, pw_screen_pos_t visible_height) {
+static void overlay_img_aligned(pw_img_t *base, pw_img_t *img, pw_screen_pos_t x, pw_screen_pos_t y, pw_screen_dim_t visible_width, pw_screen_dim_t visible_height) {
 
     // Split y
     uint8_t chunk_spans = visible_height / 8;
@@ -313,7 +313,7 @@ static void overlay_img_aligned(pw_img_t *base, pw_img_t *img, pw_screen_pos_t x
 /**
  * Specifically for images with y offset aligned to 8 bytes
  */
-static void overlay_img_unaligned(pw_img_t *base, pw_img_t *img, pw_screen_pos_t x, pw_screen_pos_t y, pw_screen_pos_t visible_width, pw_screen_pos_t visible_height) {
+static void overlay_img_unaligned(pw_img_t *base, pw_img_t *img, pw_screen_pos_t x, pw_screen_pos_t y, pw_screen_dim_t visible_width, pw_screen_dim_t visible_height) {
 
     // Split y
     uint8_t chunk_spans = (visible_height / 8) + ((y + base->height)%8 + (8-1))/8;
@@ -341,7 +341,8 @@ static void overlay_img_unaligned(pw_img_t *base, pw_img_t *img, pw_screen_pos_t
     chunk++;
 
     // Middle chunks, top is bottom of previous chunk, bottom is top of current chunk
-    for(; chunk < chunk_spans-1; chunk++) {
+    size_t n_chunks = chunk_spans - 1;
+    for(; chunk < n_chunks; chunk++) {
         for(size_t b = 0; b < 2*visible_width; b++) {
             uint8_t top_byte = img->data[2*img->width*(chunk-1) + x_read_offset + b];
             uint8_t bot_byte = img->data[2*img->width*(chunk+0) + x_read_offset + b];
@@ -353,7 +354,7 @@ static void overlay_img_unaligned(pw_img_t *base, pw_img_t *img, pw_screen_pos_t
     }
 
     // Final chunk, top is bottom of last chunk, bottom is zeros
-    for(size_t b = 0; b < 2*visible_width; b++) {
+    for(int b = 0; b < 2*visible_width; b++) {
         uint8_t top_byte = img->data[2*img->width*(chunk-1) + x_read_offset + b];
         uint8_t bot_byte = 0;
 

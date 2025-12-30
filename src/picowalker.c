@@ -246,7 +246,7 @@ void pw_sleep_loop() {
     pw_power_enter_sleep();
 }
 
-void pw_state_handle_input(uint8_t b) {
+void pw_state_handle_input(pw_buttons_t b) {
     STATE_FUNCS[current_state->sid].input(current_state, &screen_flags, b);
 }
 

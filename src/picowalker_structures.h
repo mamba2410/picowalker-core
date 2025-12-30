@@ -29,6 +29,7 @@
  * Valid range: -PW_SCREEN_WIDTH to PW_SCREEN_WIDTH-1
  */
 typedef int8_t pw_screen_pos_t;
+typedef uint8_t pw_screen_dim_t;
 
 
 /**
@@ -38,7 +39,7 @@ typedef int8_t pw_screen_pos_t;
 typedef struct pw_img_s {
     uint8_t *data;
     size_t size;
-    pw_screen_pos_t height, width;
+    pw_screen_dim_t height, width;
 } pw_img_t;
 
 

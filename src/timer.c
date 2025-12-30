@@ -62,7 +62,7 @@ void pw_rtc_regular_processing() {
 
         for(size_t i = 6; i > 0; i--) {
             historic_steps[i] = historic_steps[i-1];
-            printf("[Debug] Today -%d: 0x%08x\n", i+1, historic_steps[i]);
+            printf("[Debug] Today -%lu: 0x%08x\n", i+1, historic_steps[i]);
         }
         historic_steps[0] = swap_bytes_u32(health_data_cache.today_steps);
         printf("[Debug] Today -1: 0x%08x\n", historic_steps[0]);

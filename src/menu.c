@@ -73,11 +73,14 @@ void pw_menu_move_cursor(pw_state_t *s, int8_t move) {
 }
 
 void pw_menu_init(pw_state_t *s, const screen_flags_t *sf) {
+    (void)s;
+    (void)sf;
     s->menu.message = MSG_NONE;
     s->menu.substate = MS_NORMAL;
 }
 
 void pw_menu_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf) {
+    (void)sf;
     switch(s->menu.substate) {
 
     case MS_NORMAL: { break; }  // nothing to do
@@ -131,7 +134,8 @@ void pw_menu_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf) 
 }
 
 
-void pw_menu_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b) {
+void pw_menu_handle_input(pw_state_t *s, const screen_flags_t *sf, pw_buttons_t b) {
+    (void)sf;
 
     if(s->menu.substate == MS_MESSAGE) {
         s->menu.substate = MS_NORMAL;
@@ -160,6 +164,8 @@ void pw_menu_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b) {
 }
 
 static void menu_draw_bottom_numbers(pw_state_t *s, const screen_flags_t *sf) {
+    (void)s;
+    (void)sf;
     if(MENU_COSTS[s->menu.cursor] != 0) {
         size_t x = pw_screen_draw_integer(MENU_COSTS[s->menu.cursor], 16, PW_SCREEN_HEIGHT-16);
         pw_screen_clear_area(0, PW_SCREEN_HEIGHT-16, x, 16);
@@ -193,7 +199,7 @@ static void menu_draw_bottom_numbers(pw_state_t *s, const screen_flags_t *sf) {
 
 
 static void menu_clear_draw_cursor(pw_state_t *s, const screen_flags_t *sf) {
-    for(size_t i = 0; i < MENU_SIZE; i++) {
+    for(int i = 0; i < MENU_SIZE; i++) {
         if(s->menu.cursor == i) {
         pw_eeprom_addr_t addr = (sf->frame&ANIM_FRAME_NORMAL_TIME)?PW_EEPROM_ADDR_IMG_ARROW_DOWN_NORMAL:PW_EEPROM_ADDR_IMG_ARROW_DOWN_OFFSET;
             pw_screen_draw_from_eeprom(
@@ -230,7 +236,7 @@ void pw_menu_init_display(pw_state_t *s, const screen_flags_t *sf) {
         PW_EEPROM_SIZE_IMG_MENU_ARROW_RIGHT
     );
 
-    for(size_t i = 0; i < MENU_SIZE; i++) {
+    for(int i = 0; i < MENU_SIZE; i++) {
         pw_screen_draw_from_eeprom(
             i*16, CURSOR_Y_VALUES[i],
             16, 16,

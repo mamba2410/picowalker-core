@@ -45,8 +45,8 @@ ir_err_t pw_ir_send_packet(pw_packet_t *packet, size_t len, size_t *pn_write) {
     for(size_t i = 0; i < len; i++)
         packet->bytes[i] ^= 0xaa;
 
-    int n_write = pw_ir_write(packet->bytes, len);
-    *pn_write = (size_t)n_write;
+    size_t n_write = pw_ir_write(packet->bytes, len);
+    *pn_write = n_write;
 
     if(n_write != len) return IR_ERR_BAD_SEND;
 
@@ -56,13 +56,13 @@ ir_err_t pw_ir_send_packet(pw_packet_t *packet, size_t len, size_t *pn_write) {
 ir_err_t pw_ir_recv_packet(pw_packet_t *packet, size_t len, size_t *pn_read) {
 
     *pn_read = 0;
-    int n_read = pw_ir_read(packet->bytes, len);
+    size_t n_read = pw_ir_read(packet->bytes, len);
 
     if(n_read <= 0) return IR_ERR_TIMEOUT;
     *pn_read = (size_t)n_read;
 
     //printf("n_read: %lu\n", *pn_read);
-    for(int i = 0; i < n_read; i++)
+    for(size_t i = 0; i < n_read; i++)
         packet->bytes[i] ^= 0xaa;
 
     if(n_read != len && len < MAX_PACKET_SIZE) return IR_ERR_SIZE_MISMATCH;

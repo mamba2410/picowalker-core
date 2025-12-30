@@ -3,7 +3,10 @@
 
 #include "compression.h"
 
-void pw_compress_data(uint8_t *data, uint8_t *buf, size_t dlen) {
+void pw_compress_data(const uint8_t *data, uint8_t *buf, size_t dlen) {
+    (void)data;
+    (void)buf;
+    (void)dlen;
 
 }
 
@@ -11,7 +14,7 @@ void pw_compress_data(uint8_t *data, uint8_t *buf, size_t dlen) {
  *  data is packet minus 8-byte header
  *  Assume buf can hold decompressed data
  */
-int pw_decompress_data(uint8_t *data, uint8_t *buf, size_t dlen) {
+int pw_decompress_data(const uint8_t *data, uint8_t *buf, size_t dlen) {
     if(data == 0 || buf == 0) return -1;
 
     size_t c = 0;

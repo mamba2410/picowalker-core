@@ -6,7 +6,7 @@
 
 /// @file ir/compression.h
 
-void pw_compress_data(uint8_t *data, uint8_t *buf, size_t dlen);
-int  pw_decompress_data(uint8_t *data, uint8_t *buf, size_t dlen);
+void pw_compress_data(const uint8_t *data, uint8_t *buf, size_t dlen);
+int  pw_decompress_data(const uint8_t *data, uint8_t *buf, size_t dlen);
 
 #endif /* PW_COMPRESSION_H */

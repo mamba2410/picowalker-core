@@ -233,7 +233,7 @@ void pw_comms_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf)
 
 }
 
-void pw_comms_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b) {
+void pw_comms_handle_input(pw_state_t *s, const screen_flags_t *sf, pw_buttons_t b) {
 
     switch(s->comms.current_substate) {
     case COMM_SUBSTATE_NO_PEER_FOUND:

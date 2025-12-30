@@ -8,7 +8,7 @@
 #include "types.h"
 #include "utils.h"
 
-static const char const NINTENDO_STRING[] = "nintendo";
+static const char NINTENDO_STRING[] = "nintendo";
 
 int pw_eeprom_reliable_read(pw_eeprom_addr_t addr1, pw_eeprom_addr_t addr2, uint8_t *buf, size_t len) {
 
@@ -148,7 +148,7 @@ void pw_eeprom_reset(bool clear_events, bool clear_steps) {
 
     pw_eeprom_set_area(PW_EEPROM_ADDR_MET_PEER_DATA, 0, PW_EEPROM_SIZE_MET_PEER_DATA);
 
-    pw_eeprom_write(PW_EEPROM_ADDR_NINTENDO, NINTENDO_STRING, PW_EEPROM_SIZE_NINTENDO);
+    pw_eeprom_write(PW_EEPROM_ADDR_NINTENDO, (const uint8_t*)NINTENDO_STRING, PW_EEPROM_SIZE_NINTENDO);
 }
 
 void pw_eeprom_initialise_health_data(bool clear_time) {

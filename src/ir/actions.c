@@ -17,6 +17,8 @@
 #include "../apps/app_comms.h"
 #include "../event_log.h"
 
+#define FALLTHROUGH __attribute__((fallthrough))
+
 #define ACTION_DELAY_MS 1
 
 ir_err_t pw_ir_eeprom_do_write(pw_packet_t *packet, size_t len);
@@ -54,6 +56,7 @@ ir_err_t pw_action_listen_and_advertise(app_comms_t *comms, pw_packet_t *packet,
  *  Do one action per call, called in the main event loop
  */
 ir_err_t pw_action_try_find_peer(app_comms_t *comms, pw_packet_t *packet, size_t packet_max) {
+    (void)packet_max;
 
     ir_err_t err = IR_ERR_UNHANDLED_ERROR;
     size_t n_read = 0;
@@ -77,8 +80,7 @@ ir_err_t pw_action_try_find_peer(app_comms_t *comms, pw_packet_t *packet, size_t
             return err; // TODO: change this
         }
 
-        //break;
-        // Fall through
+        FALLTHROUGH;
     }
     case COMM_SUBSTATE_DETERMINE_ROLE: {
 
@@ -246,6 +248,7 @@ ir_err_t pw_action_slave_perform_request(app_comms_t *comms, pw_packet_t *packet
     }
     case CMD_WALK_START_INIT:
         health_data_cache.today_steps = 0;
+        FALLTHROUGH;
     case CMD_WALK_START: {
         // keep cmd
         packet->extra = EXTRA_BYTE_FROM_WALKER;
@@ -624,6 +627,7 @@ ir_err_t pw_action_peer_play(app_comms_t *comms, pw_packet_t *packet, size_t max
  */
 ir_err_t pw_action_send_large_raw_data_from_eeprom(uint16_t src, uint16_t dst, size_t final_write_size,
         size_t write_size, uint8_t *pcounter, pw_packet_t *packet, size_t max_len) {
+    (void)max_len;
     ir_err_t err = IR_ERR_UNHANDLED_ERROR;
 
     size_t cur_write_size   = (size_t)(*pcounter) * write_size;
@@ -664,6 +668,7 @@ ir_err_t pw_action_send_large_raw_data_from_eeprom(uint16_t src, uint16_t dst, s
  */
 ir_err_t pw_action_read_large_raw_data_from_eeprom(uint16_t src, uint16_t dst, size_t final_read_size,
         size_t read_size, uint8_t *pcounter, pw_packet_t *packet, size_t max_len) {
+    (void)max_len;
 
     ir_err_t err;
     size_t cur_read_size   = (size_t)(*pcounter) * read_size;
@@ -706,6 +711,7 @@ ir_err_t pw_action_read_large_raw_data_from_eeprom(uint16_t src, uint16_t dst, s
  */
 ir_err_t pw_action_send_large_raw_data_from_pointer(uint8_t *src, uint16_t dst, size_t final_write_size,
         size_t write_size, uint8_t *pcounter, pw_packet_t *packet, size_t max_len) {
+    (void)max_len;
     ir_err_t err = IR_ERR_UNHANDLED_ERROR;
 
     size_t cur_write_size   = (size_t)(*pcounter) * write_size;
@@ -777,6 +783,9 @@ void pw_ir_end_walk() {
     walker_info_t info;
 
     int res = pw_eeprom_read_walker_info(&info);
+    if(res < 0) {
+        printf("[Warn ] Can't read walker info\n");
+    }
 
     info.le_unk1 = 0;
     info.le_unk3 = 0;
@@ -802,16 +811,17 @@ void pw_ir_end_walk() {
 void pw_ir_start_walk() {
 
     uint8_t *buf = eeprom_buf;
-    size_t buf_size = EEPROM_BUF_SIZE;
-    int n = 0;
 
     buf[0] = 0xa5;
-    n = pw_eeprom_reliable_write(
+    int res = pw_eeprom_reliable_write(
             PW_EEPROM_ADDR_COPY_MARKER_1,
             PW_EEPROM_ADDR_COPY_MARKER_2,
             buf,
             1
         );
+    if(res < 0) {
+        printf("[Warn ] Couldn't write copy marker\n");
+    }
 
     // buf_size must wholly divide into copy size
     const size_t sz = 128;
@@ -832,12 +842,15 @@ void pw_ir_start_walk() {
     }
 
     buf[0] = 0x00;
-    n = pw_eeprom_reliable_write(
+    res = pw_eeprom_reliable_write(
             PW_EEPROM_ADDR_COPY_MARKER_1,
             PW_EEPROM_ADDR_COPY_MARKER_2,
             buf,
             1
         );
+    if(res < 0) {
+        printf("[Warn ] Couldn't clear copy marker\n");
+    }
 
     health_data_cache.walk_minute_counter = 0;
     health_data_cache.event_log_index = 0;
@@ -858,7 +871,7 @@ void pw_ir_start_walk() {
     //walker_info_t *info = (walker_info_t*)buf;
     walker_info_t *info = &walker_info_cache;
 
-    int res = pw_eeprom_read_walker_info(info);
+    res = pw_eeprom_read_walker_info(info);
     if(res != 0) {
         printf("Error: Reading walker info failed in walk start (%d)\n", res);
     }

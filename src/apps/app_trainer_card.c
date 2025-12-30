@@ -172,7 +172,7 @@ void pw_trainer_card_move_cursor(pw_state_t *s, int8_t m) {
     PW_SET_REQUEST(s->requests, PW_REQUEST_REDRAW);
 }
 
-void pw_trainer_card_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b) {
+void pw_trainer_card_handle_input(pw_state_t *s, const screen_flags_t *sf, pw_buttons_t b) {
     switch(b) {
     case PW_BUTTON_L: {
         if(s->trainer_card.current_cursor <= 0) {

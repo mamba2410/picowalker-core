@@ -8,7 +8,7 @@
 #include "power.h"
 #include "timer.h"
 
-volatile pw_power_context_t power_context = { };
+volatile pw_power_context_t power_context = {0};
 
 void walker_loop();
 extern void (*current_loop)(void);

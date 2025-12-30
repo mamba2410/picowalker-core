@@ -97,7 +97,6 @@ void pw_read_inventory(pw_brief_inventory_t *brief, pw_detailed_inventory_t *det
 
 
     // special inventory (stamps, etc)
-    uint8_t special_inventory;
     pw_eeprom_read(
         PW_EEPROM_ADDR_RECEIVED_BITFIELD,
         &(brief->received_bitfield),
