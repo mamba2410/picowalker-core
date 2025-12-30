@@ -10,7 +10,7 @@
 
 static const char const NINTENDO_STRING[] = "nintendo";
 
-int pw_eeprom_reliable_read(eeprom_addr_t addr1, eeprom_addr_t addr2, uint8_t *buf, size_t len) {
+int pw_eeprom_reliable_read(pw_eeprom_addr_t addr1, pw_eeprom_addr_t addr2, uint8_t *buf, size_t len) {
 
     uint8_t chk1, chk2;
     uint8_t written_chk1, written_chk2;
@@ -67,7 +67,7 @@ int pw_eeprom_reliable_read(eeprom_addr_t addr1, eeprom_addr_t addr2, uint8_t *b
     return 0;
 }
 
-int pw_eeprom_reliable_write(eeprom_addr_t addr1, eeprom_addr_t addr2, uint8_t *buf, size_t len) {
+int pw_eeprom_reliable_write(pw_eeprom_addr_t addr1, pw_eeprom_addr_t addr2, uint8_t *buf, size_t len) {
 
     uint8_t chk = pw_eeprom_checksum(buf, len);
     pw_eeprom_write(addr1, buf, len);

@@ -71,17 +71,7 @@ typedef enum pw_screen_color_e {
 /*
  * Types and defines
  */
-typedef uint16_t eeprom_addr_t;
-
-/*
- *  Functions defined by the driver
- */
-void pw_eeprom_init();
-int pw_eeprom_read(eeprom_addr_t addr, uint8_t *buf, size_t len);
-int pw_eeprom_write(eeprom_addr_t addr, uint8_t *buf, size_t len);
-void pw_eeprom_set_area(eeprom_addr_t addr, uint8_t v, size_t len);
-void pw_eeprom_sleep();
-void pw_eeprom_wake();
+typedef uint16_t pw_eeprom_addr_t;
 
 
 /*
