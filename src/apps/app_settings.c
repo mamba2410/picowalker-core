@@ -26,7 +26,7 @@ enum {
     SETTINGS_GO_TO_PICOWALKER,
 };
 
-static screen_pos_t cursor_positions[N_MAIN_OPTIONS][2] = {
+static pw_screen_pos_t cursor_positions[N_MAIN_OPTIONS][2] = {
     {0, 20},
     {48, 20},
     {0, 44}
@@ -126,7 +126,7 @@ void pw_settings_init_display(pw_state_t *s, const screen_flags_t *sf) {
         break;
     }
     case SETTINGS_SOUND: {
-        pw_screen_clear_area(0, 32, SCREEN_WIDTH, SCREEN_HEIGHT/2);
+        pw_screen_clear_area(0, 32, PW_SCREEN_WIDTH, PW_SCREEN_HEIGHT/2);
         pw_screen_draw_from_eeprom(
             s->settings.main_cursor*48, 16+4,
             8, 8,

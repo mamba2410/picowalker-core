@@ -7,7 +7,7 @@
 #include "app_picowalker.h"
 #include "../eeprom_map.h"
 #include "../pico_roms.h"
-#include "../picowalker-defs.h"
+#include "../picowalker_structures.h"
 #include "../power.h"
 #include "../screen.h"
 #include "../states.h"
@@ -21,12 +21,14 @@ enum {
 };
 
 void pw_picowalker_settings_init(pw_state_t *s, const screen_flags_t *sf) {
+    (void)sf;
     s->picowalker.current_substate = SUBSTATE_NORMAL;
     s->picowalker.cursor = 0;
 }
 
 
 void pw_picowalker_settings_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf) {
+    (void)sf;
     switch(s->picowalker.current_substate) {
         case SUBSTATE_NORMAL: {
             break;
@@ -49,20 +51,21 @@ void pw_picowalker_settings_event_loop(pw_state_t *s, pw_state_t *p, const scree
 }
 
 
-void pw_picowalker_settings_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b) {
+void pw_picowalker_settings_handle_input(pw_state_t *s, const screen_flags_t *sf, pw_buttons_t b) {
+    (void)sf;
     switch(b) {
-        case BUTTON_L: {
+        case PW_BUTTON_L: {
             s->picowalker.cursor--;
             if(s->picowalker.cursor < 0) {
                 s->picowalker.current_substate = SUBSTATE_GO_TO_SETTINGS;
             }
             break;
         }
-        case BUTTON_M: {
+        case PW_BUTTON_M: {
             s->picowalker.current_substate = SUBSTATE_GO_TO_SPLASH;
             break;
         }
-        case BUTTON_R: {
+        case PW_BUTTON_R: {
             if(s->picowalker.cursor < N_ENTRIES-1) {
                 s->picowalker.cursor++;
             }
@@ -78,7 +81,9 @@ void pw_picowalker_settings_handle_input(pw_state_t *s, const screen_flags_t *sf
 
 
 void pw_picowalker_settings_init_display(pw_state_t *s, const screen_flags_t *sf) {
-    screen_pos_t x, y;
+    (void)s;
+    (void)sf;
+    pw_screen_pos_t x, y;
     pw_img_t img = (pw_img_t){
         .width = 80,
         .height = 16,
@@ -104,7 +109,7 @@ void pw_picowalker_settings_init_display(pw_state_t *s, const screen_flags_t *sf
     };
     pw_screen_draw_img(&img, x, y);
     uint8_t percent = pw_power_get_battery();
-    x = SCREEN_WIDTH-8;
+    x = PW_SCREEN_WIDTH-8;
     x = pw_screen_draw_integer(percent, x, y);
 
     img = (pw_img_t) {
@@ -113,12 +118,12 @@ void pw_picowalker_settings_init_display(pw_state_t *s, const screen_flags_t *sf
         .data = percent_char,
         .size = 8*16/4
     };
-    pw_screen_draw_img(&img, SCREEN_WIDTH-8, y);
+    pw_screen_draw_img(&img, PW_SCREEN_WIDTH-8, y);
 }
 
 
 void pw_picowalker_settings_update_display(pw_state_t *s, const screen_flags_t *sf) {
-    eeprom_addr_t addr = sf->frame&ANIM_FRAME_NORMAL_TIME?PW_EEPROM_ADDR_IMG_ARROW_RIGHT_NORMAL:
+    pw_eeprom_addr_t addr = sf->frame&ANIM_FRAME_NORMAL_TIME?PW_EEPROM_ADDR_IMG_ARROW_RIGHT_NORMAL:
                          PW_EEPROM_ADDR_IMG_ARROW_RIGHT_OFFSET;
     pw_screen_draw_from_eeprom(
         0, 16+4+s->picowalker.cursor*16,
@@ -126,7 +131,7 @@ void pw_picowalker_settings_update_display(pw_state_t *s, const screen_flags_t *
         addr,
         PW_EEPROM_SIZE_IMG_ARROW
     );
-    for(size_t i = 0; i < N_ENTRIES; i++) {
+    for(int8_t i = 0; i < N_ENTRIES; i++) {
         if(i == s->picowalker.cursor) continue;
         pw_screen_clear_area(
             0, 16+i*16,
