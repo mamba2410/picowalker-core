@@ -280,9 +280,14 @@ void pw_settings_handle_input(pw_state_t *s, const screen_flags_t *sf, pw_button
 		        pw_audio_play_sound(SOUND_NAVIGATE_BACK);
                 break;
             }
+            s->settings.main_cursor = (s->settings.main_cursor - 1)%N_MAIN_OPTIONS;
 	        pw_audio_play_sound(SOUND_CURSOR_MOVE);
-            // fall through otherwise
-            FALLTHROUGH;
+            break;
+        }
+        case PW_BUTTON_R: {
+            s->settings.main_cursor = (s->settings.main_cursor + 1)%N_MAIN_OPTIONS;
+	        pw_audio_play_sound(SOUND_CURSOR_MOVE);
+            break;
         }
         case PW_BUTTON_M: {
             if(s->settings.main_cursor == 0) {
@@ -295,6 +300,7 @@ void pw_settings_handle_input(pw_state_t *s, const screen_flags_t *sf, pw_button
                 s->settings.last_sub_cursor = (health_data_cache.settings&SETTINGS_SHADE_MASK)>>SETTINGS_SHADE_OFFSET;
             } else if(s->settings.main_cursor == 2) {
                 s->settings.current_substate = SETTINGS_GO_TO_PICOWALKER;
+	            pw_audio_play_sound(SOUND_NAVIGATE_MENU);
             }
             PW_SET_REQUEST(s->requests, PW_REQUEST_REDRAW);
             break;
