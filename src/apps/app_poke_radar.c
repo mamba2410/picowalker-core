@@ -20,8 +20,8 @@
  */
 
 static uint8_t radar_level_to_index[4] = {0, 0, 1, 2};
-static screen_pos_t bush_xs[4] = {8, 16, 56, 64};
-static screen_pos_t bush_ys[4] = {0, 24, 0, 24};
+static pw_screen_pos_t bush_xs[4] = {8, 16, 56, 64};
+static pw_screen_pos_t bush_ys[4] = {0, 24, 0, 24};
 static uint8_t invisible_timer_divisors[4] = {1, 1, 2, 3}; // idk
 static uint8_t active_timers[4] = {20, 15, 10, 7};
 
@@ -87,7 +87,7 @@ void pw_poke_radar_init_display(pw_state_t *s, const screen_flags_t *sf) {
         for(uint8_t i = 0; i < 4; i++)
             pw_screen_draw_img(&bush, bush_xs[i], bush_ys[i]);
 
-        pw_screen_draw_message_with_text_box(SCREEN_HEIGHT-16, 28, 16, SCREEN_BLACK); // "find a pokemon!"
+        pw_screen_draw_message_with_text_box(PW_SCREEN_HEIGHT-16, 28, 16, PW_SCREEN_BLACK); // "find a pokemon!"
         break;
     }
     case RADAR_BUSH_OK: {
@@ -100,7 +100,7 @@ void pw_poke_radar_init_display(pw_state_t *s, const screen_flags_t *sf) {
         break;
     }
     case RADAR_FAILED: {
-        pw_screen_draw_message_with_text_box(SCREEN_HEIGHT-16, 30, 16, SCREEN_BLACK); // "it got away"
+        pw_screen_draw_message_with_text_box(PW_SCREEN_HEIGHT-16, 30, 16, PW_SCREEN_BLACK); // "it got away"
         break;
     }
     case RADAR_START_BATTLE: {
@@ -158,8 +158,8 @@ void pw_poke_radar_update_display(pw_state_t *s, const screen_flags_t *sf) {
         break;
     }
     case RADAR_START_BATTLE: {
-        pw_screen_fill_area(0, s->radar.begin_timer*8, SCREEN_WIDTH, 8, SCREEN_BLACK);
-        pw_screen_fill_area(0, SCREEN_HEIGHT-(s->radar.begin_timer+1)*8, SCREEN_WIDTH, 8, SCREEN_BLACK);
+        pw_screen_fill_area(0, s->radar.begin_timer*8, PW_SCREEN_WIDTH, 8, PW_SCREEN_BLACK);
+        pw_screen_fill_area(0, PW_SCREEN_HEIGHT-(s->radar.begin_timer+1)*8, PW_SCREEN_WIDTH, 8, PW_SCREEN_BLACK);
         s->radar.begin_timer++;
         break;
     }
@@ -179,17 +179,17 @@ void pw_poke_radar_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t
     case RADAR_CHOOSING: {
         PW_SET_REQUEST(s->requests, PW_REQUEST_REDRAW);
         switch(b) {
-        case BUTTON_L: {
+        case PW_BUTTON_L: {
             s->radar.user_cursor = (s->radar.user_cursor-1+4)%4; // in mod 4, +3 == -1
 	    pw_audio_play_sound(SOUND_CURSOR_MOVE);
             break;
         }
-        case BUTTON_R: {
+        case PW_BUTTON_R: {
             s->radar.user_cursor = (s->radar.user_cursor+1)%4;
 	    pw_audio_play_sound(SOUND_CURSOR_MOVE);
             break;
         }
-        case BUTTON_M: {
+        case PW_BUTTON_M: {
             if(s->radar.user_cursor == s->radar.active_bush) {
                 s->radar.current_substate = RADAR_BUSH_OK;
                 s->radar.invisible_timer = s->radar.active_timer = 3;

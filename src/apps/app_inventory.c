@@ -83,18 +83,18 @@ void pw_inventory_update_display(pw_state_t *s, const screen_flags_t *sf) {
 
 void pw_inventory_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b) {
     switch(b) {
-    case BUTTON_L: {
+    case PW_BUTTON_L: {
         pw_inventory_move_cursor(s, -1);
         break;
     };
-    case BUTTON_M: {
+    case PW_BUTTON_M: {
         if(s->inventory.current_substate == SUBSCREEN_FOUND && gbrief.peer_play_items != 0) {
             s->inventory.current_substate = SUBSCREEN_PRESENTS;
         } else {
             s->inventory.current_substate = SUBSTATE_GO_TO_SPLASH;
         }
     };
-    case BUTTON_R: {
+    case PW_BUTTON_R: {
         pw_inventory_move_cursor(s, +1);
         break;
     };
@@ -161,7 +161,7 @@ static void pw_inventory_move_cursor(pw_state_t *s, int8_t m) {
 }
 
 
-static void get_cursor_coords(pw_state_t *s, screen_pos_t *cx, screen_pos_t *cy) {
+static void get_cursor_coords(pw_state_t *s, pw_screen_pos_t *cx, pw_screen_pos_t *cy) {
     uint8_t xs[] = {8, 24, 32, 40, 48};
     const uint8_t yp = 24, yi = 40;
     uint8_t x0 = 16, y0 = 24;
@@ -189,7 +189,7 @@ static void draw_cursor(pw_state_t *s, const screen_flags_t *sf) {
 
     uint16_t addr = (sf->frame&ANIM_FRAME_NORMAL_TIME)?PW_EEPROM_ADDR_IMG_ARROW_DOWN_NORMAL:PW_EEPROM_ADDR_IMG_ARROW_DOWN_OFFSET;
 
-    screen_pos_t cx=0, cy=0;
+    pw_screen_pos_t cx=0, cy=0;
     get_cursor_coords(s, &cx, &cy);
     pw_screen_draw_from_eeprom(
         cx, cy,
@@ -226,7 +226,7 @@ static void draw_animated_sprite(pw_state_t *s, const screen_flags_t *sf) {
     sprite = (pw_img_t) {
         .data=buf, .width=32, .height=24, .size=size
     };
-    pw_screen_draw_img(&sprite, SCREEN_WIDTH-32-4, SCREEN_HEIGHT-16-24);
+    pw_screen_draw_img(&sprite, PW_SCREEN_WIDTH-32-4, PW_SCREEN_HEIGHT-16-24);
 
 }
 
@@ -259,9 +259,9 @@ static void draw_name(pw_state_t *s, const screen_flags_t *sf) {
         };
     }
 
-    pw_screen_overlay_text_box(&sprite, SCREEN_WIDTH, 16, SCREEN_BLACK);
-    pw_screen_draw_img(&sprite, 0, SCREEN_HEIGHT-16);
-    //pw_screen_draw_text_box(0, SCREEN_HEIGHT-16, SCREEN_WIDTH, 16, SCREEN_BLACK);
+    pw_screen_overlay_text_box(&sprite, PW_SCREEN_WIDTH, 16, PW_SCREEN_BLACK);
+    pw_screen_draw_img(&sprite, 0, PW_SCREEN_HEIGHT-16);
+    //pw_screen_draw_text_box(0, PW_SCREEN_HEIGHT-16, PW_SCREEN_WIDTH, 16, PW_SCREEN_BLACK);
 
 }
 
@@ -275,7 +275,7 @@ static void pw_inventory_draw_screen1(pw_state_t *s, const screen_flags_t *sf) {
     );
 
     pw_screen_draw_from_eeprom(
-        SCREEN_WIDTH-8, 0,
+        PW_SCREEN_WIDTH-8, 0,
         8, 16,
         PW_EEPROM_ADDR_IMG_MENU_ARROW_RIGHT,
         PW_EEPROM_SIZE_IMG_MENU_ARROW_RIGHT
@@ -382,7 +382,7 @@ static void pw_inventory_draw_screen2(pw_state_t *s, const screen_flags_t *sf) {
         draw_cursor(s, sf);
 
         pw_screen_draw_from_eeprom(
-            SCREEN_WIDTH-32-4, SCREEN_HEIGHT-16-24,
+            PW_SCREEN_WIDTH-32-4, PW_SCREEN_HEIGHT-16-24,
             32, 24,
             PW_EEPROM_ADDR_IMG_PRESENT_LARGE,
             PW_EEPROM_SIZE_IMG_PRESENT_LARGE
@@ -394,7 +394,7 @@ static void pw_inventory_draw_screen2(pw_state_t *s, const screen_flags_t *sf) {
 
 
 static void pw_inventory_update_screen1(pw_state_t *s, const screen_flags_t *sf) {
-    screen_pos_t cx=0, cy=0;
+    pw_screen_pos_t cx=0, cy=0;
     get_cursor_coords(s, &cx, &cy);
 
     if(cy == 16) {
@@ -416,7 +416,7 @@ static void pw_inventory_update_screen1(pw_state_t *s, const screen_flags_t *sf)
 
 static void pw_inventory_update_screen2(pw_state_t *s, const screen_flags_t *sf) {
 
-    screen_pos_t cx=0, cy=0;
+    pw_screen_pos_t cx=0, cy=0;
     get_cursor_coords(s, &cx, &cy);
     uint8_t x0 = 16, y0 = 24;
 

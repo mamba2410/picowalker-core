@@ -19,7 +19,7 @@ void pw_screen_draw_from_eeprom(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint
     pw_screen_draw_img(&img, x, y);
 }
 
-void pw_screen_draw_from_eeprom_with_text_box(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint16_t addr, size_t len, screen_colour_t c) {
+void pw_screen_draw_from_eeprom_with_text_box(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint16_t addr, size_t len, pw_screen_color_t c) {
     pw_img_t img = {.height=h, .width=w, .data=eeprom_buf, .size=len};
     pw_eeprom_read(addr, eeprom_buf, len);
     pw_screen_overlay_text_box(&img, w, h, c);
@@ -47,7 +47,7 @@ size_t pw_screen_draw_integer(uint32_t n, size_t right_x, size_t y) {
 }
 
 
-size_t pw_screen_draw_integer_with_overline(uint32_t n, size_t right_x, size_t y, screen_colour_t c) {
+size_t pw_screen_draw_integer_with_overline(uint32_t n, size_t right_x, size_t y, pw_screen_color_t c) {
 
     size_t x = right_x;
     uint32_t m = n;
@@ -104,18 +104,18 @@ void pw_screen_draw_subtime(uint8_t n, size_t x, size_t y, bool draw_colon) {
 }
 
 // always draws at x=0
-void pw_screen_draw_message(screen_pos_t y, uint8_t message_index, screen_pos_t h) {
+void pw_screen_draw_message(pw_screen_pos_t y, uint8_t message_index, pw_screen_pos_t h) {
     if(h != 16 && h != 32) {
         return;    // can only do 16 or 32 height messages
     }
 
-    eeprom_addr_t addr = PW_EEPROM_ADDR_TEXT_CONNECTING + message_index * PW_EEPROM_SIZE_TEXT_CONNECTING;
+    pw_eeprom_addr_t addr = PW_EEPROM_ADDR_TEXT_CONNECTING + message_index * PW_EEPROM_SIZE_TEXT_CONNECTING;
     size_t sz = PW_EEPROM_SIZE_TEXT_CONNECTING*h/16;
 
     pw_eeprom_read(addr, eeprom_buf, sz);
 
     pw_img_t img = {
-        .width=SCREEN_WIDTH, .height=h,
+        .width=PW_SCREEN_WIDTH, .height=h,
         .data=eeprom_buf,
         .size=sz
     };
@@ -124,28 +124,28 @@ void pw_screen_draw_message(screen_pos_t y, uint8_t message_index, screen_pos_t 
 }
 
 // always draws at x=0
-void pw_screen_draw_message_with_text_box(screen_pos_t y, uint8_t message_index, screen_pos_t h, screen_colour_t c) {
+void pw_screen_draw_message_with_text_box(pw_screen_pos_t y, uint8_t message_index, pw_screen_pos_t h, pw_screen_color_t c) {
     if(h != 16 && h != 32) {
         return;    // can only do 16 or 32 height messages
     }
 
-    eeprom_addr_t addr = PW_EEPROM_ADDR_TEXT_CONNECTING + message_index * PW_EEPROM_SIZE_TEXT_CONNECTING;
+    pw_eeprom_addr_t addr = PW_EEPROM_ADDR_TEXT_CONNECTING + message_index * PW_EEPROM_SIZE_TEXT_CONNECTING;
     size_t sz = PW_EEPROM_SIZE_TEXT_CONNECTING*h/16;
 
     pw_eeprom_read(addr, eeprom_buf, sz);
 
     pw_img_t img = {
-        .width=SCREEN_WIDTH, .height=h,
+        .width=PW_SCREEN_WIDTH, .height=h,
         .data=eeprom_buf,
         .size=sz
     };
-    pw_screen_overlay_text_box(&img, SCREEN_WIDTH, h, c);
+    pw_screen_overlay_text_box(&img, PW_SCREEN_WIDTH, h, c);
 
     pw_screen_draw_img(&img, 0, y);
 }
 
-void pw_screen_draw_pokemon_name_and_message(uint16_t poke_addr, uint16_t message_addr, screen_colour_t c) {
-    pw_img_t img = {.width=SCREEN_WIDTH, .height=32, .data=eeprom_buf, .size=2*PW_EEPROM_SIZE_TEXT_APPEARED};
+void pw_screen_draw_pokemon_name_and_message(uint16_t poke_addr, uint16_t message_addr, pw_screen_color_t c) {
+    pw_img_t img = {.width=PW_SCREEN_WIDTH, .height=32, .data=eeprom_buf, .size=2*PW_EEPROM_SIZE_TEXT_APPEARED};
     pw_eeprom_read(
         poke_addr,
         img.data,
@@ -158,18 +158,18 @@ void pw_screen_draw_pokemon_name_and_message(uint16_t poke_addr, uint16_t messag
     );
     for(int i = 1; i >= 0; i--) {
         for(int j = 2*80 - 1; j >= 0; j--) {
-            img.data[i*2*SCREEN_WIDTH+j] = img.data[i*2*80 + j];
+            img.data[i*2*PW_SCREEN_WIDTH+j] = img.data[i*2*80 + j];
         }
         if(i > 0) {
             memset(&img.data[i*2*80], 0, 2*(16));
         }
     }
     memset(img.data+PW_EEPROM_SIZE_TEXT_POKEMON_NAME, 0, PW_EEPROM_SIZE_TEXT_ATTACKED - PW_EEPROM_SIZE_TEXT_POKEMON_NAME);
-    pw_screen_overlay_text_box(&img, SCREEN_WIDTH, 32, SCREEN_BLACK);
-    pw_screen_draw_img(&img, 0, SCREEN_HEIGHT-32);
+    pw_screen_overlay_text_box(&img, PW_SCREEN_WIDTH, 32, PW_SCREEN_BLACK);
+    pw_screen_draw_img(&img, 0, PW_SCREEN_HEIGHT-32);
 }
 
-void pw_screen_overlay_text_box(pw_img_t *img, screen_pos_t w, screen_pos_t h, screen_colour_t c) {
+void pw_screen_overlay_text_box(pw_img_t *img, pw_screen_pos_t w, pw_screen_pos_t h, pw_screen_color_t c) {
     // If dimensions are too small, extend source image.
     // TODO: this assumes there's enough space in the buffer. this is bad.
     if(w > img->width) {
@@ -238,7 +238,7 @@ void pw_screen_overlay_text_box(pw_img_t *img, screen_pos_t w, screen_pos_t h, s
 
 }
 
-void pw_screen_overlay_overline(pw_img_t *img, screen_pos_t w, screen_colour_t c) {
+void pw_screen_overlay_overline(pw_img_t *img, pw_screen_pos_t w, pw_screen_color_t c) {
     if(w > img->width) {
         printf("[Error] Trying to draw a %d pixel line over a %dx%d image\n", w, img->width, img->height);
         return;
@@ -256,8 +256,8 @@ void pw_screen_overlay_overline(pw_img_t *img, screen_pos_t w, screen_colour_t c
 }
 
 
-void pw_screen_get_blank_image(pw_img_t *img, screen_pos_t w, screen_pos_t h) {
-    bool invalid = (w > SCREEN_WIDTH) || (h > SCREEN_HEIGHT) || (img == NULL);
+void pw_screen_get_blank_image(pw_img_t *img, pw_screen_pos_t w, pw_screen_pos_t h) {
+    bool invalid = (w > PW_SCREEN_WIDTH) || (h > PW_SCREEN_HEIGHT) || (img == NULL);
     if(invalid) {
         img->data = NULL;
         img->width = 0;
@@ -277,7 +277,7 @@ void pw_screen_get_blank_image(pw_img_t *img, screen_pos_t w, screen_pos_t h) {
  * Gives the visible dimension (width/height) of a smaller image when overlapping with a larger one.
  * Effectively the convolution of two unit top-hat functions of widths img and base.
  */
-static screen_pos_t get_overlapping_dimension(screen_pos_t img, screen_pos_t base, int8_t pos) {
+static pw_screen_pos_t get_overlapping_dimension(pw_screen_pos_t img, pw_screen_pos_t base, int8_t pos) {
     if(img > base) return 0;
     if(pos < (int8_t)(-img)) return 0;
     if(pos < 0) return img + pos;
@@ -290,7 +290,7 @@ static screen_pos_t get_overlapping_dimension(screen_pos_t img, screen_pos_t bas
 /**
  * Specifically for images with y offset aligned to 8 bytes
  */
-static void overlay_img_aligned(pw_img_t *base, pw_img_t *img, int8_t x, int8_t y, screen_pos_t visible_width, screen_pos_t visible_height) {
+static void overlay_img_aligned(pw_img_t *base, pw_img_t *img, int8_t x, int8_t y, pw_screen_pos_t visible_width, pw_screen_pos_t visible_height) {
 
     // Split y
     uint8_t chunk_spans = visible_height / 8;
@@ -313,7 +313,7 @@ static void overlay_img_aligned(pw_img_t *base, pw_img_t *img, int8_t x, int8_t 
 /**
  * Specifically for images with y offset aligned to 8 bytes
  */
-static void overlay_img_unaligned(pw_img_t *base, pw_img_t *img, int8_t x, int8_t y, screen_pos_t visible_width, screen_pos_t visible_height) {
+static void overlay_img_unaligned(pw_img_t *base, pw_img_t *img, int8_t x, int8_t y, pw_screen_pos_t visible_width, pw_screen_pos_t visible_height) {
 
     // Split y
     uint8_t chunk_spans = (visible_height / 8) + ((y + base->height)%8 + (8-1))/8;
@@ -369,10 +369,10 @@ static void overlay_img_unaligned(pw_img_t *base, pw_img_t *img, int8_t x, int8_
  * Overlay image `img` on top of the image `base`.
  *
  */
-void pw_screen_overlay_img(pw_img_t *base, pw_img_t *img, screen_pos_t x, screen_pos_t y) {
+void pw_screen_overlay_img(pw_img_t *base, pw_img_t *img, pw_screen_pos_t x, pw_screen_pos_t y) {
     // Dimension checks
-    screen_pos_t visible_width = get_overlapping_dimension(img->width, base->width, x);
-    screen_pos_t visible_height = get_overlapping_dimension(img->height, base->height, y);
+    pw_screen_pos_t visible_width = get_overlapping_dimension(img->width, base->width, x);
+    pw_screen_pos_t visible_height = get_overlapping_dimension(img->height, base->height, y);
     if(visible_width == 0 || visible_height == 0) {
         printf("[Error] Visible width/height of overlapping image is zero.");
         return;

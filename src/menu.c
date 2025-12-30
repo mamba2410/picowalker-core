@@ -137,16 +137,16 @@ void pw_menu_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b) {
         s->menu.substate = MS_NORMAL;
     } else {
         switch(b) {
-            case BUTTON_L: {
+            case PW_BUTTON_L: {
                 pw_menu_move_cursor(s, -1);
                 break;
             };
-            case BUTTON_M: {
+            case PW_BUTTON_M: {
                 s->menu.substate = MS_CLICKED;
                 pw_audio_play_sound(SOUND_NAVIGATE_MENU);
                 break;
             };
-            case BUTTON_R: {
+            case PW_BUTTON_R: {
                 pw_menu_move_cursor(s, +1);
                 break;
             };
@@ -161,33 +161,33 @@ void pw_menu_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b) {
 
 static void menu_draw_bottom_numbers(pw_state_t *s, const screen_flags_t *sf) {
     if(MENU_COSTS[s->menu.cursor] != 0) {
-        size_t x = pw_screen_draw_integer(MENU_COSTS[s->menu.cursor], 16, SCREEN_HEIGHT-16);
-        pw_screen_clear_area(0, SCREEN_HEIGHT-16, x, 16);
+        size_t x = pw_screen_draw_integer(MENU_COSTS[s->menu.cursor], 16, PW_SCREEN_HEIGHT-16);
+        pw_screen_clear_area(0, PW_SCREEN_HEIGHT-16, x, 16);
         pw_screen_draw_from_eeprom(
-            24, SCREEN_HEIGHT-16,
+            24, PW_SCREEN_HEIGHT-16,
             16, 16,
             PW_EEPROM_ADDR_IMG_WATTS,
             PW_EEPROM_SIZE_IMG_WATTS
         );
         pw_screen_draw_from_eeprom(
-            40, SCREEN_HEIGHT-16,
+            40, PW_SCREEN_HEIGHT-16,
             8, 16,
             PW_EEPROM_ADDR_IMG_CHAR_SLASH,
             PW_EEPROM_SIZE_IMG_CHAR
         );
     } else {
-        pw_screen_clear_area(0, SCREEN_HEIGHT-16, SCREEN_WIDTH/2, 16);
+        pw_screen_clear_area(0, PW_SCREEN_HEIGHT-16, PW_SCREEN_WIDTH/2, 16);
     }
 
     pw_screen_draw_from_eeprom(
-        SCREEN_WIDTH-16, SCREEN_HEIGHT-16,
+        PW_SCREEN_WIDTH-16, PW_SCREEN_HEIGHT-16,
         16, 16,
         PW_EEPROM_ADDR_IMG_WATTS,
         PW_EEPROM_SIZE_IMG_WATTS
     );
-    size_t x = pw_screen_draw_integer(health_data_cache.current_watts, SCREEN_WIDTH-16, SCREEN_HEIGHT-16);
-    pw_screen_clear_area(SCREEN_WIDTH/2, SCREEN_HEIGHT-16, x - SCREEN_WIDTH/2, 16);
-    pw_screen_clear_area(16, SCREEN_HEIGHT-16, 8, 16);
+    size_t x = pw_screen_draw_integer(health_data_cache.current_watts, PW_SCREEN_WIDTH-16, PW_SCREEN_HEIGHT-16);
+    pw_screen_clear_area(PW_SCREEN_WIDTH/2, PW_SCREEN_HEIGHT-16, x - PW_SCREEN_WIDTH/2, 16);
+    pw_screen_clear_area(16, PW_SCREEN_HEIGHT-16, 8, 16);
 
 }
 
@@ -195,7 +195,7 @@ static void menu_draw_bottom_numbers(pw_state_t *s, const screen_flags_t *sf) {
 static void menu_clear_draw_cursor(pw_state_t *s, const screen_flags_t *sf) {
     for(size_t i = 0; i < MENU_SIZE; i++) {
         if(s->menu.cursor == i) {
-        eeprom_addr_t addr = (sf->frame&ANIM_FRAME_NORMAL_TIME)?PW_EEPROM_ADDR_IMG_ARROW_DOWN_NORMAL:PW_EEPROM_ADDR_IMG_ARROW_DOWN_OFFSET;
+        pw_eeprom_addr_t addr = (sf->frame&ANIM_FRAME_NORMAL_TIME)?PW_EEPROM_ADDR_IMG_ARROW_DOWN_NORMAL:PW_EEPROM_ADDR_IMG_ARROW_DOWN_OFFSET;
             pw_screen_draw_from_eeprom(
                 4+i*16, CURSOR_Y_VALUES[i]-8,
                 8, 8,
@@ -224,7 +224,7 @@ void pw_menu_init_display(pw_state_t *s, const screen_flags_t *sf) {
         PW_EEPROM_SIZE_IMG_MENU_ARROW_LEFT
     );
     pw_screen_draw_from_eeprom(
-        SCREEN_WIDTH-8, 0,
+        PW_SCREEN_WIDTH-8, 0,
         8, 16,
         PW_EEPROM_ADDR_IMG_MENU_ARROW_RIGHT,
         PW_EEPROM_SIZE_IMG_MENU_ARROW_RIGHT
@@ -268,19 +268,19 @@ void pw_menu_update_display(pw_state_t *s, const screen_flags_t *sf) {
         case MS_MESSAGE: {
             // Draw message spanning the whole bottom
             //pw_screen_draw_from_eeprom(
-            //    0, SCREEN_HEIGHT-16,
-            //    SCREEN_WIDTH, 16,
+            //    0, PW_SCREEN_HEIGHT-16,
+            //    PW_SCREEN_WIDTH, 16,
             //    // TODO: change this to MENU_MESSAGES
             //    PW_EEPROM_ADDR_TEXT_NEED_WATTS + PW_EEPROM_SIZE_TEXT_NEED_WATTS*(s->menu.message-1),
             //    PW_EEPROM_SIZE_TEXT_NEED_WATTS
             //);
-            //pw_screen_draw_text_box(0, SCREEN_HEIGHT-16, SCREEN_WIDTH, 16, SCREEN_BLACK);
+            //pw_screen_draw_text_box(0, PW_SCREEN_HEIGHT-16, PW_SCREEN_WIDTH, 16, PW_SCREEN_BLACK);
 
             uint16_t addr = PW_EEPROM_ADDR_TEXT_NEED_WATTS + PW_EEPROM_SIZE_TEXT_NEED_WATTS*(s->menu.message-1);
-            pw_img_t img = (pw_img_t){.width=SCREEN_WIDTH, .height=16, .data=eeprom_buf, .size=PW_EEPROM_SIZE_TEXT_NEED_WATTS};
+            pw_img_t img = (pw_img_t){.width=PW_SCREEN_WIDTH, .height=16, .data=eeprom_buf, .size=PW_EEPROM_SIZE_TEXT_NEED_WATTS};
             pw_eeprom_read(addr, eeprom_buf, PW_EEPROM_SIZE_TEXT_NEED_WATTS);
-            pw_screen_overlay_text_box(&img, SCREEN_WIDTH, 16, SCREEN_BLACK);
-            pw_screen_draw_img(&img, 0, SCREEN_HEIGHT-16);
+            pw_screen_overlay_text_box(&img, PW_SCREEN_WIDTH, 16, PW_SCREEN_BLACK);
+            pw_screen_draw_img(&img, 0, PW_SCREEN_HEIGHT-16);
 
             break;
         }

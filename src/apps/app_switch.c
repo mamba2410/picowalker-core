@@ -50,7 +50,7 @@ void pw_switch_init(pw_state_t *s, const screen_flags_t *sf) {
 }
 
 void pw_switch_init_display(pw_state_t *s, const screen_flags_t *sf) {
-    eeprom_addr_t addr = 0;
+    pw_eeprom_addr_t addr = 0;
     size_t size = 0;
 
     switch(s->switches.switch_type) {
@@ -83,7 +83,7 @@ void pw_switch_init_display(pw_state_t *s, const screen_flags_t *sf) {
 
     for(uint8_t i = 0; i < 3; i++) {
         pw_screen_draw_from_eeprom(
-            20+i*(16+8), SCREEN_HEIGHT-32-8,
+            20+i*(16+8), PW_SCREEN_HEIGHT-32-8,
             8, 8,
             addr,
             size
@@ -91,7 +91,7 @@ void pw_switch_init_display(pw_state_t *s, const screen_flags_t *sf) {
     }
 
     pw_screen_draw_from_eeprom(
-        20+s->switches.cursor*(16+8), SCREEN_HEIGHT-32,
+        20+s->switches.cursor*(16+8), PW_SCREEN_HEIGHT-32,
         8, 8,
         PW_EEPROM_ADDR_IMG_ARROW_UP_NORMAL,
         PW_EEPROM_SIZE_IMG_ARROW
@@ -99,9 +99,9 @@ void pw_switch_init_display(pw_state_t *s, const screen_flags_t *sf) {
 }
 
 void pw_switch_update_display(pw_state_t *s, const screen_flags_t *sf) {
-    eeprom_addr_t addr = 0;
+    pw_eeprom_addr_t addr = 0;
     size_t size = 0;
-    screen_pos_t width = 0;
+    pw_screen_pos_t width = 0;
 
     switch(s->switches.switch_type) {
     case SWITCH_TYPE_ITEM: {
@@ -121,18 +121,18 @@ void pw_switch_update_display(pw_state_t *s, const screen_flags_t *sf) {
     }
 
     for(uint8_t i = 0; i < 3; i++) {
-        pw_screen_clear_area(20+i*(8+16), SCREEN_HEIGHT-32, 8, 8);
+        pw_screen_clear_area(20+i*(8+16), PW_SCREEN_HEIGHT-32, 8, 8);
     }
     if(sf->frame&ANIM_FRAME_DOUBLE_TIME) {
         pw_screen_draw_from_eeprom(
-            20+s->switches.cursor*(8+16), SCREEN_HEIGHT-32,
+            20+s->switches.cursor*(8+16), PW_SCREEN_HEIGHT-32,
             8, 8,
             PW_EEPROM_ADDR_IMG_ARROW_UP_NORMAL,
             PW_EEPROM_SIZE_IMG_ARROW
         );
     } else {
         pw_screen_draw_from_eeprom(
-            20+s->switches.cursor*(8+16), SCREEN_HEIGHT-32,
+            20+s->switches.cursor*(8+16), PW_SCREEN_HEIGHT-32,
             8, 8,
             PW_EEPROM_ADDR_IMG_ARROW_UP_OFFSET,
             PW_EEPROM_SIZE_IMG_ARROW
@@ -141,12 +141,12 @@ void pw_switch_update_display(pw_state_t *s, const screen_flags_t *sf) {
 
     if(s->switches.cursor != s->switches.prev_cursor) {
         pw_screen_draw_from_eeprom(
-            0, SCREEN_HEIGHT-16,
+            0, PW_SCREEN_HEIGHT-16,
             width, 16,
             addr,
             size
         );
-        pw_screen_draw_text_box(0, SCREEN_HEIGHT-16, SCREEN_WIDTH, 16, SCREEN_BLACK);
+        pw_screen_draw_text_box(0, PW_SCREEN_HEIGHT-16, PW_SCREEN_WIDTH, 16, PW_SCREEN_BLACK);
         s->switches.prev_cursor = s->switches.cursor;
     }
 
@@ -154,7 +154,7 @@ void pw_switch_update_display(pw_state_t *s, const screen_flags_t *sf) {
 
 void pw_switch_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b) {
     switch(b) {
-    case BUTTON_L: {
+    case PW_BUTTON_L: {
         if(s->switches.cursor == 0) {
             s->switches.current_substate = SWITCHES_TO_SPLASH;
             break;
@@ -162,12 +162,12 @@ void pw_switch_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b) 
         s->switches.cursor = (s->switches.cursor-1+3)%3;
         break;
     }
-    case BUTTON_R: {
+    case PW_BUTTON_R: {
         if(s->switches.cursor >= 2) break;
         s->switches.cursor = (s->switches.cursor+1)%3;
         break;
     }
-    case BUTTON_M: {
+    case PW_BUTTON_M: {
         s->switches.current_substate = SWITCHES_WRITE_INV;
         break;
     }

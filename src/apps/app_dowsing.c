@@ -18,8 +18,8 @@
  *
  */
 
-#define BUSH_HEIGHT (SCREEN_HEIGHT-16-8-16)
-#define ARROW_HEIGHT (SCREEN_HEIGHT-16-8)
+#define BUSH_HEIGHT (PW_SCREEN_HEIGHT-16-8-16)
+#define ARROW_HEIGHT (PW_SCREEN_HEIGHT-16-8)
 
 
 static uint8_t img_buf[128];
@@ -142,14 +142,14 @@ void pw_dowsing_init_display(pw_state_t *s, const screen_flags_t *sf) {
         if(i == s->dowsing.current_cursor) {
             if(sf->frame&ANIM_FRAME_NORMAL_TIME) {
                 pw_screen_draw_from_eeprom(
-                    16*i+2, SCREEN_HEIGHT-16-8,
+                    16*i+2, PW_SCREEN_HEIGHT-16-8,
                     8, 8,
                     PW_EEPROM_ADDR_IMG_ARROW_UP_NORMAL,
                     PW_EEPROM_SIZE_IMG_ARROW
                 );
             } else {
                 pw_screen_draw_from_eeprom(
-                    16*i+2, SCREEN_HEIGHT-16-8,
+                    16*i+2, PW_SCREEN_HEIGHT-16-8,
                     8, 8,
                     PW_EEPROM_ADDR_IMG_ARROW_UP_OFFSET,
                     PW_EEPROM_SIZE_IMG_ARROW
@@ -159,13 +159,13 @@ void pw_dowsing_init_display(pw_state_t *s, const screen_flags_t *sf) {
     }
 
     pw_screen_draw_from_eeprom_with_text_box(
-        0, SCREEN_HEIGHT-16,
+        0, PW_SCREEN_HEIGHT-16,
         96, 16,
         PW_EEPROM_ADDR_TEXT_DISCOVER_ITEM,
         PW_EEPROM_SIZE_TEXT_DISCOVER_ITEM,
-        SCREEN_BLACK
+        PW_SCREEN_BLACK
     );
-    //pw_screen_draw_text_box(0, SCREEN_HEIGHT-16, SCREEN_WIDTH, 16, 0x3);
+    //pw_screen_draw_text_box(0, PW_SCREEN_HEIGHT-16, PW_SCREEN_WIDTH, 16, 0x3);
 
     pw_screen_draw_from_eeprom(
         0, 0,
@@ -192,13 +192,13 @@ void pw_dowsing_init_display(pw_state_t *s, const screen_flags_t *sf) {
 
 static void choosing_draw_init(pw_state_t *s, const screen_flags_t *sf) {
     pw_screen_draw_from_eeprom_with_text_box(
-        0, SCREEN_HEIGHT-16,
+        0, PW_SCREEN_HEIGHT-16,
         96, 16,
         PW_EEPROM_ADDR_TEXT_DISCOVER_ITEM,
         PW_EEPROM_SIZE_TEXT_DISCOVER_ITEM,
-        SCREEN_BLACK
+        PW_SCREEN_BLACK
     );
-    //pw_screen_draw_text_box(0, SCREEN_HEIGHT-16, SCREEN_WIDTH, 16, 0x3);
+    //pw_screen_draw_text_box(0, PW_SCREEN_HEIGHT-16, PW_SCREEN_WIDTH, 16, 0x3);
 
 
     s->dowsing.previous_substate = s->dowsing.current_substate;
@@ -206,14 +206,14 @@ static void choosing_draw_init(pw_state_t *s, const screen_flags_t *sf) {
 }
 
 static void choosing_draw_update(pw_state_t *s, const screen_flags_t *sf) {
-    //pw_screen_clear_area(0, SCREEN_HEIGHT-16-8, SCREEN_WIDTH, 8);
+    //pw_screen_clear_area(0, PW_SCREEN_HEIGHT-16-8, PW_SCREEN_WIDTH, 8);
 
-    screen_pos_t cx = 16*s->dowsing.current_cursor+4;
-    pw_screen_clear_area(0, SCREEN_HEIGHT-16-8, cx, 8);
-    pw_screen_clear_area(cx+9, SCREEN_HEIGHT-16-8, SCREEN_WIDTH-(cx+8), 8);
+    pw_screen_pos_t cx = 16*s->dowsing.current_cursor+4;
+    pw_screen_clear_area(0, PW_SCREEN_HEIGHT-16-8, cx, 8);
+    pw_screen_clear_area(cx+9, PW_SCREEN_HEIGHT-16-8, PW_SCREEN_WIDTH-(cx+8), 8);
     uint16_t addr = (sf->frame&ANIM_FRAME_NORMAL_TIME)?PW_EEPROM_ADDR_IMG_ARROW_UP_NORMAL:PW_EEPROM_ADDR_IMG_ARROW_UP_OFFSET;
     pw_screen_draw_from_eeprom(
-        cx, SCREEN_HEIGHT-16-8,
+        cx, PW_SCREEN_HEIGHT-16-8,
         8, 8,
         addr,
         PW_EEPROM_SIZE_IMG_ARROW
@@ -236,18 +236,18 @@ static void selected_draw_update(pw_state_t *s, const screen_flags_t *sf) {
 
 static void replace_item_draw_update(pw_state_t *s, const screen_flags_t *sf) {
     for(uint8_t i = 0; i < 3; i++) {
-        pw_screen_clear_area(20+i*(8+16), SCREEN_HEIGHT-32, 8, 8);
+        pw_screen_clear_area(20+i*(8+16), PW_SCREEN_HEIGHT-32, 8, 8);
     }
     if((sf->frame&ANIM_FRAME_NORMAL_TIME)) {
         pw_screen_draw_from_eeprom(
-            20+s->dowsing.current_cursor*(8+16), SCREEN_HEIGHT-32,
+            20+s->dowsing.current_cursor*(8+16), PW_SCREEN_HEIGHT-32,
             8, 8,
             PW_EEPROM_ADDR_IMG_ARROW_UP_NORMAL,
             PW_EEPROM_SIZE_IMG_ARROW
         );
     } else {
         pw_screen_draw_from_eeprom(
-            20+s->dowsing.current_cursor*(8+16), SCREEN_HEIGHT-32,
+            20+s->dowsing.current_cursor*(8+16), PW_SCREEN_HEIGHT-32,
             8, 8,
             PW_EEPROM_ADDR_IMG_ARROW_UP_OFFSET,
             PW_EEPROM_SIZE_IMG_ARROW
@@ -270,13 +270,13 @@ static void replace_item_draw_update(pw_state_t *s, const screen_flags_t *sf) {
     uint8_t cursor_item_index = pw_item_id_to_item_index(le_item);
 
     pw_screen_draw_from_eeprom_with_text_box(
-        0, SCREEN_HEIGHT-16,
+        0, PW_SCREEN_HEIGHT-16,
         96, 16,
         PW_EEPROM_ADDR_TEXT_ITEM_NAMES + cursor_item_index*PW_EEPROM_SIZE_TEXT_ITEM_NAME_SINGLE,
         PW_EEPROM_SIZE_TEXT_ITEM_NAME_SINGLE,
-        SCREEN_BLACK
+        PW_SCREEN_BLACK
     );
-    //pw_screen_draw_text_box(0, SCREEN_HEIGHT-16, SCREEN_WIDTH, 16, 0x3);
+    //pw_screen_draw_text_box(0, PW_SCREEN_HEIGHT-16, PW_SCREEN_WIDTH, 16, 0x3);
 
 }
 
@@ -314,13 +314,13 @@ void pw_dowsing_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b)
     switch(s->dowsing.current_substate) {
     case DOWSING_CHOOSING: {
         switch(b) {
-        case BUTTON_L:
+        case PW_BUTTON_L:
             move_cursor(s, -1);
             break;
-        case BUTTON_R:
+        case PW_BUTTON_R:
             move_cursor(s, +1);
             break;
-        case BUTTON_M: {
+        case PW_BUTTON_M: {
             // If we haven't alreadt selected it
             if(!( (1<<s->dowsing.current_cursor) & s->dowsing.chosen_positions )) {
                 switch_substate(s, DOWSING_SELECTED);
@@ -375,13 +375,13 @@ void pw_dowsing_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *s
 	    pw_audio_play_sound(SOUND_SELECTION_MISS);
 
             pw_screen_draw_from_eeprom_with_text_box(
-                0, SCREEN_HEIGHT-16,
+                0, PW_SCREEN_HEIGHT-16,
                 96, 16,
                 PW_EEPROM_ADDR_TEXT_NOTHING_FOUND,
                 PW_EEPROM_SIZE_TEXT_NOTHING_FOUND,
-                SCREEN_BLACK
+                PW_SCREEN_BLACK
             );
-            //pw_screen_draw_text_box(0, SCREEN_HEIGHT-16, SCREEN_WIDTH, 16, 0x3);
+            //pw_screen_draw_text_box(0, PW_SCREEN_HEIGHT-16, PW_SCREEN_WIDTH, 16, 0x3);
 
             // do we still have guesses remaining?
             if(s->dowsing.choices_remaining > 0) {
@@ -400,22 +400,22 @@ void pw_dowsing_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *s
     case DOWSING_INTERMEDIATE: {
         if(s->dowsing.current_cursor == s->dowsing.item_position-1 || s->dowsing.current_cursor == s->dowsing.item_position+1) {
             pw_screen_draw_from_eeprom_with_text_box(
-                0, SCREEN_HEIGHT-16,
+                0, PW_SCREEN_HEIGHT-16,
                 96, 16,
                 PW_EEPROM_ADDR_TEXT_ITS_NEAR,
                 PW_EEPROM_SIZE_TEXT_ITS_NEAR,
-                SCREEN_BLACK
+                PW_SCREEN_BLACK
             );
-            //pw_screen_draw_text_box(0, SCREEN_HEIGHT-16, SCREEN_WIDTH, 16, 0x3);
+            //pw_screen_draw_text_box(0, PW_SCREEN_HEIGHT-16, PW_SCREEN_WIDTH, 16, 0x3);
         } else {
             pw_screen_draw_from_eeprom_with_text_box(
-                0, SCREEN_HEIGHT-16,
+                0, PW_SCREEN_HEIGHT-16,
                 96, 16,
                 PW_EEPROM_ADDR_TEXT_FAR_AWAY,
                 PW_EEPROM_SIZE_TEXT_FAR_AWAY,
-                SCREEN_BLACK
+                PW_SCREEN_BLACK
             );
-            //pw_screen_draw_text_box(0, SCREEN_HEIGHT-16, SCREEN_WIDTH, 16, 0x3);
+            //pw_screen_draw_text_box(0, PW_SCREEN_HEIGHT-16, PW_SCREEN_WIDTH, 16, 0x3);
         }
 
         s->dowsing.user_input = 0;
@@ -439,7 +439,7 @@ void pw_dowsing_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *s
         for(avail = 0; (avail<3) && (inv[avail].le_item != 0); avail++);
 
         // Draw "Item found" text
-        pw_img_t item_found_img = {.width=SCREEN_WIDTH, .height=32, .data=eeprom_buf, .size=2*PW_EEPROM_SIZE_TEXT_FOUND};
+        pw_img_t item_found_img = {.width=PW_SCREEN_WIDTH, .height=32, .data=eeprom_buf, .size=2*PW_EEPROM_SIZE_TEXT_FOUND};
         uint8_t chosen_item_index = pw_item_id_to_item_index(s->dowsing.chosen_item);
 
         pw_eeprom_read(
@@ -452,8 +452,8 @@ void pw_dowsing_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *s
             item_found_img.data + PW_EEPROM_SIZE_TEXT_FOUND,
             PW_EEPROM_SIZE_TEXT_FOUND
         );
-        pw_screen_overlay_text_box(&item_found_img, SCREEN_WIDTH, 32, SCREEN_BLACK);
-        pw_screen_draw_img(&item_found_img, 0, SCREEN_HEIGHT-32);
+        pw_screen_overlay_text_box(&item_found_img, PW_SCREEN_WIDTH, 32, PW_SCREEN_BLACK);
+        pw_screen_draw_img(&item_found_img, 0, PW_SCREEN_HEIGHT-32);
 
         if( avail >= 3 ) {
             s->dowsing.current_cursor = 0;

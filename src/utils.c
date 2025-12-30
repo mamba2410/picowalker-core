@@ -135,7 +135,7 @@ void pw_read_inventory(pw_brief_inventory_t *brief, pw_detailed_inventory_t *det
 }
 
 void pw_pokemon_index_to_small_sprite(pokemon_index_t idx, uint8_t *buf, uint8_t frame) {
-    eeprom_addr_t addr;
+    pw_eeprom_addr_t addr;
 
     switch(idx) {
     case PIDX_WALKING: {
@@ -170,7 +170,7 @@ void pw_pokemon_index_to_small_sprite(pokemon_index_t idx, uint8_t *buf, uint8_t
  *
  */
 void pw_pokemon_index_to_name(pokemon_index_t idx, uint8_t *buf) {
-    eeprom_addr_t addr;
+    pw_eeprom_addr_t addr;
 
     switch(idx) {
     case PIDX_WALKING: {

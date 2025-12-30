@@ -127,7 +127,7 @@ void pw_settings_init_display(pw_state_t *s, const screen_flags_t *sf) {
             PW_EEPROM_SIZE_IMG_SPEAKER_HIGH
         );
 
-        eeprom_addr_t addr = sf->frame&ANIM_FRAME_NORMAL_TIME?PW_EEPROM_ADDR_IMG_ARROW_RIGHT_NORMAL:
+        pw_eeprom_addr_t addr = sf->frame&ANIM_FRAME_NORMAL_TIME?PW_EEPROM_ADDR_IMG_ARROW_RIGHT_NORMAL:
                              PW_EEPROM_ADDR_IMG_ARROW_RIGHT_OFFSET;
         pw_screen_draw_from_eeprom(
             s->settings.sub_cursor*32, 40+4,
@@ -159,7 +159,7 @@ void pw_settings_init_display(pw_state_t *s, const screen_flags_t *sf) {
             pw_screen_draw_img(&shade_bars, 8+i*8, 40);
         }
 
-        eeprom_addr_t addr = sf->frame&ANIM_FRAME_NORMAL_TIME?PW_EEPROM_ADDR_IMG_ARROW_DOWN_NORMAL:
+        pw_eeprom_addr_t addr = sf->frame&ANIM_FRAME_NORMAL_TIME?PW_EEPROM_ADDR_IMG_ARROW_DOWN_NORMAL:
                              PW_EEPROM_ADDR_IMG_ARROW_DOWN_OFFSET;
         pw_screen_draw_from_eeprom(
             8+s->settings.sub_cursor*8, 32,
@@ -182,7 +182,7 @@ void pw_settings_update_display(pw_state_t *s, const screen_flags_t *sf) {
 
     switch(s->settings.current_substate) {
     case SETTINGS_TOP_LEVEL: {
-        eeprom_addr_t addr = sf->frame&ANIM_FRAME_NORMAL_TIME?PW_EEPROM_ADDR_IMG_ARROW_RIGHT_NORMAL:
+        pw_eeprom_addr_t addr = sf->frame&ANIM_FRAME_NORMAL_TIME?PW_EEPROM_ADDR_IMG_ARROW_RIGHT_NORMAL:
                              PW_EEPROM_ADDR_IMG_ARROW_RIGHT_OFFSET;
         pw_screen_draw_from_eeprom(
             s->settings.main_cursor*48, 16+4,
@@ -201,7 +201,7 @@ void pw_settings_update_display(pw_state_t *s, const screen_flags_t *sf) {
     }
     case SETTINGS_SOUND: {
 
-        eeprom_addr_t addr = sf->frame&ANIM_FRAME_NORMAL_TIME?PW_EEPROM_ADDR_IMG_ARROW_RIGHT_NORMAL:
+        pw_eeprom_addr_t addr = sf->frame&ANIM_FRAME_NORMAL_TIME?PW_EEPROM_ADDR_IMG_ARROW_RIGHT_NORMAL:
                              PW_EEPROM_ADDR_IMG_ARROW_RIGHT_OFFSET;
         pw_screen_draw_from_eeprom(
             s->settings.sub_cursor*32, 40+4,
@@ -219,7 +219,7 @@ void pw_settings_update_display(pw_state_t *s, const screen_flags_t *sf) {
 
         break;
         case SETTINGS_SHADE: {
-            eeprom_addr_t addr = sf->frame&ANIM_FRAME_NORMAL_TIME?PW_EEPROM_ADDR_IMG_ARROW_DOWN_NORMAL:
+            pw_eeprom_addr_t addr = sf->frame&ANIM_FRAME_NORMAL_TIME?PW_EEPROM_ADDR_IMG_ARROW_DOWN_NORMAL:
                                  PW_EEPROM_ADDR_IMG_ARROW_DOWN_OFFSET;
             pw_screen_draw_from_eeprom(
                 8+s->settings.sub_cursor*8, 32,
@@ -245,7 +245,7 @@ void pw_settings_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b
     switch(s->settings.current_substate) {
     case SETTINGS_TOP_LEVEL: {
         switch(b) {
-        case BUTTON_L: {
+        case PW_BUTTON_L: {
             if(s->settings.main_cursor == 0) {
                 s->settings.current_substate = SETTINGS_GO_TO_MENU;
 		pw_audio_play_sound(SOUND_NAVIGATE_BACK);
@@ -254,12 +254,12 @@ void pw_settings_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b
 	    pw_audio_play_sound(SOUND_CURSOR_MOVE);
             // fall through otherwise
         }
-        case BUTTON_R: {
+        case PW_BUTTON_R: {
             s->settings.main_cursor = (s->settings.main_cursor+1)%2;
 	    pw_audio_play_sound(SOUND_CURSOR_MOVE);
             break;
         }
-        case BUTTON_M: {
+        case PW_BUTTON_M: {
             if(s->settings.main_cursor == 0) {
                 s->settings.current_substate = SETTINGS_SOUND;
                 s->settings.sub_cursor = (health_data_cache.settings&SETTINGS_SOUND_MASK)>>SETTINGS_SOUND_OFFSET;
@@ -277,15 +277,15 @@ void pw_settings_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b
     }
     case SETTINGS_SOUND: {
         switch(b) {
-        case BUTTON_L: {
+        case PW_BUTTON_L: {
             s->settings.sub_cursor = (s->settings.sub_cursor-1+N_SOUND_OPTIONS)%N_SOUND_OPTIONS;
             break;
         }
-        case BUTTON_R: {
+        case PW_BUTTON_R: {
             s->settings.sub_cursor = (s->settings.sub_cursor+1)%N_SOUND_OPTIONS;
             break;
         }
-        case BUTTON_M: {
+        case PW_BUTTON_M: {
             s->settings.current_substate = SETTINGS_GO_TO_SPLASH;
             break;
         }
@@ -294,15 +294,15 @@ void pw_settings_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b
     }
     case SETTINGS_SHADE: {
         switch(b) {
-        case BUTTON_L: {
+        case PW_BUTTON_L: {
             s->settings.sub_cursor = (s->settings.sub_cursor-1+N_SHADE_OPTIONS)%N_SHADE_OPTIONS;
             break;
         }
-        case BUTTON_R: {
+        case PW_BUTTON_R: {
             s->settings.sub_cursor = (s->settings.sub_cursor+1)%N_SHADE_OPTIONS;
             break;
         }
-        case BUTTON_M: {
+        case PW_BUTTON_M: {
             s->settings.current_substate = SETTINGS_GO_TO_SPLASH;
             break;
         }

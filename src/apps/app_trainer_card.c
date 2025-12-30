@@ -50,7 +50,7 @@ void pw_trainer_card_init_display(pw_state_t *s, const screen_flags_t *sf) {
         PW_EEPROM_SIZE_IMG_MENU_ARROW_RETURN
     );
     pw_screen_draw_from_eeprom(
-        SCREEN_WIDTH-8, 0,
+        PW_SCREEN_WIDTH-8, 0,
         8, 16,
         PW_EEPROM_ADDR_IMG_MENU_ARROW_RIGHT,
         PW_EEPROM_SIZE_IMG_MENU_ARROW_RIGHT
@@ -129,7 +129,7 @@ void pw_trainer_card_draw_dayview(uint8_t day, uint32_t day_steps,
     x+=12;
 
     pw_screen_draw_from_eeprom(
-        SCREEN_WIDTH-8, 0,
+        PW_SCREEN_WIDTH-8, 0,
         8, 16,
         PW_EEPROM_ADDR_IMG_MENU_ARROW_RIGHT,
         PW_EEPROM_SIZE_IMG_MENU_ARROW_RIGHT
@@ -137,12 +137,12 @@ void pw_trainer_card_draw_dayview(uint8_t day, uint32_t day_steps,
     x+=8;
 
     pw_screen_draw_from_eeprom(
-        SCREEN_WIDTH-40, 16,
+        PW_SCREEN_WIDTH-40, 16,
         40, 16,
         PW_EEPROM_ADDR_IMG_STEPS_FRAME,
         PW_EEPROM_SIZE_IMG_STEPS_FRAME
     );
-    screen_pos_t until = pw_screen_draw_integer(day_steps, SCREEN_WIDTH-40, 16);
+    pw_screen_pos_t until = pw_screen_draw_integer(day_steps, PW_SCREEN_WIDTH-40, 16);
     pw_screen_clear_area(0, 16, until, 16);
 
     pw_screen_draw_from_eeprom(
@@ -151,16 +151,16 @@ void pw_trainer_card_draw_dayview(uint8_t day, uint32_t day_steps,
         PW_EEPROM_ADDR_IMG_TOTAL_DAYS_FRAME,
         PW_EEPROM_SIZE_IMG_TOTAL_DAYS_FRAME
     );
-    until = pw_screen_draw_integer(total_days, SCREEN_WIDTH, 32); // shift x by -1?
+    until = pw_screen_draw_integer(total_days, PW_SCREEN_WIDTH, 32); // shift x by -1?
     pw_screen_clear_area(64, 32, until-64, 16);
 
     pw_screen_draw_from_eeprom(
-        SCREEN_WIDTH-40, 48,
+        PW_SCREEN_WIDTH-40, 48,
         40, 16,
         PW_EEPROM_ADDR_IMG_STEPS_FRAME,
         PW_EEPROM_SIZE_IMG_STEPS_FRAME
     );
-    until = pw_screen_draw_integer(total_steps, SCREEN_WIDTH-40, 48);
+    until = pw_screen_draw_integer(total_steps, PW_SCREEN_WIDTH-40, 48);
     pw_screen_clear_area(0, 48, until, 16);
 
 }
@@ -174,7 +174,7 @@ void pw_trainer_card_move_cursor(pw_state_t *s, int8_t m) {
 
 void pw_trainer_card_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b) {
     switch(b) {
-    case BUTTON_L: {
+    case PW_BUTTON_L: {
         if(s->trainer_card.current_cursor <= 0) {
             s->trainer_card.current_substate = TC_GO_TO_MENU;
 	    pw_audio_play_sound(SOUND_NAVIGATE_BACK);
@@ -184,12 +184,12 @@ void pw_trainer_card_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8
         }
         break;
     }
-    case BUTTON_M: {
+    case PW_BUTTON_M: {
         s->trainer_card.current_substate = TC_GO_TO_SPLASH;
 	pw_audio_play_sound(SOUND_NAVIGATE_MENU);
         break;
     }
-    case BUTTON_R: {
+    case PW_BUTTON_R: {
         pw_trainer_card_move_cursor(s, +1);
 	pw_audio_play_sound(SOUND_CURSOR_MOVE);
         break;

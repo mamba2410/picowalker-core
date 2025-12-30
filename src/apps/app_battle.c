@@ -80,17 +80,17 @@ static const uint8_t CATCH_CHANCES[4] = { 97, 79, 66, 56 };
  *  Note: same animations for attack and evade
  *  just flip ours/theirs on evade
  */
-const screen_pos_t OUR_ATTACK_XS[2][ATTACK_ANIM_LENGTH] = {
+const pw_screen_pos_t OUR_ATTACK_XS[2][ATTACK_ANIM_LENGTH] = {
     /* us   */ {56, 56, 54, 52, 53, 54, 55, 56, 56}, // copied from walker FLASH:0xbb12
     /* them */ {8,   8,  8,  8,  0,  0,  4,  8,  8}
 };
-const screen_pos_t THEIR_ATTACK_XS[2][ATTACK_ANIM_LENGTH] = {
+const pw_screen_pos_t THEIR_ATTACK_XS[2][ATTACK_ANIM_LENGTH] = {
     /* us   */ {56, 56, 56, 56, 64, 64, 64, 60, 56}, // copied from walker FLASH:0xbb12
     /* them */ {8,   8, 10, 12, 12, 11, 10,  9,  8}
 };
 
-const screen_pos_t POKEBALL_THROW_XS[6] = { 44, 40, 36, 32, 28, 24 };
-const screen_pos_t POKEBALL_THROW_YS[6] = { 20, 14,  9,  6,  4,  6 };
+const pw_screen_pos_t POKEBALL_THROW_XS[6] = { 44, 40, 36, 32, 28, 24 };
+const pw_screen_pos_t POKEBALL_THROW_YS[6] = { 20, 14,  9,  6,  4,  6 };
 const int8_t POKEMON_ENTER_XS[4] = { -16, -4, 8, 8 };
 
 
@@ -600,7 +600,7 @@ void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
 
     switch(s->battle.current_substate) {
     case BATTLE_OPENING: {
-        pw_screen_fill_area(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_BLACK);
+        pw_screen_fill_area(0, 0, PW_SCREEN_WIDTH, PW_SCREEN_HEIGHT, PW_SCREEN_BLACK);
         break;
     }
     case BATTLE_APPEARED: {
@@ -610,7 +610,7 @@ void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
         pw_screen_draw_pokemon_name_and_message(
             PW_EEPROM_ADDR_TEXT_POKEMON_NAMES + s->battle.chosen_pokemon*PW_EEPROM_SIZE_TEXT_POKEMON_NAME,
             PW_EEPROM_ADDR_TEXT_APPEARED,
-            SCREEN_BLACK
+            PW_SCREEN_BLACK
         );
 
         pw_img_t health_bar = {.width=8, .height=8, .data=eeprom_buf, .size=16};
@@ -623,7 +623,7 @@ void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
 
         health = (s->battle.current_hp&OUR_HP_MASK) >> OUR_HP_OFFSET;
         for(int8_t i = 0; i < health; i++) {
-            pw_screen_draw_img(&health_bar, SCREEN_WIDTH/2 + 8*(i+1), 0);
+            pw_screen_draw_img(&health_bar, PW_SCREEN_WIDTH/2 + 8*(i+1), 0);
         }
 
 
@@ -631,7 +631,7 @@ void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
     }
     case BATTLE_CHOOSING: {
         pw_screen_draw_from_eeprom(
-            0, SCREEN_HEIGHT-32,
+            0, PW_SCREEN_HEIGHT-32,
             96, 32,
             PW_EEPROM_ADDR_TEXT_RADAR_ACTION,
             PW_EEPROM_SIZE_TEXT_RADAR_ACTION
@@ -647,7 +647,7 @@ void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
             pw_screen_draw_pokemon_name_and_message(
                 PW_EEPROM_ADDR_TEXT_POKEMON_NAME,
                 PW_EEPROM_ADDR_TEXT_ATTACKED,
-                SCREEN_BLACK
+                PW_SCREEN_BLACK
             );
             break;
         }
@@ -655,13 +655,13 @@ void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
             pw_screen_draw_pokemon_name_and_message(
                 PW_EEPROM_ADDR_TEXT_POKEMON_NAMES + s->battle.chosen_pokemon*PW_EEPROM_SIZE_TEXT_POKEMON_NAME,
                 PW_EEPROM_ADDR_TEXT_EVADED,
-                SCREEN_BLACK
+                PW_SCREEN_BLACK
             );
             break;
         }
         case ACTION_SPECIAL: {
-            pw_screen_clear_area(0, SCREEN_HEIGHT-32, SCREEN_WIDTH, 16);
-            pw_screen_draw_message_with_text_box(SCREEN_HEIGHT-16, 37, 16, SCREEN_BLACK); // "critical hit"
+            pw_screen_clear_area(0, PW_SCREEN_HEIGHT-32, PW_SCREEN_WIDTH, 16);
+            pw_screen_draw_message_with_text_box(PW_SCREEN_HEIGHT-16, 37, 16, PW_SCREEN_BLACK); // "critical hit"
             break;
         }
         }
@@ -675,14 +675,14 @@ void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
             pw_screen_draw_pokemon_name_and_message(
                 PW_EEPROM_ADDR_TEXT_POKEMON_NAME,
                 PW_EEPROM_ADDR_TEXT_EVADED,
-                SCREEN_BLACK
+                PW_SCREEN_BLACK
             );
 
         } else {
             pw_screen_draw_pokemon_name_and_message(
                 PW_EEPROM_ADDR_TEXT_POKEMON_NAMES + s->battle.chosen_pokemon*PW_EEPROM_SIZE_TEXT_POKEMON_NAME,
                 PW_EEPROM_ADDR_TEXT_ATTACKED,
-                SCREEN_BLACK
+                PW_SCREEN_BLACK
             );
         }
         break;
@@ -691,7 +691,7 @@ void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
         pw_screen_draw_pokemon_name_and_message(
             PW_EEPROM_ADDR_TEXT_POKEMON_NAMES + s->battle.chosen_pokemon*PW_EEPROM_SIZE_TEXT_POKEMON_NAME,
             PW_EEPROM_ADDR_TEXT_FLED,
-            SCREEN_BLACK
+            PW_SCREEN_BLACK
         );
         break;
     }
@@ -699,22 +699,22 @@ void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
         pw_screen_draw_pokemon_name_and_message(
             PW_EEPROM_ADDR_TEXT_POKEMON_NAMES + s->battle.chosen_pokemon*PW_EEPROM_SIZE_TEXT_POKEMON_NAME,
             PW_EEPROM_ADDR_TEXT_TOO_STRONG,
-            SCREEN_BLACK
+            PW_SCREEN_BLACK
         );
         break;
     }
     case BATTLE_STAREDOWN: {
-        pw_screen_clear_area(0, SCREEN_HEIGHT-32, SCREEN_WIDTH, 16);
-        pw_screen_draw_message_with_text_box(SCREEN_HEIGHT-16, 41, 16, SCREEN_BLACK); // "staredown"
+        pw_screen_clear_area(0, PW_SCREEN_HEIGHT-32, PW_SCREEN_WIDTH, 16);
+        pw_screen_draw_message_with_text_box(PW_SCREEN_HEIGHT-16, 41, 16, PW_SCREEN_BLACK); // "staredown"
         break;
     }
     case BATTLE_THREW_BALL: {
-        pw_screen_clear_area(0, SCREEN_HEIGHT-32, SCREEN_WIDTH, 16);
-        pw_screen_draw_message_with_text_box(SCREEN_HEIGHT-16, 39, 16, SCREEN_BLACK); // "threw a ball"
+        pw_screen_clear_area(0, PW_SCREEN_HEIGHT-32, PW_SCREEN_WIDTH, 16);
+        pw_screen_draw_message_with_text_box(PW_SCREEN_HEIGHT-16, 39, 16, PW_SCREEN_BLACK); // "threw a ball"
         break;
     }
     case BATTLE_CLOUD_ANIM: {
-        pw_screen_clear_area(0, SCREEN_HEIGHT-32, SCREEN_WIDTH, 16);
+        pw_screen_clear_area(0, PW_SCREEN_HEIGHT-32, PW_SCREEN_WIDTH, 16);
         pw_screen_draw_from_eeprom(
             THEIR_NORMAL_X, THEIR_NORMAL_Y,
             32, 24,
@@ -724,7 +724,7 @@ void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
         break;
     }
     case BATTLE_BALL_WOBBLE: {
-        pw_screen_clear_area(0, SCREEN_HEIGHT-32, SCREEN_WIDTH, 16);
+        pw_screen_clear_area(0, PW_SCREEN_HEIGHT-32, PW_SCREEN_WIDTH, 16);
         pw_screen_clear_area(
             THEIR_NORMAL_X, THEIR_NORMAL_Y,
             32, 24
@@ -739,18 +739,18 @@ void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
     }
     case BATTLE_ALMOST_HAD_IT: {
         pw_screen_draw_img(&their_sprite, THEIR_NORMAL_X, THEIR_NORMAL_Y);
-        pw_screen_draw_message_with_text_box(SCREEN_HEIGHT-16, 40, 16, SCREEN_BLACK); // "almost had it"
+        pw_screen_draw_message_with_text_box(PW_SCREEN_HEIGHT-16, 40, 16, PW_SCREEN_BLACK); // "almost had it"
         break;
     }
     case BATTLE_CATCH_STARS: {
-        pw_screen_clear_area(0, SCREEN_HEIGHT-32, SCREEN_WIDTH, 16);
+        pw_screen_clear_area(0, PW_SCREEN_HEIGHT-32, PW_SCREEN_WIDTH, 16);
         break;
     }
     case BATTLE_POKEMON_CAUGHT: {
         pw_screen_draw_pokemon_name_and_message(
             PW_EEPROM_ADDR_TEXT_POKEMON_NAMES + s->battle.chosen_pokemon*PW_EEPROM_SIZE_TEXT_POKEMON_NAME,
             PW_EEPROM_ADDR_TEXT_WAS_CAUGHT,
-            SCREEN_BLACK
+            PW_SCREEN_BLACK
         );
         break;
     }
@@ -767,7 +767,7 @@ static void draw_our_hp_bar(pw_img_t *battle_buffer, uint8_t hp) {
     pw_eeprom_read(PW_EEPROM_ADDR_IMG_RADAR_HP_BLIP, hp_sprite.data, PW_EEPROM_SIZE_IMG_RADAR_HP_BLIP);
 
     for(uint8_t i = 0; i < hp; i++) {
-        pw_screen_overlay_img(battle_buffer, &hp_sprite, SCREEN_WIDTH/2+8*(i+1), 0);
+        pw_screen_overlay_img(battle_buffer, &hp_sprite, PW_SCREEN_WIDTH/2+8*(i+1), 0);
     }
 
 }
@@ -828,12 +828,12 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
     switch(s->battle.current_substate) {
     case BATTLE_OPENING: {
         if(s->battle.anim_frame > 0) s->battle.anim_frame--;
-        pw_screen_fill_area(0, s->battle.anim_frame*8, SCREEN_WIDTH, (4-s->battle.anim_frame)*16, SCREEN_WHITE);
+        pw_screen_fill_area(0, s->battle.anim_frame*8, PW_SCREEN_WIDTH, (4-s->battle.anim_frame)*16, PW_SCREEN_WHITE);
         break;
     }
     case BATTLE_APPEARED: {
         pw_screen_overlay_img(&battle_buffer, &their_sprite, 8, 0);
-        pw_screen_overlay_img(&battle_buffer, &our_sprite, SCREEN_WIDTH/2+8, 8);
+        pw_screen_overlay_img(&battle_buffer, &our_sprite, PW_SCREEN_WIDTH/2+8, 8);
         battle_draw_hp_bars(&battle_buffer, s);
 
         pw_screen_draw_img(&battle_buffer, 0, 0);
@@ -841,7 +841,7 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
     }
     case BATTLE_CHOOSING: {
         pw_screen_overlay_img(&battle_buffer, &their_sprite, 8, 0);
-        pw_screen_overlay_img(&battle_buffer, &our_sprite, SCREEN_WIDTH/2+8, 8);
+        pw_screen_overlay_img(&battle_buffer, &our_sprite, PW_SCREEN_WIDTH/2+8, 8);
         battle_draw_hp_bars(&battle_buffer, s);
 
         pw_screen_draw_img(&battle_buffer, 0, 0);
@@ -859,12 +859,12 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
             if(their_action == ACTION_SPECIAL) {
                 pw_img_t crit_hit = {.width = 16, .height = 32, .data=decompression_buf, .size=PW_EEPROM_SIZE_IMG_RADAR_CRITICAL_HIT};
                 pw_eeprom_read(PW_EEPROM_ADDR_IMG_RADAR_CRITICAL_HIT, crit_hit.data, PW_EEPROM_SIZE_IMG_RADAR_CRITICAL_HIT);
-                pw_screen_overlay_img(&battle_buffer, &crit_hit, (SCREEN_WIDTH-16)/2, 0);
+                pw_screen_overlay_img(&battle_buffer, &crit_hit, (PW_SCREEN_WIDTH-16)/2, 0);
 
             } else if(their_action != ACTION_EVADE) {
                 pw_img_t normal_hit = {.width = 16, .height = 32, .data=decompression_buf, .size=PW_EEPROM_SIZE_IMG_RADAR_ATTACK_HIT};
                 pw_eeprom_read(PW_EEPROM_ADDR_IMG_RADAR_ATTACK_HIT, normal_hit.data, PW_EEPROM_SIZE_IMG_RADAR_ATTACK_HIT);
-                pw_screen_overlay_img(&battle_buffer, &normal_hit, (SCREEN_WIDTH-16)/2, 0);
+                pw_screen_overlay_img(&battle_buffer, &normal_hit, (PW_SCREEN_WIDTH-16)/2, 0);
             }
 
         }
@@ -885,7 +885,7 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
             if(our_action != ACTION_EVADE) {
                 pw_img_t normal_hit = {.width = 16, .height = 32, .data=decompression_buf, .size=PW_EEPROM_SIZE_IMG_RADAR_ATTACK_HIT};
                 pw_eeprom_read(PW_EEPROM_ADDR_IMG_RADAR_ATTACK_HIT, normal_hit.data, PW_EEPROM_SIZE_IMG_RADAR_ATTACK_HIT);
-                pw_screen_overlay_img(&battle_buffer, &normal_hit, (SCREEN_WIDTH-16)/2, 0);
+                pw_screen_overlay_img(&battle_buffer, &normal_hit, (PW_SCREEN_WIDTH-16)/2, 0);
             }
         }
 
@@ -926,11 +926,11 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
     }
     case BATTLE_BALL_WOBBLE: {
 
-        screen_pos_t middle = THEIR_NORMAL_X+8;
-        screen_pos_t left   = middle-2;
-        screen_pos_t right  = middle+2;
+        pw_screen_pos_t middle = THEIR_NORMAL_X+8;
+        pw_screen_pos_t left   = middle-2;
+        pw_screen_pos_t right  = middle+2;
 
-        screen_pos_t x = middle;
+        pw_screen_pos_t x = middle;
         switch(s->battle.anim_frame%4) {
         case 0:
         case 2: {
@@ -1004,19 +1004,19 @@ void pw_battle_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b) 
     }
     case BATTLE_CHOOSING: {
         switch(b) {
-        case BUTTON_L: {
+        case PW_BUTTON_L: {
             s->battle.actions &= ~OUR_ACTION_MASK;
             s->battle.actions |= ACTION_ATTACK << OUR_ACTION_OFFSET;
             s->battle.substate_queue_index = 1;
             break;
         }
-        case BUTTON_R: {
+        case PW_BUTTON_R: {
             s->battle.actions &= ~OUR_ACTION_MASK;
             s->battle.actions |= ACTION_EVADE << OUR_ACTION_OFFSET;
             s->battle.substate_queue_index = 1;
             break;
         }
-        case BUTTON_M: {
+        case PW_BUTTON_M: {
             pw_battle_switch_substate(s, BATTLE_CATCH_SETUP);
 	    pw_audio_play_sound(SOUND_POKEBALL_THROW);
             break;
