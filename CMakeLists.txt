@@ -60,13 +60,13 @@ add_library(picowalker-core
     src/apps/app_switch.h
 )
 
-
 if (MSVC)
-    # warning level 4
-    add_compile_options(/W4)
+    target_compile_options(picowalker-core /W4)
 else()
-    # additional warnings
-    add_compile_options(-Wall -Wextra -Wpedantic)
+    target_compile_options(picowalker-core PRIVATE -Wall -Wextra -Wpedantic)
+    #target_compile_options(picowalker-core PRIVATE -Wall -Wextra)
+    #target_compile_options(picowalker-core PRIVATE -Wall)
 endif()
+
 
 
