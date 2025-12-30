@@ -18,7 +18,7 @@
 void pw_screen_draw_from_eeprom(
     pw_screen_pos_t x, pw_screen_pos_t y,
     pw_screen_pos_t w, pw_screen_pos_t h,
-    eeprom_addr_t addr,
+    pw_eeprom_addr_t addr,
     size_t len
 );
 size_t pw_screen_draw_integer(uint32_t n, size_t right_x, size_t y);
