@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 
-#include "picowalker-defs.h"
+#include "picowalker_structures.h"
 #include "accel.h"
 #include "eeprom.h"
 #include "eeprom_map.h"
