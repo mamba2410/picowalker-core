@@ -5,6 +5,8 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#include "picowalker_structures.h"
+
 /**
  * @file picowalker_core.h
  *
@@ -18,27 +20,11 @@
  */
 
 
-
 /*
  *  ==================================================================================
  *  EEPROM
  *  ==================================================================================
  */
-
-/*
- * Types and defines
- */
-typedef uint16_t eeprom_addr_t;
-
-/*
- *  Functions defined by the driver
- */
-void pw_eeprom_init();
-int pw_eeprom_read(eeprom_addr_t addr, uint8_t *buf, size_t len);
-int pw_eeprom_write(eeprom_addr_t addr, uint8_t *buf, size_t len);
-void pw_eeprom_set_area(eeprom_addr_t addr, uint8_t v, size_t len);
-void pw_eeprom_sleep();
-void pw_eeprom_wake();
 
 
 /*
@@ -46,25 +32,6 @@ void pw_eeprom_wake();
  *  FLASH
  *  ==================================================================================
  */
-
-/*
- * Types and defines
- */
-typedef enum {
-    FLASH_IMG_POKEWALKER,
-    FLASH_IMG_FACE_NEUTRAL,
-    FLASH_IMG_FACE_HAPPY,
-    FLASH_IMG_FACE_SAD,
-    FLASH_IMG_UP_ARROW,
-    FLASH_IMG_IR_ACTIVE,
-    FLASH_IMG_TINY_CHARS,
-} pw_flash_img_t;
-
-/*
- *  Functions defined by the driver
- */
-void pw_flash_sleep();
-void pw_flash_wake();
 
 
 /*
