@@ -3,7 +3,7 @@ project(picowalker-core)
 
 add_library(picowalker-core
     src/picowalker.c
-    src/picowalker.h
+    src/picowalker_structures.h
     src/buttons.c
     src/buttons.h
     src/states.c

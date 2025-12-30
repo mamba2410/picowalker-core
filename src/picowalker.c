@@ -5,8 +5,7 @@
 
 #include <stdio.h>
 
-#include "picowalker.h"
-#include "picowalker-defs.h"
+#include "picowalker_structures.h"
 #include "buttons.h"
 #include "screen.h"
 #include "audio.h"
