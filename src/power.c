@@ -4,8 +4,9 @@
 
 #include <stdio.h>
 
+#include "picowalker_structures.h"
 #include "power.h"
-#include "picowalker-defs.h"
+#include "timer.h"
 
 volatile pw_power_context_t power_context = { };
 

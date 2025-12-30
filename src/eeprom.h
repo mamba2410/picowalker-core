@@ -32,7 +32,7 @@ int pw_eeprom_read_walker_info(walker_info_t *wi);
  */
 extern void pw_eeprom_init();
 extern int pw_eeprom_read(pw_eeprom_addr_t addr, uint8_t *buf, size_t len);
-extern int pw_eeprom_write(pw_eeprom_addr_t addr, uint8_t *buf, size_t len);
+extern int pw_eeprom_write(pw_eeprom_addr_t addr, const uint8_t *buf, size_t len);
 extern void pw_eeprom_set_area(pw_eeprom_addr_t addr, uint8_t v, size_t len);
 extern void pw_eeprom_sleep();
 extern void pw_eeprom_wake();

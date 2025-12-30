@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 #include "ir.h"
+#include "../picowalker_structures.h"
 
 static volatile uint8_t g_session_id[SESSION_ID_SIZE] = {0xde, 0xad, 0xbe, 0xef};
 

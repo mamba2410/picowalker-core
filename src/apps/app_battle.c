@@ -19,7 +19,7 @@
 #include "../types.h"
 #include "../event_log.h"
 
-#include "../picowalker-defs.h"
+#include "../picowalker_structures.h"
 
 /** @file apps/app_battle.c
  *

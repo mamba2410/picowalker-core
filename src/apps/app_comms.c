@@ -345,19 +345,19 @@ void pw_comms_init_display(pw_state_t *s, const screen_flags_t *sf) {
         }
         case COMM_SUBSTATE_FIRST_IDLE: {
             pw_img_t img = {.height=32, .width=32, .size=256, .data=eeprom_buf};
-            pw_flash_read(FLASH_IMG_POKEWALKER, img.data);
+            pw_flash_read(PW_FLASH_IMG_POKEWALKER, img.data);
             pw_screen_draw_img(&img, (PW_SCREEN_WIDTH-32)/2, (PW_SCREEN_HEIGHT-32)/2);
 
             img.width = 16;
             img.height = 8;
             img.size = 0x20;
-            pw_flash_read(FLASH_IMG_FACE_NEUTRAL, img.data);
+            pw_flash_read(PW_FLASH_IMG_FACE_NEUTRAL, img.data);
             pw_screen_draw_img(&img, (PW_SCREEN_WIDTH-16)/2, (PW_SCREEN_HEIGHT-8)/2);
             break;
         }
         case COMM_SUBSTATE_FIRST_SLAVE_PERFORM_REQUEST: {
             pw_img_t face = {.width=16, .height=8, .size=32, .data=eeprom_buf};
-            pw_flash_read(FLASH_IMG_FACE_HAPPY, face.data);
+            pw_flash_read(PW_FLASH_IMG_FACE_HAPPY, face.data);
             pw_screen_draw_img(&face, (PW_SCREEN_WIDTH-16)/2, (PW_SCREEN_HEIGHT-8)/2);
             pw_screen_clear_area((PW_SCREEN_WIDTH-8)/2, 48, 8, 8);
                                                             break;
@@ -570,7 +570,7 @@ void pw_comms_draw_update(pw_state_t *s, const screen_flags_t *sf) {
 
             pw_img_t img = {.width=8, .height=8, .size=16, .data=eeprom_buf};
             if(sf->frame&ANIM_FRAME_NORMAL_TIME) {
-                pw_flash_read(FLASH_IMG_UP_ARROW, img.data);
+                pw_flash_read(PW_FLASH_IMG_UP_ARROW, img.data);
                 pw_screen_draw_img(&img, (PW_SCREEN_WIDTH-8)/2, 48);
             } else {
                 pw_screen_clear_area((PW_SCREEN_WIDTH-8)/2, 48, 8, 8);
@@ -578,14 +578,14 @@ void pw_comms_draw_update(pw_state_t *s, const screen_flags_t *sf) {
 
             img.width = 16;
             img.size=32;
-            pw_flash_read(FLASH_IMG_FACE_NEUTRAL, img.data);
+            pw_flash_read(PW_FLASH_IMG_FACE_NEUTRAL, img.data);
             pw_screen_draw_img(&img, (PW_SCREEN_WIDTH-16)/2, (PW_SCREEN_HEIGHT-8)/2);
             break;
         }
         case COMM_SUBSTATE_FIRST_TIMEOUT: {
             pw_screen_clear_area((PW_SCREEN_WIDTH-8)/2, 0, 8, 8);
             pw_img_t face = {.width=16, .height=8, .size=32, .data=eeprom_buf};
-            pw_flash_read(FLASH_IMG_FACE_SAD, face.data);
+            pw_flash_read(PW_FLASH_IMG_FACE_SAD, face.data);
             pw_screen_draw_img(&face, (PW_SCREEN_WIDTH-16)/2, (PW_SCREEN_HEIGHT-8)/2);
             s->comms.timer--;
             break;
@@ -598,7 +598,7 @@ void pw_comms_draw_update(pw_state_t *s, const screen_flags_t *sf) {
 
             if(sf->frame&ANIM_FRAME_NORMAL_TIME) {
                 pw_img_t img = {.width=8, .height=8, .size=16, .data=eeprom_buf};
-                pw_flash_read(FLASH_IMG_IR_ACTIVE, img.data);
+                pw_flash_read(PW_FLASH_IMG_IR_ACTIVE, img.data);
                 pw_screen_draw_img(&img, (PW_SCREEN_WIDTH-8)/2, 0);
             } else {
                 pw_screen_clear_area((PW_SCREEN_WIDTH-8)/2, 0, 8, 8);

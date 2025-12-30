@@ -11,8 +11,7 @@
 #include "globals.h"
 #include "types.h"
 #include "utils.h"
-
-#include "picowalker-defs.h"
+#include "picowalker_structures.h"
 
 void pw_log_event(event_log_item_t *item, route_info_t *ri, event_log_type_t event_type, uint16_t extra, bool special_route, uint8_t pokemon_idx) {
     uint8_t next_idx = health_data_cache.event_log_index;
