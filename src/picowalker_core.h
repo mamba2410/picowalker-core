@@ -36,6 +36,8 @@ extern void pw_button_callback(pw_buttons_t b);
  */
 extern const uint8_t PW_AUDIO_PERIODTAB[];
 
+extern pw_volume_t pw_audio_get_volume();
+
 /**
  * Get the current power mode
  */

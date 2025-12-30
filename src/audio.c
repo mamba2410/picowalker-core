@@ -45,3 +45,8 @@ void pw_audio_set_volume(uint8_t vol) {
     pw_audio_volume = vol;
 }
 
+
+pw_volume_t pw_audio_get_volume() {
+    return pw_audio_volume;
+}
+
