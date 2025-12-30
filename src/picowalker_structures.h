@@ -68,9 +68,6 @@ typedef enum pw_screen_color_e {
  *  ==================================================================================
  */
 
-/*
- * Types and defines
- */
 typedef uint16_t pw_eeprom_addr_t;
 
 
