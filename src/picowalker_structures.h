@@ -80,24 +80,20 @@ typedef uint16_t pw_eeprom_addr_t;
  *  ==================================================================================
  */
 
-/*
- * Types and defines
+/**
+ * Index of each image stored in flash.
+ * Contains only original pokewalker images
  */
-typedef enum {
-    FLASH_IMG_POKEWALKER,
-    FLASH_IMG_FACE_NEUTRAL,
-    FLASH_IMG_FACE_HAPPY,
-    FLASH_IMG_FACE_SAD,
-    FLASH_IMG_UP_ARROW,
-    FLASH_IMG_IR_ACTIVE,
-    FLASH_IMG_TINY_CHARS,
+typedef enum pw_flash_img_e {
+    PW_FLASH_IMG_POKEWALKER,
+    PW_FLASH_IMG_FACE_NEUTRAL,
+    PW_FLASH_IMG_FACE_HAPPY,
+    PW_FLASH_IMG_FACE_SAD,
+    PW_FLASH_IMG_UP_ARROW,
+    PW_FLASH_IMG_IR_ACTIVE,
+    PW_FLASH_IMG_TINY_CHARS,
 } pw_flash_img_t;
 
-/*
- *  Functions defined by the driver
- */
-void pw_flash_sleep();
-void pw_flash_wake();
 
 /*
  *  ==================================================================================
