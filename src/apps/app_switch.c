@@ -16,7 +16,7 @@
  */
 
 void pw_switch_init(pw_state_t *s, const screen_flags_t *sf) {
-
+    (void)sf;
     s->switches.cursor = 1;
     s->switches.current_substate = SWITCHES_CHOOSING;
 
@@ -50,6 +50,7 @@ void pw_switch_init(pw_state_t *s, const screen_flags_t *sf) {
 }
 
 void pw_switch_init_display(pw_state_t *s, const screen_flags_t *sf) {
+    (void)sf;
     pw_eeprom_addr_t addr = 0;
     size_t size = 0;
 
@@ -153,6 +154,7 @@ void pw_switch_update_display(pw_state_t *s, const screen_flags_t *sf) {
 }
 
 void pw_switch_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b) {
+    (void)sf;
     switch(b) {
     case PW_BUTTON_L: {
         if(s->switches.cursor == 0) {
@@ -177,6 +179,7 @@ void pw_switch_handle_input(pw_state_t *s, const screen_flags_t *sf, uint8_t b) 
 }
 
 void pw_switch_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf) {
+    (void)sf;
     switch(s->switches.current_substate) {
     case SWITCHES_CHOOSING: {
         break;

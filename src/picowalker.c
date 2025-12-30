@@ -5,21 +5,20 @@
 
 #include <stdio.h>
 
-#include "picowalker_structures.h"
-#include "buttons.h"
-#include "screen.h"
+#include "accel.h"
 #include "audio.h"
-#include "states.h"
-#include "rand.h"
-#include "states.h"
-#include "timer.h"
-#include "globals.h"
-#include "utils.h"
-#include "ir/ir.h"
+#include "buttons.h"
 #include "eeprom.h"
 #include "eeprom_map.h"
-#include "accel.h"
+#include "globals.h"
+#include "ir/ir.h"
+#include "picowalker_structures.h"
 #include "power.h"
+#include "rand.h"
+#include "states.h"
+#include "screen.h"
+#include "timer.h"
+#include "utils.h"
 
 struct {
     uint32_t now;
@@ -50,13 +49,19 @@ void walker_setup() {
     printf("[Info ] Peripherals initialised!\n");
 
     if(!pw_eeprom_check_for_nintendo()) {
-        printf("No nintendo found!\n");
+        printf("[Info ] No \"nintendo\" found! Initialising EEPROM\n");
         pw_eeprom_reset(true, true);
     }
 
     int read_res;
     read_res = pw_eeprom_read_walker_info(&walker_info_cache);
+    if(read_res < 0) {
+        printf("[Warn ] Couldn't read walker info\n");
+    }
     read_res = pw_eeprom_read_health_data(&health_data_cache);
+    if(read_res < 0) {
+        printf("[Warn ] Couldn't read health data\n");
+    }
 
     pw_audio_volume = (health_data_cache.settings&SETTINGS_SOUND_MASK)>>SETTINGS_SOUND_OFFSET;
     pw_screen_set_brightness((health_data_cache.settings&SETTINGS_SHADE_MASK)>>SETTINGS_SHADE_OFFSET);
