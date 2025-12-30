@@ -5,13 +5,11 @@
 #include <stdio.h>
 
 #include "picowalker_structures.h"
+#include "picowalker_core.h"
 #include "power.h"
 #include "timer.h"
 
 volatile pw_power_context_t power_context = {0};
-
-void walker_loop();
-extern void (*current_loop)(void);
 
 void pw_power_update() {
 
@@ -78,7 +76,7 @@ void pw_power_update() {
 
 
 int pw_power_get_mode() {
-    return (current_loop == walker_loop)? 0: 1;
+    return (pw_current_loop == pw_normal_loop)? 0: 1;
 }
 
 

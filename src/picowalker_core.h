@@ -34,7 +34,12 @@ extern void pw_button_callback(pw_buttons_t b);
 /**
  * Audio period table, stored in core but needed by drivers
  */
-extern const uint8_t PW_AUDIO_PERIOD_TAB[];
+extern const uint8_t PW_AUDIO_PERIODTAB[];
+
+/**
+ * Get the current power mode
+ */
+extern int pw_power_get_mode();
 
 #endif /* PICOWALKER_DRIVERS_H */
 
