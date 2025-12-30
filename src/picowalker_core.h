@@ -51,23 +51,6 @@ extern void pw_button_callback(pw_buttons_t b);
  *  ==================================================================================
  */
 
-/*
- * Types and defines
- */
-#define MAX_PACKET_SIZE (128+8)
-
-#define PW_IR_READ_TIMEOUT_MS   200u
-#define PW_IR_READ_TIMEOUT_US   (PW_IR_READ_TIMEOUT_MS*1000)
-#define PW_IR_READ_TIMEOUT_DS   (PW_IR_READ_TIMEOUT_MS/100)
-
-/*
- *  Functions defined by the driver
- */
-void pw_ir_init();
-int pw_ir_read(uint8_t *buf, size_t len);
-int pw_ir_write(uint8_t *buf, size_t len);
-void pw_ir_sleep();
-void pw_ir_wake();
 
 /*
  *  ==================================================================================

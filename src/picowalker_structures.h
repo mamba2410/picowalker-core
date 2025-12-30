@@ -122,23 +122,23 @@ typedef enum pw_buttons_e {
  *  ==================================================================================
  */
 
-/*
- * Types and defines
+/**
+ * Maximum size of a pokewalker IR packet
  */
-#define MAX_PACKET_SIZE (128+8)
+#define PACKET_HEADER_SIZE 8
+#define PACKET_MAX_PAYLOAD_SIZE 128
+#define MAX_PACKET_SIZE (PACKET_HEADER_SIZE+PACKET_MAX_PAYLOAD_SIZE)
 
-#define PW_IR_READ_TIMEOUT_MS   200u
-#define PW_IR_READ_TIMEOUT_US   (PW_IR_READ_TIMEOUT_MS*1000)
-#define PW_IR_READ_TIMEOUT_DS   (PW_IR_READ_TIMEOUT_MS/100)
-
-/*
- *  Functions defined by the driver
+/**
+ * Timeout value for searching for a byte
  */
-void pw_ir_init();
-int pw_ir_read(uint8_t *buf, size_t len);
-int pw_ir_write(uint8_t *buf, size_t len);
-void pw_ir_sleep();
-void pw_ir_wake();
+#define PW_IR_READ_TIMEOUT_US   200000u
+
+/**
+ * Timeout value for the next byte in a packet
+ */
+#define PW_IR_BYTE_TIMEOUT_US   3742
+
 
 /*
  *  ==================================================================================

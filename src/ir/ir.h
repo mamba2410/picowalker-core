@@ -76,12 +76,6 @@
 
 #define MAX_ADVERTISING_PACKETS 20
 
-#define MAX_PACKET_SIZE (128+8)
-
-#define PW_IR_READ_TIMEOUT_MS   200u
-#define PW_IR_READ_TIMEOUT_US   (PW_IR_READ_TIMEOUT_MS*1000)
-#define PW_IR_READ_TIMEOUT_DS   (PW_IR_READ_TIMEOUT_MS/100)
-
 #define SESSION_ID_SIZE 4
 
 typedef enum {
@@ -109,12 +103,6 @@ typedef enum {
 
 extern const char* const PW_IR_ERR_NAMES[];
 
-/*
- *  These should be defined by some driver
- */
-extern void pw_ir_init();
-extern int pw_ir_read(uint8_t *buf, size_t len);
-extern int pw_ir_write(uint8_t *buf, size_t len);
 
 /*
  *  Defined by `ir.c`
@@ -129,6 +117,16 @@ uint16_t pw_ir_checksum(pw_packet_t *packet, size_t len);
 ir_err_t pw_ir_get_session_id(uint8_t session_id[SESSION_ID_SIZE]);
 ir_err_t pw_ir_set_session_id(uint8_t session_id[SESSION_ID_SIZE]);
 ir_err_t pw_ir_mix_session_id(uint8_t session_id[SESSION_ID_SIZE]);
+
+
+/*
+ * Functions defined in the IR driver module
+ */
+extern void pw_ir_init();
+extern int pw_ir_read(uint8_t *buf, size_t len);
+extern int pw_ir_write(uint8_t *buf, size_t len);
+extern void pw_ir_sleep();
+extern void pw_ir_wake();
 
 #endif /* PW_IR_H */
 
