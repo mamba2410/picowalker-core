@@ -30,5 +30,11 @@ extern void pw_ir_loop();
  */
 extern void pw_button_callback(pw_buttons_t b);
 
+
+/**
+ * Audio period table, stored in core but needed by drivers
+ */
+extern const uint8_t PW_AUDIO_PERIOD_TAB[];
+
 #endif /* PICOWALKER_DRIVERS_H */
 

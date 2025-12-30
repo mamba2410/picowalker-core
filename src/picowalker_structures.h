@@ -227,5 +227,23 @@ typedef struct pw_dhms_s {
 } pw_dhms_t;
 
 
+/*
+ *  ==================================================================================
+ *  AUDIO
+ *  ==================================================================================
+ */
+
+typedef struct {
+    uint8_t info;
+    uint8_t period_idx;
+} pw_sound_frame_t;
+
+typedef enum {
+    VOLUME_NONE=0,
+    VOLUME_HALF=1,
+    VOLUME_FULL=2
+} pw_volume_t;
+
+
 #endif /* PW_PICOWALKER_INCLUDE_H */
 
