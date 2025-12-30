@@ -206,7 +206,8 @@ void pw_sleep_loop() {
         pw_rtc_regular_processing();
         pw_power_update();
         pw_power_start_measurement();
-        power_context.last_bat_check = pw_now_us();
+        //power_context.last_bat_check = pw_now_us();
+        power_context.last_bat_check = pw_time_get_us();
         // Wait until its finished
         // TODO: Figure out how to go to sleep until its done
         //while(!pw_power_result_available());

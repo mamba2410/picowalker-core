@@ -38,6 +38,10 @@ extern void pw_power_start_measurement();
 extern bool pw_power_result_available();
 extern pw_power_status_t pw_power_get_status();
 extern void pw_battery_shutdown();
+extern bool pw_power_should_sleep();
+extern pw_wake_reason_t pw_power_get_wake_reason();
+extern void pw_power_clear_wake_reason(pw_wake_reason_t);
+extern void pw_power_enter_sleep();
 
 #endif /* PW_POWER_H */
 
