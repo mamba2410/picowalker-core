@@ -5,7 +5,7 @@
 #include "globals.h"
 #include "utils.h"
 
-#include "picowalker-defs.h"
+#include "picowalker_structures.h"
 
 void pw_accel_process_steps() {
     uint32_t new_steps = pw_accel_get_new_steps();

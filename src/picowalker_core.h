@@ -58,17 +58,6 @@ extern void pw_button_callback(pw_buttons_t b);
  *  ==================================================================================
  */
 
-/*
- * Types and defines
- */
-
-/*
- *  Functions defined by driver
- */
-void pw_accel_init();
-uint32_t pw_accel_get_new_steps();
-void pw_accel_sleep();
-void pw_accel_wake();
 
 /*
  *  ==================================================================================
