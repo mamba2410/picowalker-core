@@ -56,6 +56,7 @@ static void draw_cursor_update(pw_state_t *s, const screen_flags_t *sf) {
  *
  */
 void pw_poke_radar_init(pw_state_t *s, const screen_flags_t *sf) {
+    (void)sf;
     route_info_t ri;
     pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO, (uint8_t*)&ri, sizeof(ri));
 
@@ -79,6 +80,7 @@ void pw_poke_radar_init(pw_state_t *s, const screen_flags_t *sf) {
  *
  */
 void pw_poke_radar_init_display(pw_state_t *s, const screen_flags_t *sf) {
+    (void)sf;
     switch(s->radar.current_substate) {
     case RADAR_CHOOSING: {
         pw_img_t bush = {.width=32, .height=24, .data=eeprom_buf, .size=192};
@@ -175,6 +177,7 @@ void pw_poke_radar_update_display(pw_state_t *s, const screen_flags_t *sf) {
  *
  */
 void pw_poke_radar_handle_input(pw_state_t *s, const screen_flags_t *sf, pw_buttons_t b) {
+    (void)sf;
     switch(s->radar.current_substate) {
     case RADAR_CHOOSING: {
         PW_SET_REQUEST(s->requests, PW_REQUEST_REDRAW);
@@ -222,7 +225,7 @@ void pw_poke_radar_handle_input(pw_state_t *s, const screen_flags_t *sf, pw_butt
  *
  */
 void pw_poke_radar_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf) {
-
+    (void)sf;
     switch(s->radar.current_substate) {
     case RADAR_CHOOSING: {
         if(s->radar.invisible_timer <= 0 && s->radar.active_timer <= 0) {

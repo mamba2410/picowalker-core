@@ -24,12 +24,13 @@
 
 static uint8_t img_buf[128];
 static void check_guess_draw_init(pw_state_t *s, const screen_flags_t *sf);
-static void replace_item_draw_update(pw_state_t *s, const screen_flags_t *sf);
+//static void replace_item_draw_update(pw_state_t *s, const screen_flags_t *sf);
 static void selected_draw_update(pw_state_t *s, const screen_flags_t *sf);
 static void choosing_draw_update(pw_state_t *s, const screen_flags_t *sf);
 static void choosing_draw_init(pw_state_t *s, const screen_flags_t *sf);
 
 static void match_substate_2(pw_state_t *s, const screen_flags_t *sf) {
+    (void)sf;
     s->dowsing.previous_substate = s->dowsing.current_substate;
 }
 
@@ -77,6 +78,7 @@ static void move_cursor(pw_state_t *s, int8_t m) {
 }
 
 static uint16_t get_item(app_dowsing_t *dowsing, route_info_t *ri, health_data_t *hd) {
+    (void)dowsing;
     uint32_t today_steps = hd->today_steps;
 
     // TODO: checks for gift item
@@ -111,6 +113,7 @@ static uint16_t get_item(app_dowsing_t *dowsing, route_info_t *ri, health_data_t
 
 
 void pw_dowsing_init(pw_state_t *s, const screen_flags_t *sf) {
+    (void)sf;
     route_info_t ri;
     pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO, (uint8_t*)(&ri), sizeof(ri));
 
@@ -191,6 +194,7 @@ void pw_dowsing_init_display(pw_state_t *s, const screen_flags_t *sf) {
 }
 
 static void choosing_draw_init(pw_state_t *s, const screen_flags_t *sf) {
+    (void)sf;
     pw_screen_draw_from_eeprom_with_text_box(
         0, PW_SCREEN_HEIGHT-16,
         96, 16,
@@ -234,6 +238,8 @@ static void selected_draw_update(pw_state_t *s, const screen_flags_t *sf) {
     pw_screen_clear_area(16*s->dowsing.current_cursor, y, 16, 2);
 }
 
+
+/*
 static void replace_item_draw_update(pw_state_t *s, const screen_flags_t *sf) {
     for(uint8_t i = 0; i < 3; i++) {
         pw_screen_clear_area(20+i*(8+16), PW_SCREEN_HEIGHT-32, 8, 8);
@@ -279,8 +285,10 @@ static void replace_item_draw_update(pw_state_t *s, const screen_flags_t *sf) {
     //pw_screen_draw_text_box(0, PW_SCREEN_HEIGHT-16, PW_SCREEN_WIDTH, 16, 0x3);
 
 }
+*/
 
 static void check_guess_draw_init(pw_state_t *s, const screen_flags_t *sf) {
+    (void)sf;
     pw_screen_clear_area(16*s->dowsing.current_cursor, BUSH_HEIGHT, 16, 2);
     pw_screen_clear_area(16*s->dowsing.current_cursor, BUSH_HEIGHT+16-2, 16, 2);
     pw_screen_draw_from_eeprom(
@@ -311,6 +319,7 @@ void pw_dowsing_update_display(pw_state_t *s, const screen_flags_t *sf) {
 
 
 void pw_dowsing_handle_input(pw_state_t *s, const screen_flags_t *sf, pw_buttons_t b) {
+    (void)sf;
     switch(s->dowsing.current_substate) {
     case DOWSING_CHOOSING: {
         switch(b) {

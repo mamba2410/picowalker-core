@@ -20,12 +20,14 @@ enum {
 };
 
 void pw_splash_init(pw_state_t *s, const screen_flags_t *sf) {
+    (void)sf;
     pw_detailed_inventory_t di;
     pw_read_inventory(&(s->splash.inventory), &di);
     s->splash.current_substate = SPLASH_NORMAL;
 }
 
 void pw_splash_handle_input(pw_state_t *s, const screen_flags_t *sf, pw_buttons_t b) {
+    (void)sf;
     switch(b) {
     case PW_BUTTON_M: {
         s->splash.menu_cursor = (MENU_SIZE-1)/2;
@@ -50,6 +52,7 @@ void pw_splash_handle_input(pw_state_t *s, const screen_flags_t *sf, pw_buttons_
 }
 
 void pw_splash_init_display(pw_state_t *s, const screen_flags_t *sf) {
+    (void)sf;
     if(s->splash.inventory.caught_pokemon & INV_WALKING_POKEMON) {
         pw_screen_draw_from_eeprom(
             PW_SCREEN_WIDTH-64, 0,
@@ -148,6 +151,7 @@ void pw_splash_update_display(pw_state_t *s, const screen_flags_t *sf) {
 }
 
 void pw_splash_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf) {
+    (void)sf;
     switch(s->splash.current_substate) {
     case SPLASH_GO_TO_MENU: {
         p->sid = STATE_MAIN_MENU;

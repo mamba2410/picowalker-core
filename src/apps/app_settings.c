@@ -10,6 +10,8 @@
 #include "../globals.h"
 #include "../eeprom.h"
 
+#define FALLTHROUGH __attribute__((fallthrough))
+
 #define N_MAIN_OPTIONS 2
 #define N_SOUND_OPTIONS 3
 #define N_SHADE_OPTIONS 10
@@ -23,6 +25,7 @@ enum {
 };
 
 void pw_settings_init(pw_state_t *s, const screen_flags_t *sf) {
+    (void)sf;
     s->settings.current_substate = SETTINGS_TOP_LEVEL;
     s->settings.main_cursor = 0;
     s->settings.sub_cursor = 0;
@@ -30,6 +33,7 @@ void pw_settings_init(pw_state_t *s, const screen_flags_t *sf) {
 }
 
 void pw_settings_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf) {
+    (void)sf;
     switch(s->settings.current_substate) {
     case SETTINGS_TOP_LEVEL: {
         // nothing to do
@@ -190,7 +194,7 @@ void pw_settings_update_display(pw_state_t *s, const screen_flags_t *sf) {
             addr,
             PW_EEPROM_SIZE_IMG_ARROW
         );
-        for(size_t i = 0; i < 2; i++) {
+        for(int i = 0; i < 2; i++) {
             if(i == s->settings.main_cursor) continue;
             pw_screen_clear_area(
                 i*48, 16+4,
@@ -209,7 +213,7 @@ void pw_settings_update_display(pw_state_t *s, const screen_flags_t *sf) {
             addr,
             PW_EEPROM_SIZE_IMG_ARROW
         );
-        for(size_t i = 0; i < N_SOUND_OPTIONS; i++) {
+        for(int i = 0; i < N_SOUND_OPTIONS; i++) {
             if(i == s->settings.sub_cursor) continue;
             pw_screen_clear_area(
                 i*32, 40+4,
@@ -227,7 +231,7 @@ void pw_settings_update_display(pw_state_t *s, const screen_flags_t *sf) {
                 addr,
                 PW_EEPROM_SIZE_IMG_ARROW
             );
-            for(size_t i = 0; i < N_SHADE_OPTIONS; i++) {
+            for(int i = 0; i < N_SHADE_OPTIONS; i++) {
                 if(i == s->settings.sub_cursor) continue;
                 pw_screen_clear_area(
                     8+i*8, 32,
@@ -242,21 +246,23 @@ void pw_settings_update_display(pw_state_t *s, const screen_flags_t *sf) {
 }
 
 void pw_settings_handle_input(pw_state_t *s, const screen_flags_t *sf, pw_buttons_t b) {
+    (void)sf;
     switch(s->settings.current_substate) {
     case SETTINGS_TOP_LEVEL: {
         switch(b) {
         case PW_BUTTON_L: {
             if(s->settings.main_cursor == 0) {
                 s->settings.current_substate = SETTINGS_GO_TO_MENU;
-		pw_audio_play_sound(SOUND_NAVIGATE_BACK);
+		        pw_audio_play_sound(SOUND_NAVIGATE_BACK);
                 break;
             }
-	    pw_audio_play_sound(SOUND_CURSOR_MOVE);
+	        pw_audio_play_sound(SOUND_CURSOR_MOVE);
             // fall through otherwise
+            FALLTHROUGH;
         }
         case PW_BUTTON_R: {
             s->settings.main_cursor = (s->settings.main_cursor+1)%2;
-	    pw_audio_play_sound(SOUND_CURSOR_MOVE);
+	        pw_audio_play_sound(SOUND_CURSOR_MOVE);
             break;
         }
         case PW_BUTTON_M: {

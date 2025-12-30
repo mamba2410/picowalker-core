@@ -20,6 +20,7 @@ static uint32_t prev_step_counts[7] = {0,};
 void pw_trainer_card_move_cursor(pw_state_t *s, int8_t m);
 
 void pw_trainer_card_init(pw_state_t *s, const screen_flags_t *sf) {
+    (void)sf;
     s->trainer_card.current_cursor = 0;
     s->trainer_card.previous_cursor = -1;
     s->trainer_card.current_substate = TC_NORMAL;
@@ -37,6 +38,8 @@ void pw_trainer_card_init(pw_state_t *s, const screen_flags_t *sf) {
 }
 
 void pw_trainer_card_init_display(pw_state_t *s, const screen_flags_t *sf) {
+    (void)s;
+    (void)sf;
     pw_screen_draw_from_eeprom(
         8, 0,
         80, 16,
@@ -167,12 +170,12 @@ void pw_trainer_card_draw_dayview(uint8_t day, uint32_t day_steps,
 
 void pw_trainer_card_move_cursor(pw_state_t *s, int8_t m) {
     s->trainer_card.current_cursor += m;
-    if(s->trainer_card.current_cursor < 0) s->trainer_card.current_cursor = 0;
     if(s->trainer_card.current_cursor > TRAINER_CARD_MAX_DAYS) s->trainer_card.current_cursor = TRAINER_CARD_MAX_DAYS;
     PW_SET_REQUEST(s->requests, PW_REQUEST_REDRAW);
 }
 
 void pw_trainer_card_handle_input(pw_state_t *s, const screen_flags_t *sf, pw_buttons_t b) {
+    (void)sf;
     switch(b) {
     case PW_BUTTON_L: {
         if(s->trainer_card.current_cursor <= 0) {
@@ -203,7 +206,7 @@ void pw_trainer_card_draw_update(pw_state_t *s, const screen_flags_t *sf) {
             pw_trainer_card_init_display(s, sf);
         } else {
             uint32_t const total_steps = health_data_cache.total_steps;
-            uint32_t const today_steps = health_data_cache.today_steps;
+            //uint32_t const today_steps = health_data_cache.today_steps;
             uint16_t const total_days  = health_data_cache.total_days;
             pw_trainer_card_draw_dayview(
                 s->trainer_card.current_cursor,
@@ -226,6 +229,7 @@ void pw_trainer_card_draw_update(pw_state_t *s, const screen_flags_t *sf) {
 
 
 void pw_trainer_card_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf) {
+    (void)sf;
     switch(s->trainer_card.current_substate) {
     case TC_NORMAL: {
         break;

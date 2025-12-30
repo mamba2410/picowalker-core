@@ -63,9 +63,9 @@ add_library(picowalker-core
 if (MSVC)
     target_compile_options(picowalker-core /W4)
 else()
-    target_compile_options(picowalker-core PRIVATE -Wall -Wextra -Wpedantic)
-    #target_compile_options(picowalker-core PRIVATE -Wall -Wextra)
-    #target_compile_options(picowalker-core PRIVATE -Wall)
+    target_compile_options(picowalker-core PRIVATE -std=c17 -Wall -Wextra -Wpedantic)
+    #target_compile_options(picowalker-core PRIVATE -std=c17 -Wall -Wextra)
+    #target_compile_options(picowalker-core PRIVATE -std=c17 -Wall)
 endif()
 
 

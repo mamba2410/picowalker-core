@@ -53,7 +53,7 @@ state_void_func_t const update_funcs[N_SUBSCREENS] = {
 
 
 void pw_inventory_init(pw_state_t *s, const screen_flags_t *sf) {
-
+    (void)sf;
     pw_read_inventory(&gbrief, &gdetailed);
 
     s->inventory.current_cursor = 0;
@@ -82,6 +82,7 @@ void pw_inventory_update_display(pw_state_t *s, const screen_flags_t *sf) {
 
 
 void pw_inventory_handle_input(pw_state_t *s, const screen_flags_t *sf, pw_buttons_t b) {
+    (void)sf;
     switch(b) {
     case PW_BUTTON_L: {
         pw_inventory_move_cursor(s, -1);
@@ -93,6 +94,7 @@ void pw_inventory_handle_input(pw_state_t *s, const screen_flags_t *sf, pw_butto
         } else {
             s->inventory.current_substate = SUBSTATE_GO_TO_SPLASH;
         }
+        break;
     };
     case PW_BUTTON_R: {
         pw_inventory_move_cursor(s, +1);
@@ -203,10 +205,7 @@ static void draw_cursor(pw_state_t *s, const screen_flags_t *sf) {
 static void draw_animated_sprite(pw_state_t *s, const screen_flags_t *sf) {
 
     uint8_t *buf = eeprom_buf;
-    uint8_t idx, w;
-    size_t size;
     pw_img_t sprite;
-    enum search_type type;
 
     if(s->inventory.current_cursor == PI_EMPTY_SLOT) return;
     bool is_pokemon = s->inventory.current_substate == SUBSCREEN_FOUND && s->inventory.current_cursor < PI_EMPTY_SLOT;
@@ -224,7 +223,7 @@ static void draw_animated_sprite(pw_state_t *s, const screen_flags_t *sf) {
     }
 
     sprite = (pw_img_t) {
-        .data=buf, .width=32, .height=24, .size=size
+        .data=buf, .width=32, .height=24, .size=32*24/4
     };
     pw_screen_draw_img(&sprite, PW_SCREEN_WIDTH-32-4, PW_SCREEN_HEIGHT-16-24);
 
@@ -233,10 +232,8 @@ static void draw_animated_sprite(pw_state_t *s, const screen_flags_t *sf) {
 
 
 static void draw_name(pw_state_t *s, const screen_flags_t *sf) {
-
+    (void)sf;
     uint8_t *buf = eeprom_buf;
-    uint8_t w;
-    size_t size;
     pw_img_t sprite;
 
     if(s->inventory.current_cursor == PI_EMPTY_SLOT) return;
@@ -439,6 +436,7 @@ static void pw_inventory_update_screen2(pw_state_t *s, const screen_flags_t *sf)
 }
 
 void pw_inventory_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf) {
+    (void)sf;
     switch(s->inventory.current_substate) {
     case SUBSTATE_GO_TO_SPLASH: {
         p->sid = STATE_SPLASH;

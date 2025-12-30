@@ -67,12 +67,12 @@ static uint8_t substate_queue[8];
 
 // what happens to `cur` hp given both actions
 // valid for both us vs. them and them vs. us
-static const uint8_t HP_MATRIX[3][3] = {
-    //                foe attack, foe evade,  foe crit
-    /* cur attack */ {         1,         1,         2},
-    /* cur evade  */ {         0,         0,         0},
-    /* cur crit   */ {         1,         1,         2},
-};
+//static const uint8_t HP_MATRIX[3][3] = {
+//    //                foe attack, foe evade,  foe crit
+//    /* cur attack */ {         1,         1,         2},
+//    /* cur evade  */ {         0,         0,         0},
+//    /* cur crit   */ {         1,         1,         2},
+//};
 
 static const uint8_t CATCH_CHANCES[4] = { 97, 79, 66, 56 };
 
@@ -128,6 +128,7 @@ static void pw_battle_switch_substate(pw_state_t *s, uint8_t sid) {
  *
  */
 void pw_battle_init(pw_state_t *s, const screen_flags_t *sf) {
+    (void)sf;
     s->battle.current_substate = BATTLE_OPENING;
     s->battle.previous_substate = BATTLE_OPENING;
     s->battle.actions = 0;
@@ -148,6 +149,7 @@ void pw_battle_init(pw_state_t *s, const screen_flags_t *sf) {
  *
  */
 void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf) {
+    (void)sf;
     switch(s->battle.current_substate) {
     case BATTLE_OPENING: {
         if(s->battle.anim_frame <= 0) {
@@ -450,9 +452,7 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
         break;
     }
     case BATTLE_PROCESS_CAUGHT_POKEMON: {
-
-
-        event_log_type_t event_log_type = EVENT_TYPE_EMPTY_ENTRY;
+        event_log_type_t event_log_type;
 
         if(s->battle.chosen_pokemon >= 3) {
             // event mon
@@ -566,7 +566,7 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
 
 
         // TODO: Read special route flag
-        pw_log_event(event_log, route_info, EVENT_TYPE_SPECIAL_POKEMON_CAUGHT, 0, false, s->battle.chosen_pokemon+1);
+        pw_log_event(event_log, route_info, event_log_type, 0, false, s->battle.chosen_pokemon+1);
         break;
     }
     case BATTLE_CATCH_STARS: {
@@ -639,7 +639,7 @@ void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
         break;
     }
     case BATTLE_OUR_ACTION: {
-        uint8_t our_action = (s->battle.actions&OUR_ACTION_MASK)>>OUR_ACTION_OFFSET;
+        //uint8_t our_action = (s->battle.actions&OUR_ACTION_MASK)>>OUR_ACTION_OFFSET;
         uint8_t their_action = (s->battle.actions&THEIR_ACTION_MASK)>>THEIR_ACTION_OFFSET;
 
         switch(their_action) {
@@ -669,7 +669,7 @@ void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
     }
     case BATTLE_THEIR_ACTION: {
         uint8_t our_action = (s->battle.actions&OUR_ACTION_MASK)>>OUR_ACTION_OFFSET;
-        uint8_t their_action = (s->battle.actions&THEIR_ACTION_MASK)>>THEIR_ACTION_OFFSET;
+        //uint8_t their_action = (s->battle.actions&THEIR_ACTION_MASK)>>THEIR_ACTION_OFFSET;
 
         if(our_action == ACTION_EVADE) {
             pw_screen_draw_pokemon_name_and_message(
@@ -848,7 +848,7 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
         break;
     }
     case BATTLE_OUR_ACTION: {
-        uint8_t our_action = (s->battle.actions&OUR_ACTION_MASK)>>OUR_ACTION_OFFSET;
+        //uint8_t our_action = (s->battle.actions&OUR_ACTION_MASK)>>OUR_ACTION_OFFSET;
         uint8_t their_action = (s->battle.actions&THEIR_ACTION_MASK)>>THEIR_ACTION_OFFSET;
 
         pw_screen_overlay_img(&battle_buffer, &our_sprite, OUR_ATTACK_XS[0][s->battle.anim_frame], 8);
@@ -875,7 +875,7 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
     }
     case BATTLE_THEIR_ACTION: {
         uint8_t our_action = (s->battle.actions&OUR_ACTION_MASK)>>OUR_ACTION_OFFSET;
-        uint8_t their_action = (s->battle.actions&THEIR_ACTION_MASK)>>THEIR_ACTION_OFFSET;
+        //uint8_t their_action = (s->battle.actions&THEIR_ACTION_MASK)>>THEIR_ACTION_OFFSET;
 
         pw_screen_overlay_img(&battle_buffer, &our_sprite, THEIR_ATTACK_XS[0][s->battle.anim_frame], 8);
         pw_screen_overlay_img(&battle_buffer, &their_sprite, THEIR_ATTACK_XS[1][s->battle.anim_frame], 0);
@@ -997,6 +997,7 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
  *
  */
 void pw_battle_handle_input(pw_state_t *s, const screen_flags_t *sf, pw_buttons_t b) {
+    (void)sf;
     switch(s->battle.current_substate) {
     case BATTLE_APPEARED: {
         pw_battle_switch_substate(s, BATTLE_CHOOSING);

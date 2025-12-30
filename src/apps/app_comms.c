@@ -14,6 +14,8 @@
 #include "../globals.h"
 #include "app_comms.h"
 
+#define FALLTHROUGH __attribute__((fallthrough))
+
 /** @file app_comms.c
  *
  */
@@ -58,6 +60,7 @@ const char* const PW_COMM_SUBSTATE_NAMES[N_COMM_SUBSTATE] = {
 };
 
 void pw_comms_init(pw_state_t *s, const screen_flags_t *sf) {
+    (void)sf;
     //pw_eeprom_write_health_data(&health_data_cache);
     //pw_eeprom_write_walker_info(&walker_info_cache);
 
@@ -88,7 +91,7 @@ void pw_comms_init(pw_state_t *s, const screen_flags_t *sf) {
 }
 
 void pw_comms_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf) {
-
+    (void)sf;
     app_comms_t *comms = &s->comms;
     ir_err_t err = IR_ERR_UNHANDLED_ERROR;
     size_t n_rw;
@@ -130,7 +133,7 @@ void pw_comms_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf)
             }
             }
         } else {
-            printf("[Error] Slave can't perform request 0x%02x length %d\n", packet_buf.cmd, n_rw);
+            printf("[Error] Slave can't perform request 0x%02x length %lu\n", packet_buf.cmd, n_rw);
             if(comms->first_comms) {
                 comms->current_substate = COMM_SUBSTATE_FIRST_TIMEOUT;
                 comms->timer = 5;
@@ -145,7 +148,7 @@ void pw_comms_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf)
     }
     case COMM_SUBSTATE_MASTER_DETERMINE_ACTION: {
         comms->current_substate = COMM_SUBSTATE_START_PEER_PLAY;
-        // Fall through
+        FALLTHROUGH;
     }
     // Fallthrough for all peer play packet exchanges
     case COMM_SUBSTATE_START_PEER_PLAY:
@@ -234,7 +237,8 @@ void pw_comms_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf)
 }
 
 void pw_comms_handle_input(pw_state_t *s, const screen_flags_t *sf, pw_buttons_t b) {
-
+    (void)sf;
+    (void)b;
     switch(s->comms.current_substate) {
     case COMM_SUBSTATE_NO_PEER_FOUND:
     case COMM_SUBSTATE_CANNOT_CONNECT:
@@ -471,6 +475,7 @@ void pw_comms_draw_update(pw_state_t *s, const screen_flags_t *sf) {
                     );
                     pw_screen_draw_message(PW_SCREEN_HEIGHT-16, 13, 16);
                     pw_screen_draw_text_box(0, PW_SCREEN_HEIGHT-32, PW_SCREEN_WIDTH, 32, PW_SCREEN_BLACK);
+                    break;
                 }
                 case 9:
                 case 10:
@@ -613,6 +618,8 @@ void pw_comms_draw_update(pw_state_t *s, const screen_flags_t *sf) {
 
 
 void pw_comms_deinit(pw_state_t *s, const screen_flags_t *sf) {
+    (void)s;
+    (void)sf;
     //int res;
     //res = pw_eeprom_read_walker_info(&walker_info_cache);
     //res = pw_eeprom_read_health_data(&health_data_cache);
