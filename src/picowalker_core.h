@@ -15,6 +15,15 @@
  *
  */
 
+/**
+ * Main setup and loop functions
+ */
+extern void pw_run(); // Not recommended
+extern void pw_setup();
+extern void (*pw_current_loop)();
+extern void pw_normal_loop();
+extern void pw_sleep_loop();
+extern void pw_ir_loop();
 
 /**
  * Driver module should call this function when a button interrupt fires

@@ -30,12 +30,12 @@ pw_state_t a1, a2;
 pw_state_t *current_state = &a1, *pending_state = &a2;
 screen_flags_t screen_flags;
 
-void (*current_loop)(void);
+void (*pw_current_loop)(void);
 
 void pw_sleep_loop();
-void walker_loop();
+void pw_normal_loop();
 
-void walker_setup() {
+void pw_setup() {
     // Setup IR uart and rx interrupts
     pw_power_init();
     pw_eeprom_init();
@@ -84,7 +84,7 @@ void walker_setup() {
     STATE_FUNCS[current_state->sid].init(current_state, &screen_flags);
     STATE_FUNCS[current_state->sid].draw_init(current_state, &screen_flags);
 
-    current_loop = walker_loop;
+    pw_current_loop = pw_normal_loop;
     printf("[Info ] Setup done, starting loop\n");
 }
 
@@ -93,7 +93,7 @@ bool is_in_time_sensitive_state(pw_state_id_t state) {
     return (state == STATE_COMMS || state == STATE_FIRST_COMMS);
 }
 
-void walker_loop() {
+void pw_normal_loop() {
     uint64_t td;
 
     // Skip accel/battery checks if we can't afford to hang around
@@ -170,7 +170,7 @@ void walker_loop() {
     // Check if we should sleep
     if(pw_power_should_sleep()) {
         printf("[Debug] Sleep timeout hit, entering sleep\n");
-        current_loop = pw_sleep_loop;
+        pw_current_loop = pw_sleep_loop;
 
         // Put peripherals to sleep
         pw_screen_sleep();
@@ -238,7 +238,7 @@ void pw_sleep_loop() {
 
         // Re-draw the screen
         STATE_FUNCS[current_state->sid].draw_init(current_state, &screen_flags);
-        current_loop = walker_loop;
+        pw_current_loop = pw_normal_loop;
         return;
     }
 
@@ -257,15 +257,15 @@ void pw_ir_loop() {
 /**
  *  Entry for the picowalker
  */
-void walker_entry() {
+void pw_run() {
 
-    walker_setup();
+    pw_setup();
 
     // Event loop
     // BEWARE: Could (WILL) receive interrupts during this time
     while(true) {
-        //walker_loop();
-        current_loop();
+        //pw_normal_loop();
+        pw_current_loop();
     }
 
 }
