@@ -3,10 +3,18 @@
 
 #include <stdint.h>
 
-/// @file buttons.h
+#include "picowalker_structures.h"
+
+/**
+ * @file buttons.h
+ */
+
+void pw_button_callback(pw_buttons_t b);
+
+/*
+ * Functions defined by the driver module
+ */
 
 extern void pw_button_init();
-
-void pw_button_callback(uint8_t b);
 
 #endif /* PW_BUTTONS_H */

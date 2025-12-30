@@ -98,21 +98,23 @@ typedef enum pw_flash_img_e {
  *  ==================================================================================
  */
 
-/*
- * Types and defines
+/**
+ * Index of buttons.
+ * Bits don't overlap so that the consumer can check for multiple pressed.
  */
-enum {
-    BUTTON_L = 0x01,
-    BUTTON_M = 0x02,
-    BUTTON_R = 0x04,
-};
+typedef enum pw_buttons_e {
+    PW_BUTTON_L = 0x01,
+    PW_BUTTON_M = 0x02,
+    PW_BUTTON_R = 0x04,
+} pw_buttons_t;
 
+
+/**
+ * Debounce time for buttons.
+ * A button pressed less than this time since the last one will be ignored
+ */
 #define DEBOUNCE_TIME_US    100000   // 100ms
 
-/*
- *  Functions defined by the driver
- */
-void pw_button_init();
 
 /*
  *  ==================================================================================

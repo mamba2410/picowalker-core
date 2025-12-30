@@ -73,17 +73,10 @@ void pw_flash_wake();
  *  ==================================================================================
  */
 
-/*
- * Types and defines
+/**
+ * Driver module should call this function when a button interrupt fires
  */
-enum {
-    BUTTON_L = 0x01,
-    BUTTON_M = 0x02,
-    BUTTON_R = 0x04,
-};
-
-#define DEBOUNCE_TIME_US    100000   // 100ms
-
+extern void pw_button_callback(pw_buttons_t b);
 
 /*
  *  ==================================================================================
