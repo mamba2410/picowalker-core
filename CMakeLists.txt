@@ -18,6 +18,8 @@ add_library(picowalker-core
     src/globals.h
     src/types.h
     src/pico_roms.h
+    src/debug_log.c
+    src/debug_log.h
     src/utils.c
     src/utils.h
     src/eeprom.c
@@ -65,7 +67,7 @@ add_library(picowalker-core
 if (MSVC)
     target_compile_options(picowalker-core /W4)
 else()
-    target_compile_options(picowalker-core PRIVATE -std=c17 -Wall -Wextra -Wpedantic)
+    target_compile_options(picowalker-core PRIVATE -Wall -Wextra -Wpedantic)
     #target_compile_options(picowalker-core PRIVATE -std=c17 -Wall -Wextra)
     #target_compile_options(picowalker-core PRIVATE -std=c17 -Wall)
 endif()
