@@ -1,9 +1,8 @@
 #include <stdint.h>
 
-#include <stdio.h>
-
 #include "picowalker_structures.h"
 #include "accel.h"
+#include "debug_log.h"
 #include "eeprom.h"
 #include "eeprom_map.h"
 #include "globals.h"
@@ -21,9 +20,9 @@ pw_dhms_t last_check = {0,};
 void pw_rtc_regular_processing() {
     pw_rtc_events_t events = pw_time_get_rtc_events();
 
-    //printf("[Debug] events: 0x%04x\n", events);
+    //pw_log_debug("events: 0x%04x\n", events);
     if(events & RTC_EVENT_EVERY_HOUR) {
-        printf("[Debug] every hour\n");
+        pw_log_debug("every hour\n");
         // idk why we do this
         //if(health_data_cache.total_steps < 9999999) {
         //    if(health_data_cache.today_steps < 9999999) {
@@ -46,7 +45,7 @@ void pw_rtc_regular_processing() {
     }
 
     if(events & RTC_EVENT_EVERY_DAY) {
-        printf("[Debug] every day\n");
+        pw_log_debug("every day\n");
         health_data_cache.total_days += 1;
 
         pw_accel_process_steps();
@@ -62,10 +61,10 @@ void pw_rtc_regular_processing() {
 
         for(size_t i = 6; i > 0; i--) {
             historic_steps[i] = historic_steps[i-1];
-            printf("[Debug] Today -%lu: 0x%08x\n", i+1, historic_steps[i]);
+            pw_log_debug("Today -%lu: 0x%08x\n", i+1, historic_steps[i]);
         }
         historic_steps[0] = swap_bytes_u32(health_data_cache.today_steps);
-        printf("[Debug] Today -1: 0x%08x\n", historic_steps[0]);
+        pw_log_debug("Today -1: 0x%08x\n", historic_steps[0]);
         health_data_cache.today_steps = 0;
 
         pw_eeprom_write(

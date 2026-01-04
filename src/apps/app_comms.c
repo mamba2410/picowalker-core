@@ -2,8 +2,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-#include "stdio.h"
-
+#include "../debug_log.h"
 #include "../states.h"
 #include "../buttons.h"
 #include "../screen.h"
@@ -133,7 +132,7 @@ void pw_comms_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf)
             }
             }
         } else {
-            printf("[Error] Slave can't perform request 0x%02x length %lu\n", packet_buf.cmd, n_rw);
+            pw_log_error("Slave can't perform request 0x%02x length %lu\n", packet_buf.cmd, n_rw);
             if(comms->first_comms) {
                 comms->current_substate = COMM_SUBSTATE_FIRST_TIMEOUT;
                 comms->timer = 5;
@@ -216,14 +215,14 @@ void pw_comms_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf)
         break;
     }
     default: {
-        printf("[Error] Unknown comm state %d\n", comms->current_substate);
+        pw_log_error("Unknown comm state %d\n", comms->current_substate);
         break;
     }
     } // switch(cs)
 
     // TODO: remove this and display proper messages on screen
     if(err != IR_OK) {
-        printf("[Info] IR error \"%s\"\n\tSubstate \"%s\"\n",
+        pw_log_info("IR error \"%s\"\n\tSubstate \"%s\"\n",
                PW_IR_ERR_NAMES[err],
                PW_COMM_SUBSTATE_NAMES[s->comms.current_substate]
               );

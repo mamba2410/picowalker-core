@@ -2,8 +2,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-#include <stdio.h>
-
+#include "debug_log.h"
 #include "picowalker_structures.h"
 #include "picowalker_core.h"
 #include "power.h"
@@ -22,25 +21,25 @@ void pw_power_update() {
     pw_power_status_t bs = pw_power_get_status();
 
     if(bs.flags & PW_POWER_STATUS_FLAGS_FAULT) {
-        printf("[Error] Battery faulted, shutting down\n");
+        pw_log_error("Battery faulted, shutting down\n");
         pw_battery_shutdown();
         return; // Shouldn't get here
     }
 
     if(bs.flags & PW_POWER_STATUS_FLAGS_CHARGING) {
-        //printf("[Info ] Charging\n");
+        //pw_log_info("Charging\n");
     }
 
     if(bs.flags & PW_POWER_STATUS_FLAGS_CHARGE_ENDED) {
-        //printf("[Info ] Discharging\n");
+        //pw_log_info("Discharging\n");
     }
 
     if(bs.flags & PW_POWER_STATUS_FLAGS_PLUGGED) {
-        printf("[Info ] Plugged in\n");
+        pw_log_info("Plugged in\n");
     }
 
     if(bs.flags & PW_POWER_STATUS_FLAGS_UNPLUGGED) {
-        printf("[Info ] Unplugged\n");
+        pw_log_info("Unplugged\n");
     }
 
     if(bs.flags & PW_POWER_STATUS_FLAGS_CHARGING) {
@@ -51,7 +50,7 @@ void pw_power_update() {
     }
 
     if(bs.flags & PW_POWER_STATUS_FLAGS_TIMEOUT) {
-        printf("[Warn ] Battery measurement timed out\n");
+        pw_log_warn("Battery measurement timed out\n");
         // Battery percent invalid, so we skip it
     }
 
@@ -64,7 +63,7 @@ void pw_power_update() {
     power_context.battery_percent = bs.percent;
 
     if( (bs.percent < PW_POWER_CRITICAL_THRESHOLD) && !(bs.flags & PW_POWER_STATUS_FLAGS_CHARGING) ) {
-        printf("[Error] Battery is too low, shutting down\n");
+        pw_log_error("Battery is too low, shutting down\n");
         pw_battery_shutdown();
     }
 

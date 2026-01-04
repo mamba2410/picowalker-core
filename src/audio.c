@@ -1,11 +1,11 @@
 #include <stdint.h>
-#include <stdio.h>
 
 #include "audio.h"
 
 #include "eeprom.h"
 #include "eeprom_map.h"
 #include "utils.h"
+#include "debug_log.h"
 
 #define MAX_SOUND_DATA 0xc0
 
@@ -39,7 +39,7 @@ void pw_audio_play_sound(uint8_t sound_id) {
 
 void pw_audio_set_volume(uint8_t vol) {
     if(vol > VOLUME_FULL) {
-        printf("[Warn ] Attempted to set volume level %d\n", vol);
+        pw_log_warn("Attempted to set volume level %d\n", vol);
         return;
     }
 

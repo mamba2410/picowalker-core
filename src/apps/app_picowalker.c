@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 #include "app_picowalker.h"
+#include "../debug_log.h"
 #include "../eeprom_map.h"
 #include "../pico_roms.h"
 #include "../picowalker_structures.h"
@@ -42,7 +43,7 @@ void pw_picowalker_settings_event_loop(pw_state_t *s, pw_state_t *p, const scree
             break;
         }
         default: {
-            printf("[Error] Unknown substate %d in %s",
+            pw_log_error("Unknown substate %d in %s",
                     s->picowalker.current_substate,
                     state_strings[s->sid]);
             break;
@@ -72,7 +73,7 @@ void pw_picowalker_settings_handle_input(pw_state_t *s, const screen_flags_t *sf
             break;
         }
         default: {
-            printf("[Error] Unknown input %d in substate %s\n",
+            pw_log_error("Unknown input %d in substate %s\n",
                     b, state_strings[s->sid]);
             break;
         }
@@ -138,5 +139,27 @@ void pw_picowalker_settings_update_display(pw_state_t *s, const screen_flags_t *
             8, 8
         );
     }
+
+    // Draw battery percentage
+    pw_screen_pos_t y = 16;
+    pw_screen_pos_t x = 8;
+    pw_img_t img = (pw_img_t) {
+        .width = 48,
+        .height = 16,
+        .data = battery_fancy_text,
+        .size = 32*16/4
+    };
+    pw_screen_draw_img(&img, x, y);
+    uint8_t percent = pw_power_get_battery();
+    x = PW_SCREEN_WIDTH-8;
+    x = pw_screen_draw_integer(percent, x, y);
+
+    img = (pw_img_t) {
+        .width = 8,
+        .height = 16,
+        .data = percent_char,
+        .size = 8*16/4
+    };
+    pw_screen_draw_img(&img, PW_SCREEN_WIDTH-8, y);
 }
 

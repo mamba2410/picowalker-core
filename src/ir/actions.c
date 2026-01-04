@@ -1,8 +1,8 @@
-#include <stdio.h>
 #include <stdbool.h>
 
 #include <string.h> // memcpy()
 
+#include "../debug_log.h"
 #include "../eeprom_map.h"
 #include "../eeprom.h"
 #include "../types.h"
@@ -367,7 +367,7 @@ ir_err_t pw_action_slave_perform_request(app_comms_t *comms, pw_packet_t *packet
         break;
     }
     default: {
-        printf("[Error] Slave recv unhandled packet: %02x\n", packet->cmd);
+        pw_log_error("Slave recv unhandled packet: %02x\n", packet->cmd);
         err = IR_ERR_UNEXPECTED_PACKET;
         break;
     }
@@ -755,9 +755,6 @@ ir_err_t pw_ir_eeprom_do_write(pw_packet_t *packet, size_t len) {
     // compressed if 0x00 or 0x02 and length < 136
     bool cmp = ( (cmd&0x02) == 0 ) && (len<0x88);
 
-    //printf("P %02x %02x, len:0x%02x ; addr:%04x cmp:%d", cmd, packet[1], len, addr, cmp);
-
-    //printf("addr: %04x", addr);
     if(cmp) {
         // decompress
         int e = pw_decompress_data(packet->payload, decompression_buf, len-8);
@@ -768,10 +765,9 @@ ir_err_t pw_ir_eeprom_do_write(pw_packet_t *packet, size_t len) {
     }
 
     if(addr == 0xd700) {
-        printf("decomp species: %02x%02x\n", data[1], data[0]);
+        pw_log_debug("decomp species: %02x%02x\n", data[1], data[0]);
     }
 
-    //printf("\n");
     pw_eeprom_write(addr, data, wlen);
 
     return err;
@@ -784,7 +780,7 @@ void pw_ir_end_walk() {
 
     int res = pw_eeprom_read_walker_info(&info);
     if(res < 0) {
-        printf("[Warn ] Can't read walker info\n");
+        pw_log_warn("Can't read walker info\n");
     }
 
     info.le_unk1 = 0;
@@ -820,7 +816,7 @@ void pw_ir_start_walk() {
             1
         );
     if(res < 0) {
-        printf("[Warn ] Couldn't write copy marker\n");
+        pw_log_error("Couldn't write copy marker\n");
     }
 
     // buf_size must wholly divide into copy size
@@ -831,7 +827,7 @@ void pw_ir_start_walk() {
         int a = pw_eeprom_read(PW_EEPROM_ADDR_SCENARIO_STAGING_AREA+i, buf, sz);
         uint16_t species = buf[0] | (uint16_t)(buf[1])<<8;
         if(i == 0 && species == 0) {
-            printf("n read: %d\n", a);
+            pw_log_debug("n read: %d\n", a);
         }
         pw_eeprom_write(PW_EEPROM_ADDR_ROUTE_INFO+i, buf, sz);
     }
@@ -849,7 +845,7 @@ void pw_ir_start_walk() {
             1
         );
     if(res < 0) {
-        printf("[Warn ] Couldn't clear copy marker\n");
+        pw_log_error("Couldn't clear copy marker\n");
     }
 
     health_data_cache.walk_minute_counter = 0;
@@ -861,7 +857,7 @@ void pw_ir_start_walk() {
     // this always reads ok, so the write must have been fine
     route_info_t *route_info = (route_info_t*)buf;
     pw_eeprom_read(PW_EEPROM_ADDR_SCENARIO_STAGING_AREA, (uint8_t*)route_info, PW_EEPROM_SIZE_ROUTE_INFO);
-    printf("d700 species: %04x\n", route_info->pokemon_summary.le_species);
+    pw_log_debug("d700 species: %04x\n", route_info->pokemon_summary.le_species);
 
 
     pw_eeprom_set_area(PW_EEPROM_ADDR_EVENT_LOG, 0, PW_EEPROM_SIZE_EVENT_LOG);
@@ -873,7 +869,7 @@ void pw_ir_start_walk() {
 
     res = pw_eeprom_read_walker_info(info);
     if(res != 0) {
-        printf("Error: Reading walker info failed in walk start (%d)\n", res);
+        pw_log_error("Reading walker info failed in walk start (%d)\n", res);
     }
 
     info->le_unk0 = peer_info_cache.le_unk0;
@@ -913,16 +909,16 @@ void pw_ir_start_walk() {
     event_log_item_t *event_item = malloc(sizeof(*event_item));
 
     pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO, (uint8_t*)route_info, PW_EEPROM_SIZE_ROUTE_INFO);
-    //printf("8f00 species: %04x\n", route_info->pokemon_summary.le_species);
+    //pw_log_debug("8f00 species: %04x\n", route_info->pokemon_summary.le_species);
     ////pw_eeprom_read(0xd700, (uint8_t*)route_info, PW_EEPROM_SIZE_ROUTE_INFO);
-    ////printf("d700 species: %04x\n", route_info->pokemon_summary.le_species);
+    ////pw_log_debug("d700 species: %04x\n", route_info->pokemon_summary.le_species);
 
 
     //event_item->le_our_species = route_info->pokemon_summary.le_species;
     //event_item->our_pokemon_flags = route_info->pokemon_summary.pokemon_flags_1;
     //for(uint8_t i = 0; i < 11; i++)
     //    event_item->our_pokemon_name[i] = route_info->pokemon_nickname[i];
-    //printf("event species: %04x\n", event_item->le_our_species);
+    //pw_log_debug("event species: %04x\n", event_item->le_our_species);
 
     //for(size_t i = 0; i < 11; i++)
     //    event_item->our_pokemon_name[i] = route_info->pokemon_nickname[i];
@@ -990,7 +986,7 @@ ir_err_t pw_ir_identity_ack(pw_packet_t *packet) {
         health_data_cache.last_sync = last_sync;
         pw_time_set_rtc(health_data_cache.last_sync);
     } else {
-        printf("[Debug] peeer info last sync was zero\n");
+        pw_log_debug("peer info last sync was zero\n");
     }
 
     pw_time_delay_ms(ACTION_DELAY_MS);

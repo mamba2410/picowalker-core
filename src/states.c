@@ -1,5 +1,3 @@
-#include <stdio.h>
-
 #include "states.h"
 #include "menu.h"
 #include "buttons.h"

@@ -1,4 +1,3 @@
-
 #include "app_dowsing.h"
 
 #include "../buttons.h"

@@ -2,9 +2,9 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include <stdio.h>
 #include <string.h> // for memset
 
+#include "debug_log.h"
 #include "eeprom.h"
 #include "eeprom_map.h"
 #include "event_log.h"
@@ -16,7 +16,7 @@
 void pw_log_event(event_log_item_t *item, route_info_t *ri, event_log_type_t event_type, uint16_t extra, bool special_route, uint8_t pokemon_idx) {
     uint8_t next_idx = health_data_cache.event_log_index;
 
-    printf("[Debug] Writing event log for event 0x%02x at index %d...", event_type, next_idx);
+    pw_log_debug("Writing event log for event 0x%02x at index %d...", event_type, next_idx);
 
 
     event_log_type_t stored_event_type = EVENT_TYPE_EMPTY_ENTRY;
@@ -24,7 +24,6 @@ void pw_log_event(event_log_item_t *item, route_info_t *ri, event_log_type_t eve
 
     // Only write "fell asleep" if there's no other event there
     if((event_type == EVENT_TYPE_FELL_ASLEEP) && (stored_event_type != EVENT_TYPE_EMPTY_ENTRY)) {
-        printf(" aborted\n");
         return;
     }
 
@@ -85,7 +84,6 @@ void pw_log_event(event_log_item_t *item, route_info_t *ri, event_log_type_t eve
         default: break;
     }
 
-    printf(" complete\n");
     pw_eeprom_write(PW_EEPROM_ADDR_EVENT_LOG + next_idx*sizeof(event_log_item_t), (uint8_t*)item, sizeof(event_log_item_t));
     health_data_cache.event_log_index = (next_idx+1)%EVENT_LOG_COUNT;
     pw_eeprom_write_health_data(&health_data_cache);

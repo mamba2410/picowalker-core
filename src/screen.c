@@ -2,12 +2,11 @@
 #include <string.h>
 #include <stdbool.h>
 
-#include <stdio.h>
-
-#include "screen.h"
+#include "debug_log.h"
 #include "eeprom.h"
 #include "eeprom_map.h"
 #include "globals.h"
+#include "screen.h"
 
 /*
  *  Most of the heavy lifting is done by the driver code
@@ -173,7 +172,7 @@ void pw_screen_overlay_text_box(pw_img_t *img, pw_screen_dim_t w, pw_screen_dim_
     // If dimensions are too small, extend source image.
     // TODO: this assumes there's enough space in the buffer. this is bad.
     if(w > img->width) {
-        //printf("[Debug] Increased text box size from %dx%d to %dx%d\n", img->width, img->height, w, img->height);
+        //pw_log_debug("Increased text box size from %dx%d to %dx%d\n", img->width, img->height, w, img->height);
         // Need to copy from the back to not override data
         for(int i = img->height/8-1; i >= 0; i--) {
             //memcpy(&img->data[i*2*w], &img->data[i*2*img->width], 2*img->width);
@@ -190,7 +189,7 @@ void pw_screen_overlay_text_box(pw_img_t *img, pw_screen_dim_t w, pw_screen_dim_
     }
 
     if(h > img->height) {
-        //printf("[Debug] Increased text box size from %dx%d to %dx%d\n", img->width, img->height, img->width, h);
+        //pw_log_debug("Increased text box size from %dx%d to %dx%d\n", img->width, img->height, img->width, h);
         memset(&img->data[(img->height/8)*2*img->width], 0, 2*img->width*(h-img->height));
         img->height = h;
         img->size = img->height * img->width;
@@ -240,7 +239,7 @@ void pw_screen_overlay_text_box(pw_img_t *img, pw_screen_dim_t w, pw_screen_dim_
 
 void pw_screen_overlay_overline(pw_img_t *img, pw_screen_dim_t w, pw_screen_color_t c) {
     if(w > img->width) {
-        printf("[Error] Trying to draw a %d pixel line over a %dx%d image\n", w, img->width, img->height);
+        pw_log_error("Trying to draw a %d pixel line over a %dx%d image\n", w, img->width, img->height);
         return;
     }
 
@@ -375,12 +374,12 @@ void pw_screen_overlay_img(pw_img_t *base, pw_img_t *img, pw_screen_pos_t x, pw_
     pw_screen_pos_t visible_width = get_overlapping_dimension(img->width, base->width, x);
     pw_screen_pos_t visible_height = get_overlapping_dimension(img->height, base->height, y);
     if(visible_width == 0 || visible_height == 0) {
-        printf("[Error] Visible width/height of overlapping image is zero.");
+        pw_log_error("Visible width/height of overlapping image is zero.");
         return;
     }
 
     if(y < 0 || y > base->height - img->height) {
-        printf("[Error] Overlays which puts an image off the top or bottom edge of a screen are not supported\n");
+        pw_log_error("Overlays which puts an image off the top or bottom edge of a screen are not supported\n");
         return;
     }
     // Now we know that i + visible_width <= base->height for all 0 <= i <= x. Same for y.

@@ -2,11 +2,10 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-#include <stdio.h>
-
 #include "app_battle.h"
 #include "app_switch.h"
 
+#include "../debug_log.h"
 #include "../states.h"
 #include "../screen.h"
 #include "../audio.h"
@@ -582,7 +581,7 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
         break;
     }
     default: {
-        //printf("[ERROR] Unhandled substate init: 0x%02x\n", s->battle.current_substate);
+        //pw_log_error("Unhandled substate init: 0x%02x\n", s->battle.current_substate);
         break;
     }
 
@@ -755,7 +754,7 @@ void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
         break;
     }
     default: {
-        //printf("[ERROR] Unhandled substate draw: 0x%02x\n", s->battle.current_substate);
+        //pw_log_error("Unhandled substate draw: 0x%02x\n", s->battle.current_substate);
         break;
     }
     }
@@ -817,7 +816,7 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
     pw_img_t battle_buffer;
     pw_screen_get_blank_image(&battle_buffer, 96, 32);
     if(battle_buffer.size == 0) {
-        printf("[Error] Couldn't get blank image for battles\n");
+        pw_log_error("Couldn't get blank image for battles\n");
         return;
     }
 
@@ -984,7 +983,7 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
         break;
     }
     default: {
-        //printf("[ERROR] Unhandled substate draw update: 0x%02x\n", s->battle.current_substate);
+        //pw_log_error("Unhandled substate draw update: 0x%02x\n", s->battle.current_substate);
         break;
     }
 

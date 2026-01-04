@@ -1,8 +1,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include <stdio.h>
-
 #include "ir.h"
 #include "../picowalker_structures.h"
 
@@ -61,7 +59,6 @@ ir_err_t pw_ir_recv_packet(pw_packet_t *packet, size_t len, size_t *pn_read) {
     if(n_read <= 0) return IR_ERR_TIMEOUT;
     *pn_read = (size_t)n_read;
 
-    //printf("n_read: %lu\n", *pn_read);
     for(size_t i = 0; i < n_read; i++)
         packet->bytes[i] ^= 0xaa;
 

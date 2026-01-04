@@ -43,7 +43,6 @@ void pw_first_comms_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_
         break;
     }
     case COMM_STATE_SLAVE: {
-        //printf("Slave waiting\n");
         err = pw_ir_recv_packet(&packet_buf, PACKET_BUF_SIZE, &n_rw);
         if(err == IR_OK || err == IR_ERR_SIZE_MISMATCH) {
             err = pw_action_slave_perform_request(&s->comms, &packet_buf, n_rw);
@@ -70,14 +69,13 @@ void pw_first_comms_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_
         break;
     }
     default: {
-        //printf("Error: Unexpected comm state 0x%02x\n", cs);
         err = IR_ERR_UNKNOWN_SUBSTATE;
         break;
     }
     } // switch(cs)
 
     if(err != IR_OK) {
-        //printf("\tError code: %02x: %s\n\tState: %d\n\tSubstate %d\n",
+        //pw_log_debug("\tError code: %02x: %s\n\tState: %d\n\tSubstate %d\n",
         //       err, PW_IR_ERR_NAMES[err],
         //       pw_ir_get_comm_state(),
         //       s->comms.current_substate

@@ -61,7 +61,6 @@ int pw_decompress_data(const uint8_t *data, uint8_t *buf, size_t dlen) {
 
     if(oc != decomp_size) return -1;
 
-    //printf("decomp size: %02x\n", oc);
     return 0;
 }
 
