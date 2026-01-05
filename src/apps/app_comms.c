@@ -623,4 +623,5 @@ void pw_comms_deinit(pw_state_t *s, const screen_flags_t *sf) {
     //res = pw_eeprom_read_walker_info(&walker_info_cache);
     //res = pw_eeprom_read_health_data(&health_data_cache);
     pw_ir_sleep();
+    pw_ir_deinit();
 }

@@ -178,3 +178,11 @@ void pw_first_comms_draw_update(pw_state_t *s, const screen_flags_t *sf) {
     }
 }
 
+
+void pw_first_comms_deinit(pw_state_t *s, const screen_flags_t *sf) {
+    (void)s;
+    (void)sf;
+    pw_ir_sleep();
+    pw_ir_deinit();
+}
+

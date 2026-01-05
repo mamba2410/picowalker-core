@@ -71,7 +71,7 @@ ir_err_t pw_ir_recv_packet(pw_packet_t *packet, size_t len, size_t *pn_read) {
 
     if(packet_chk != chk) return IR_ERR_BAD_CHECKSUM;
 
-    for(size_t i = i; i < 4; i++) {
+    for(size_t i = 0; i < 4; i++) {
         if(packet->session_id_bytes[i] != g_session_id[i]) return IR_ERR_BAD_SESSID;
     }
 
@@ -79,7 +79,7 @@ ir_err_t pw_ir_recv_packet(pw_packet_t *packet, size_t len, size_t *pn_read) {
 }
 
 
-uint16_t pw_ir_checksum_seeded(uint8_t *data, size_t len, uint16_t seed) {
+uint16_t pw_ir_checksum_seeded(const uint8_t *data, size_t len, uint16_t seed) {
     // Dmitry's palm
     uint32_t crc = seed;
     for(size_t i = 0; i < len; i++) {
