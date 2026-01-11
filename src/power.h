@@ -42,6 +42,8 @@ extern bool pw_power_should_sleep();
 extern pw_wake_reason_t pw_power_get_wake_reason();
 extern void pw_power_clear_wake_reason(pw_wake_reason_t);
 extern void pw_power_enter_sleep();
+extern void pw_power_enter_light_sleep();
+extern void pw_power_light_sleep_for(uint32_t ms);
 
 #endif /* PW_POWER_H */
 

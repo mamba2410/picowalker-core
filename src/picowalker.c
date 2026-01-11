@@ -226,19 +226,25 @@ void pw_sleep_loop() {
 
     if(wake_reason & PW_WAKE_REASON_BUTTON) {
         //pw_log_debug("Wake because button\n");
-        pw_accel_process_steps();
-        pw_screen_wake();
-        pw_screen_set_brightness((health_data_cache.settings&SETTINGS_SHADE_MASK)>>SETTINGS_SHADE_OFFSET);
-        pw_screen_clear();
 
-        if(current_state->sid == STATE_COMMS || current_state->sid == STATE_FIRST_COMMS) {
-            pw_ir_wake();
+        pw_power_light_sleep_for(1000);
+        bool pressed = pw_button_is_pressed(PW_BUTTON_M);
+
+        if(pressed) {
+            pw_accel_process_steps();
+            pw_screen_wake();
+            pw_screen_set_brightness((health_data_cache.settings&SETTINGS_SHADE_MASK)>>SETTINGS_SHADE_OFFSET);
+            pw_screen_clear();
+
+            if(current_state->sid == STATE_COMMS || current_state->sid == STATE_FIRST_COMMS) {
+                pw_ir_wake();
+            }
+
+            // Re-draw the screen
+            STATE_FUNCS[current_state->sid].draw_init(current_state, &screen_flags);
+            pw_current_loop = pw_normal_loop;
+            return;
         }
-
-        // Re-draw the screen
-        STATE_FUNCS[current_state->sid].draw_init(current_state, &screen_flags);
-        pw_current_loop = pw_normal_loop;
-        return;
     }
 
     // If nothing else to do, we go back to sleep

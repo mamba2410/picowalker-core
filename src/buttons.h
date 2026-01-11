@@ -16,5 +16,6 @@ void pw_button_callback(pw_buttons_t b);
  */
 
 extern void pw_button_init();
+extern bool pw_button_is_pressed(pw_buttons_t b);
 
 #endif /* PW_BUTTONS_H */
