@@ -12,14 +12,32 @@
  *  Most of the heavy lifting is done by the driver code
  */
 
-void pw_screen_draw_from_eeprom(pw_screen_pos_t x, pw_screen_pos_t y, pw_screen_dim_t w, pw_screen_dim_t h, pw_eeprom_addr_t addr, size_t len) {
-    pw_img_t img = {.height=h, .width=w, .data=eeprom_buf, .size=len};
+void pw_screen_draw_from_eeprom(pw_screen_pos_t x, pw_screen_pos_t y, pw_screen_dim_t w, pw_screen_dim_t h, pw_eeprom_addr_t addr, size_t len, bool use_alt) {
+    pw_img_t img = {
+        .width=w,
+        .height=h,
+        .data=eeprom_buf,
+        .size=len,
+        .lookup_table = {
+            .addr=addr,
+            .use_alt=use_alt
+        }
+    };
     pw_eeprom_read(addr, eeprom_buf, len);
     pw_screen_draw_img(&img, x, y);
 }
 
 void pw_screen_draw_from_eeprom_with_text_box(pw_screen_pos_t x, pw_screen_pos_t y, pw_screen_dim_t w, pw_screen_dim_t h, pw_eeprom_addr_t addr, size_t len, pw_screen_color_t c) {
-    pw_img_t img = {.height=h, .width=w, .data=eeprom_buf, .size=len};
+    pw_img_t img = {
+        .width=w,
+        .height=h,
+        .data=eeprom_buf,
+        .size=len,
+        .lookup_table = {
+            .addr=addr,
+            .use_alt=false
+        }
+    };
     pw_eeprom_read(addr, eeprom_buf, len);
     pw_screen_overlay_text_box(&img, w, h, c);
     pw_screen_draw_img(&img, x, y);
@@ -38,7 +56,8 @@ pw_screen_pos_t pw_screen_draw_integer(uint32_t n, pw_screen_pos_t right_x, pw_s
             x, y,
             8, 16,
             PW_EEPROM_ADDR_IMG_DIGITS+PW_EEPROM_SIZE_IMG_CHAR*idx,
-            PW_EEPROM_SIZE_IMG_CHAR
+            PW_EEPROM_SIZE_IMG_CHAR,
+            false
         );
     } while(m>0);
 
@@ -55,7 +74,16 @@ pw_screen_pos_t pw_screen_draw_integer_with_overline(uint32_t n, pw_screen_pos_t
         m = m/10;
         x -= 8;
 
-        pw_img_t img = {.width=8, .height=16, .data=eeprom_buf, .size=PW_EEPROM_SIZE_IMG_CHAR};
+        pw_img_t img = {
+            .width=8,
+            .height=16,
+            .data=eeprom_buf,
+            .size=PW_EEPROM_SIZE_IMG_CHAR,
+            .lookup_table = {
+                .addr=PW_EEPROM_ADDR_IMG_DIGITS+PW_EEPROM_SIZE_IMG_CHAR*idx,
+                .use_alt=false
+            }
+        };
         pw_eeprom_read(PW_EEPROM_ADDR_IMG_DIGITS+PW_EEPROM_SIZE_IMG_CHAR*idx, eeprom_buf, PW_EEPROM_SIZE_IMG_CHAR);
         pw_screen_overlay_overline(&img, 8, c);
         pw_screen_draw_img(&img, x, y);
@@ -80,7 +108,8 @@ void pw_screen_draw_subtime(uint8_t n, pw_screen_pos_t x, pw_screen_pos_t y, boo
         x, y,
         8, 16,
         PW_EEPROM_ADDR_IMG_DIGITS+PW_EEPROM_SIZE_IMG_CHAR*idx,
-        PW_EEPROM_SIZE_IMG_CHAR
+        PW_EEPROM_SIZE_IMG_CHAR,
+        false
     );
 
     x += 8;
@@ -89,7 +118,8 @@ void pw_screen_draw_subtime(uint8_t n, pw_screen_pos_t x, pw_screen_pos_t y, boo
         x, y,
         8, 16,
         PW_EEPROM_ADDR_IMG_DIGITS+PW_EEPROM_SIZE_IMG_CHAR*idx,
-        PW_EEPROM_SIZE_IMG_CHAR
+        PW_EEPROM_SIZE_IMG_CHAR,
+        false
     );
     if(draw_colon) {
         x += 8;
@@ -97,7 +127,8 @@ void pw_screen_draw_subtime(uint8_t n, pw_screen_pos_t x, pw_screen_pos_t y, boo
             x, y,
             8, 16,
             PW_EEPROM_ADDR_IMG_CHAR_COLON,
-            PW_EEPROM_SIZE_IMG_CHAR
+            PW_EEPROM_SIZE_IMG_CHAR,
+            false
         );
     }
 }
@@ -114,9 +145,14 @@ void pw_screen_draw_message(pw_screen_pos_t y, uint8_t message_index, pw_screen_
     pw_eeprom_read(addr, eeprom_buf, sz);
 
     pw_img_t img = {
-        .width=PW_SCREEN_WIDTH, .height=h,
+        .width=PW_SCREEN_WIDTH, 
+        .height=h,
         .data=eeprom_buf,
-        .size=sz
+        .size=sz,
+        .lookup_table = {
+            .addr=addr,
+            .use_alt=false
+        }
     };
 
     pw_screen_draw_img(&img, 0, y);
@@ -134,17 +170,32 @@ void pw_screen_draw_message_with_text_box(pw_screen_pos_t y, uint8_t message_ind
     pw_eeprom_read(addr, eeprom_buf, sz);
 
     pw_img_t img = {
-        .width=PW_SCREEN_WIDTH, .height=h,
+        .width=PW_SCREEN_WIDTH, 
+        .height=h,
         .data=eeprom_buf,
-        .size=sz
+        .size=sz,
+        .lookup_table = {
+            .addr=addr,
+            .use_alt=false
+        }
     };
+
     pw_screen_overlay_text_box(&img, PW_SCREEN_WIDTH, h, c);
 
     pw_screen_draw_img(&img, 0, y);
 }
 
 void pw_screen_draw_pokemon_name_and_message(pw_eeprom_addr_t poke_addr, pw_eeprom_addr_t message_addr, pw_screen_color_t c) {
-    pw_img_t img = {.width=PW_SCREEN_WIDTH, .height=32, .data=eeprom_buf, .size=2*PW_EEPROM_SIZE_TEXT_APPEARED};
+    pw_img_t img = {
+        .width=PW_SCREEN_WIDTH,
+        .height=32,
+        .data=eeprom_buf,
+        .size=2*PW_EEPROM_SIZE_TEXT_APPEARED,
+        .lookup_table = {
+            .addr=poke_addr,
+            .use_alt=false
+        }
+    };
     pw_eeprom_read(
         poke_addr,
         img.data,

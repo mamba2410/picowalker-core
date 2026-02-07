@@ -121,17 +121,22 @@ void pw_picowalker_settings_init_display(pw_state_t *s, const screen_flags_t *sf
 
     // Title bar
     pw_img_t img = (pw_img_t){
-        .width = 80,
-        .height = 16,
-        .data = picowalker_border_text,
-        .size = 80*16/4
+        .width=80,
+        .height=16,
+        .data=picowalker_border_text,
+        .size=80*16/4,
+        .lookup_table = {
+            .addr=-1,
+            .use_alt=false
+        }
     };
     pw_screen_draw_img(&img, 8, 0);
     pw_screen_draw_from_eeprom(
         0, 0,
         8, 16,
         PW_EEPROM_ADDR_IMG_MENU_ARROW_RETURN,
-        PW_EEPROM_SIZE_IMG_MENU_ARROW_RETURN
+        PW_EEPROM_SIZE_IMG_MENU_ARROW_RETURN,
+        false
     );
 
     draw_color_option(8, 16);
@@ -140,10 +145,14 @@ void pw_picowalker_settings_init_display(pw_state_t *s, const screen_flags_t *sf
     y = 32;
     x = 8;
     img = (pw_img_t) {
-        .width = 48,
-        .height = 16,
-        .data = battery_fancy_text,
-        .size = 48*16/4
+        .width=48,
+        .height=16,
+        .data=battery_fancy_text,
+        .size=32*16/4, // 48*16/4
+        .lookup_table = {
+            .addr=-1,
+            .use_alt=false
+        }
     };
     pw_screen_draw_img(&img, x, y);
     uint8_t percent = pw_power_get_battery();
@@ -151,10 +160,14 @@ void pw_picowalker_settings_init_display(pw_state_t *s, const screen_flags_t *sf
     x = pw_screen_draw_integer(percent, x, y);
 
     img = (pw_img_t) {
-        .width = 8,
-        .height = 16,
-        .data = percent_char,
-        .size = 8*16/4
+        .width=8,
+        .height=16,
+        .data=percent_char,
+        .size=8*16/4,
+        .lookup_table = {
+            .addr=-1,
+            .use_alt=false
+        }
     };
     pw_screen_draw_img(&img, PW_SCREEN_WIDTH-8, y);
 }
@@ -167,7 +180,8 @@ void pw_picowalker_settings_update_display(pw_state_t *s, const screen_flags_t *
         0, 16+4+s->picowalker.cursor*16,
         8, 8,
         addr,
-        PW_EEPROM_SIZE_IMG_ARROW
+        PW_EEPROM_SIZE_IMG_ARROW,
+        false
     );
     for(int8_t i = 0; i < N_ENTRIES; i++) {
         if(i == s->picowalker.cursor) continue;
@@ -182,13 +196,17 @@ void pw_picowalker_settings_update_display(pw_state_t *s, const screen_flags_t *
     draw_color_option(8, 16);
 
     // Draw battery percentage
-    y = 32;
-    x = 8;
-    img = (pw_img_t) {
-        .width = 48,
-        .height = 16,
-        .data = battery_fancy_text,
-        .size = 48*16/4
+    pw_screen_pos_t y = 16;
+    pw_screen_pos_t x = 8;
+    pw_img_t img = (pw_img_t) {
+        .width=48,
+        .height=16,
+        .data=battery_fancy_text,
+        .size=32*16/4, // 48*16/4
+        .lookup_table = {
+            .addr=-1,
+            .use_alt=false
+        }
     };
     pw_screen_draw_img(&img, x, y);
     uint8_t percent = pw_power_get_battery();
@@ -196,10 +214,14 @@ void pw_picowalker_settings_update_display(pw_state_t *s, const screen_flags_t *
     x = pw_screen_draw_integer(percent, x, y);
 
     img = (pw_img_t) {
-        .width = 8,
-        .height = 16,
-        .data = percent_char,
-        .size = 8*16/4
+        .width=8,
+        .height=16,
+        .data=percent_char,
+        .size=8*16/4,
+        .lookup_table = {
+            .addr=-1,
+            .use_alt=false
+        }
     };
     pw_screen_draw_img(&img, PW_SCREEN_WIDTH-8, y);
 }

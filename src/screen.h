@@ -19,7 +19,8 @@ void pw_screen_draw_from_eeprom(
     pw_screen_pos_t x, pw_screen_pos_t y,
     pw_screen_dim_t w, pw_screen_dim_t h,
     pw_eeprom_addr_t addr,
-    size_t len
+    size_t len,
+    bool use_alt
 );
 pw_screen_pos_t pw_screen_draw_integer(uint32_t n, pw_screen_pos_t right_x, pw_screen_pos_t y);
 void pw_screen_draw_time(uint8_t hour, uint8_t minute, uint8_t second, pw_screen_pos_t x, pw_screen_pos_t y);

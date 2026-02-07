@@ -150,7 +150,8 @@ void pw_normal_loop() {
                     0, 0,
                     8, 8,
                     PW_EEPROM_ADDR_IMG_LOW_BATTERY,
-                    PW_EEPROM_SIZE_IMG_LOW_BATTERY
+                    PW_EEPROM_SIZE_IMG_LOW_BATTERY,
+                    true
                 );
             } else {
                 pw_screen_clear_area(0, 0, 8, 8);

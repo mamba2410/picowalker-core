@@ -132,7 +132,16 @@ void pw_dowsing_init(pw_state_t *s, const screen_flags_t *sf) {
 }
 
 void pw_dowsing_init_display(pw_state_t *s, const screen_flags_t *sf) {
-    pw_img_t grass = {.data=img_buf, .width=16, .height=16, .size=PW_EEPROM_SIZE_IMG_DOWSING_BUSH_DARK};
+    pw_img_t grass = {
+        .width=16, 
+        .height=16, 
+        .data=img_buf,
+        .size=PW_EEPROM_SIZE_IMG_DOWSING_BUSH_DARK,
+        .lookup_table = {
+            .addr=PW_EEPROM_ADDR_IMG_DOWSING_BUSH_DARK,
+            .use_alt=true
+        }
+    };
     pw_eeprom_read(
         PW_EEPROM_ADDR_IMG_DOWSING_BUSH_DARK,
         grass.data,
@@ -147,14 +156,16 @@ void pw_dowsing_init_display(pw_state_t *s, const screen_flags_t *sf) {
                     16*i+2, PW_SCREEN_HEIGHT-16-8,
                     8, 8,
                     PW_EEPROM_ADDR_IMG_ARROW_UP_NORMAL,
-                    PW_EEPROM_SIZE_IMG_ARROW
+                    PW_EEPROM_SIZE_IMG_ARROW,
+                    false
                 );
             } else {
                 pw_screen_draw_from_eeprom(
                     16*i+2, PW_SCREEN_HEIGHT-16-8,
                     8, 8,
                     PW_EEPROM_ADDR_IMG_ARROW_UP_OFFSET,
-                    PW_EEPROM_SIZE_IMG_ARROW
+                    PW_EEPROM_SIZE_IMG_ARROW,
+                    false
                 );
             }
         }
@@ -173,21 +184,24 @@ void pw_dowsing_init_display(pw_state_t *s, const screen_flags_t *sf) {
         0, 0,
         32, 24,
         PW_EEPROM_ADDR_IMG_ROUTE_LARGE,
-        PW_EEPROM_SIZE_IMG_ROUTE_LARGE
+        PW_EEPROM_SIZE_IMG_ROUTE_LARGE,
+        true
     );
 
     pw_screen_draw_from_eeprom(
         36, 0,
         32, 16,
         PW_EEPROM_ADDR_TEXT_LEFT,
-        PW_EEPROM_SIZE_TEXT_LEFT
+        PW_EEPROM_SIZE_TEXT_LEFT,
+        false
     );
 
     pw_screen_draw_from_eeprom(
         76, 0,
         8, 16,
         PW_EEPROM_ADDR_IMG_DIGITS + PW_EEPROM_SIZE_IMG_CHAR*s->dowsing.choices_remaining,
-        PW_EEPROM_SIZE_IMG_CHAR
+        PW_EEPROM_SIZE_IMG_CHAR,
+        false
     );
 
 }
@@ -219,7 +233,8 @@ static void choosing_draw_update(pw_state_t *s, const screen_flags_t *sf) {
         cx, PW_SCREEN_HEIGHT-16-8,
         8, 8,
         addr,
-        PW_EEPROM_SIZE_IMG_ARROW
+        PW_EEPROM_SIZE_IMG_ARROW,
+        false
     );
 
 }
@@ -231,7 +246,8 @@ static void selected_draw_update(pw_state_t *s, const screen_flags_t *sf) {
         16*s->dowsing.current_cursor, y,
         16, 16,
         PW_EEPROM_ADDR_IMG_DOWSING_BUSH_DARK,
-        PW_EEPROM_SIZE_IMG_DOWSING_BUSH_DARK
+        PW_EEPROM_SIZE_IMG_DOWSING_BUSH_DARK,
+        true
     );
     y = (sf->frame&ANIM_FRAME_NORMAL_TIME)?BUSH_HEIGHT:BUSH_HEIGHT+16-2;
     pw_screen_clear_area(16*s->dowsing.current_cursor, y, 16, 2);
@@ -248,14 +264,16 @@ static void replace_item_draw_update(pw_state_t *s, const screen_flags_t *sf) {
             20+s->dowsing.current_cursor*(8+16), PW_SCREEN_HEIGHT-32,
             8, 8,
             PW_EEPROM_ADDR_IMG_ARROW_UP_NORMAL,
-            PW_EEPROM_SIZE_IMG_ARROW
+            PW_EEPROM_SIZE_IMG_ARROW,
+            false
         );
     } else {
         pw_screen_draw_from_eeprom(
             20+s->dowsing.current_cursor*(8+16), PW_SCREEN_HEIGHT-32,
             8, 8,
             PW_EEPROM_ADDR_IMG_ARROW_UP_OFFSET,
-            PW_EEPROM_SIZE_IMG_ARROW
+            PW_EEPROM_SIZE_IMG_ARROW,
+            false
         );
     }
 
@@ -294,14 +312,16 @@ static void check_guess_draw_init(pw_state_t *s, const screen_flags_t *sf) {
         16*s->dowsing.current_cursor, BUSH_HEIGHT,
         16, 16,
         PW_EEPROM_ADDR_IMG_DOWSING_BUSH_LIGHT,
-        PW_EEPROM_SIZE_IMG_DOWSING_BUSH_LIGHT
+        PW_EEPROM_SIZE_IMG_DOWSING_BUSH_LIGHT,
+        true
     );
 
     pw_screen_draw_from_eeprom(
         76, 0,
         8, 16,
         PW_EEPROM_ADDR_IMG_DIGITS + PW_EEPROM_SIZE_IMG_CHAR*s->dowsing.choices_remaining,
-        PW_EEPROM_SIZE_IMG_CHAR
+        PW_EEPROM_SIZE_IMG_CHAR,
+        false
     );
     s->dowsing.current_substate = s->dowsing.current_substate;
 
@@ -447,7 +467,16 @@ void pw_dowsing_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *s
         for(avail = 0; (avail<3) && (inv[avail].le_item != 0); avail++);
 
         // Draw "Item found" text
-        pw_img_t item_found_img = {.width=PW_SCREEN_WIDTH, .height=32, .data=eeprom_buf, .size=2*PW_EEPROM_SIZE_TEXT_FOUND};
+        pw_img_t item_found_img = {
+            .width=PW_SCREEN_WIDTH,
+            .height=32,
+            .data=eeprom_buf,
+            .size=2*PW_EEPROM_SIZE_TEXT_FOUND,
+            .lookup_table = {
+                .addr=PW_EEPROM_ADDR_TEXT_ITEM_NAMES,
+                .use_alt=false
+            }
+        };
         uint8_t chosen_item_index = pw_item_id_to_item_index(s->dowsing.chosen_item);
 
         pw_eeprom_read(
@@ -497,7 +526,8 @@ void pw_dowsing_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *s
             16*s->dowsing.item_position+4, BUSH_HEIGHT,
             8, 8,
             PW_EEPROM_ADDR_IMG_ITEM,
-            PW_EEPROM_SIZE_IMG_ITEM
+            PW_EEPROM_SIZE_IMG_ITEM,
+            true
         );
 
         if(s->dowsing.choices_remaining > 0) {
