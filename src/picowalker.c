@@ -96,7 +96,7 @@ void pw_normal_loop() {
     uint64_t td;
 
     // Skip accel/battery checks if we can't afford to hang around
-    /*
+
     if(!is_in_time_sensitive_state(current_state->sid)) {
         walker_timings.now = pw_time_get_us();
         td = (walker_timings.prev_accel_check>walker_timings.now)?(walker_timings.prev_accel_check-walker_timings.now):(walker_timings.now-walker_timings.prev_accel_check);
@@ -104,10 +104,10 @@ void pw_normal_loop() {
             walker_timings.prev_accel_check = walker_timings.now;
             pw_accel_process_steps();
 
-            (void)pw_power_process_battery();
+            // (void)pw_power_process_battery();
         }
     }
-    */
+    
 
     // Update power management
     pw_power_update();
