@@ -193,6 +193,9 @@ void pw_settings_init_display(pw_state_t *s, const screen_flags_t *sf) {
             PW_EEPROM_SIZE_IMG_ARROW
         );
 
+        pw_screen_pos_t x = 8+N_SHADE_OPTIONS*8;
+        pw_screen_clear_area(x, 40, PW_SCREEN_WIDTH - x, 16);
+
         break;
     }
     }
