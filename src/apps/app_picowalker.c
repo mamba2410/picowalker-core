@@ -90,6 +90,30 @@ void pw_picowalker_settings_handle_input(pw_state_t *s, const screen_flags_t *sf
 }
 
 
+static void draw_color_option(pw_screen_pos_t x, pw_screen_pos_t y) {
+    if(color_mode == (N_COLOR_MODES-1)) {
+        pw_img_t img = (pw_img_t) {
+            .width = 48,
+            .height = 16,
+            .data = color_fancy_text,
+            .size = 48*16/4
+        };
+        pw_screen_draw_img(&img, x, y);
+        x = 56;
+        pw_screen_clear_area(x, y, PW_SCREEN_WIDTH-x, 16);
+    } else {
+        pw_img_t img = (pw_img_t) {
+            .width = 48,
+            .height = 16,
+            .data = grey_fancy_text,
+            .size = 48*16/4
+        };
+        pw_screen_draw_img(&img, x, y);
+        x = PW_SCREEN_WIDTH;
+        x = pw_screen_draw_integer(color_mode, x, y);
+    }
+}
+
 void pw_picowalker_settings_init_display(pw_state_t *s, const screen_flags_t *sf) {
     (void)s;
     (void)sf;
@@ -110,18 +134,7 @@ void pw_picowalker_settings_init_display(pw_state_t *s, const screen_flags_t *sf
         PW_EEPROM_SIZE_IMG_MENU_ARROW_RETURN
     );
 
-    // Draw colour options
-    y = 16;
-    x = 8;
-    img = (pw_img_t) {
-        .width = 48,
-        .height = 16,
-        .data = color_fancy_text,
-        .size = 48*16/4
-    };
-    pw_screen_draw_img(&img, x, y);
-    x = PW_SCREEN_WIDTH;
-    x = pw_screen_draw_integer(color_mode, x, y);
+    draw_color_option(8, 16);
 
     // Draw battery percentage
     y = 32;
@@ -166,18 +179,7 @@ void pw_picowalker_settings_update_display(pw_state_t *s, const screen_flags_t *
     pw_screen_pos_t x, y;
     pw_img_t img;
 
-    // Draw colour options
-    y = 16;
-    x = 8;
-    img = (pw_img_t) {
-        .width = 48,
-        .height = 16,
-        .data = color_fancy_text,
-        .size = 48*16/4
-    };
-    pw_screen_draw_img(&img, x, y);
-    x = PW_SCREEN_WIDTH;
-    x = pw_screen_draw_integer(color_mode, x, y);
+    draw_color_option(8, 16);
 
     // Draw battery percentage
     y = 32;
