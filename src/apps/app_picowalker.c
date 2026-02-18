@@ -15,6 +15,11 @@
 
 #define N_ENTRIES 2
 
+// TODO: Move me
+#define N_COLOR_MODES 4
+uint8_t color_mode = 0;
+
+
 enum {
     SUBSTATE_NORMAL,
     SUBSTATE_GO_TO_SPLASH,
@@ -63,7 +68,11 @@ void pw_picowalker_settings_handle_input(pw_state_t *s, const screen_flags_t *sf
             break;
         }
         case PW_BUTTON_M: {
-            s->picowalker.current_substate = SUBSTATE_GO_TO_SPLASH;
+            if(s->picowalker.cursor == 0) {
+                color_mode = (color_mode + 1) % N_COLOR_MODES;
+            } else {
+                s->picowalker.current_substate = SUBSTATE_GO_TO_SPLASH;
+            }
             break;
         }
         case PW_BUTTON_R: {
@@ -102,7 +111,6 @@ void pw_picowalker_settings_init_display(pw_state_t *s, const screen_flags_t *sf
     );
 
     // Draw colour options
-    // TODO: Draw "greyscale" 
     y = 16;
     x = 8;
     img = (pw_img_t) {
@@ -112,6 +120,8 @@ void pw_picowalker_settings_init_display(pw_state_t *s, const screen_flags_t *sf
         .size = 48*16/4
     };
     pw_screen_draw_img(&img, x, y);
+    x = PW_SCREEN_WIDTH;
+    x = pw_screen_draw_integer(color_mode, x, y);
 
     // Draw battery percentage
     y = 32;
@@ -120,7 +130,7 @@ void pw_picowalker_settings_init_display(pw_state_t *s, const screen_flags_t *sf
         .width = 48,
         .height = 16,
         .data = battery_fancy_text,
-        .size = 32*16/4
+        .size = 48*16/4
     };
     pw_screen_draw_img(&img, x, y);
     uint8_t percent = pw_power_get_battery();
@@ -153,15 +163,30 @@ void pw_picowalker_settings_update_display(pw_state_t *s, const screen_flags_t *
             8, 8
         );
     }
+    pw_screen_pos_t x, y;
+    pw_img_t img;
+
+    // Draw colour options
+    y = 16;
+    x = 8;
+    img = (pw_img_t) {
+        .width = 48,
+        .height = 16,
+        .data = color_fancy_text,
+        .size = 48*16/4
+    };
+    pw_screen_draw_img(&img, x, y);
+    x = PW_SCREEN_WIDTH;
+    x = pw_screen_draw_integer(color_mode, x, y);
 
     // Draw battery percentage
-    pw_screen_pos_t y = 32;
-    pw_screen_pos_t x = 8;
-    pw_img_t img = (pw_img_t) {
+    y = 32;
+    x = 8;
+    img = (pw_img_t) {
         .width = 48,
         .height = 16,
         .data = battery_fancy_text,
-        .size = 32*16/4
+        .size = 48*16/4
     };
     pw_screen_draw_img(&img, x, y);
     uint8_t percent = pw_power_get_battery();
