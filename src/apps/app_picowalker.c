@@ -13,7 +13,7 @@
 #include "../screen.h"
 #include "../states.h"
 
-#define N_ENTRIES 1
+#define N_ENTRIES 2
 
 enum {
     SUBSTATE_NORMAL,
@@ -85,6 +85,8 @@ void pw_picowalker_settings_init_display(pw_state_t *s, const screen_flags_t *sf
     (void)s;
     (void)sf;
     pw_screen_pos_t x, y;
+
+    // Title bar
     pw_img_t img = (pw_img_t){
         .width = 80,
         .height = 16,
@@ -99,8 +101,20 @@ void pw_picowalker_settings_init_display(pw_state_t *s, const screen_flags_t *sf
         PW_EEPROM_SIZE_IMG_MENU_ARROW_RETURN
     );
 
-    // Draw battery percentage
+    // Draw colour options
+    // TODO: Draw "greyscale" 
     y = 16;
+    x = 8;
+    img = (pw_img_t) {
+        .width = 48,
+        .height = 16,
+        .data = color_fancy_text,
+        .size = 48*16/4
+    };
+    pw_screen_draw_img(&img, x, y);
+
+    // Draw battery percentage
+    y = 32;
     x = 8;
     img = (pw_img_t) {
         .width = 48,
@@ -141,7 +155,7 @@ void pw_picowalker_settings_update_display(pw_state_t *s, const screen_flags_t *
     }
 
     // Draw battery percentage
-    pw_screen_pos_t y = 16;
+    pw_screen_pos_t y = 32;
     pw_screen_pos_t x = 8;
     pw_img_t img = (pw_img_t) {
         .width = 48,
