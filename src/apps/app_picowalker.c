@@ -96,7 +96,11 @@ static void draw_color_option(pw_screen_pos_t x, pw_screen_pos_t y) {
             .width = 48,
             .height = 16,
             .data = color_fancy_text,
-            .size = 48*16/4
+            .size = 48*16/4,
+            .lookup_table = {
+                .addr=-1,
+                .use_alt=false
+            }
         };
         pw_screen_draw_img(&img, x, y);
         x = 56;
@@ -190,8 +194,6 @@ void pw_picowalker_settings_update_display(pw_state_t *s, const screen_flags_t *
             8, 8
         );
     }
-    pw_screen_pos_t x, y;
-    pw_img_t img;
 
     draw_color_option(8, 16);
 
