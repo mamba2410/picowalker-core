@@ -8,16 +8,19 @@
 #include "../debug_log.h"
 #include "../eeprom_map.h"
 #include "../pico_roms.h"
+#include "../picowalker_core.h"
 #include "../picowalker_structures.h"
 #include "../power.h"
+#include "../globals.h"
+#include "../eeprom.h"
 #include "../screen.h"
+#include "../audio.h"
 #include "../states.h"
 
-#define N_ENTRIES 2
+#define N_ENTRIES 1
 
 // TODO: Move me
 #define N_COLOR_MODES 4
-uint8_t color_mode = 0;
 
 
 enum {
@@ -65,14 +68,18 @@ void pw_picowalker_settings_handle_input(pw_state_t *s, const screen_flags_t *sf
             if(s->picowalker.cursor < 0) {
                 s->picowalker.current_substate = SUBSTATE_GO_TO_SETTINGS;
             }
+            pw_audio_play_sound(SOUND_NAVIGATE_BACK);
             break;
         }
         case PW_BUTTON_M: {
             if(s->picowalker.cursor == 0) {
-                color_mode = (color_mode + 1) % N_COLOR_MODES;
+                pw_color_mode = (pw_color_mode + 1) % N_COLOR_MODES;
+                health_data_cache.color_mode = pw_color_mode;
+                pw_eeprom_write_health_data(&health_data_cache);
             } else {
                 s->picowalker.current_substate = SUBSTATE_GO_TO_SPLASH;
             }
+            pw_audio_play_sound(SOUND_NAVIGATE_MENU);
             break;
         }
         case PW_BUTTON_R: {
@@ -84,6 +91,7 @@ void pw_picowalker_settings_handle_input(pw_state_t *s, const screen_flags_t *sf
         default: {
             pw_log_error("Unknown input %d in substate %s\n",
                     b, state_strings[s->sid]);
+            pw_audio_play_sound(SOUND_CURSOR_MOVE);
             break;
         }
     }
@@ -91,7 +99,7 @@ void pw_picowalker_settings_handle_input(pw_state_t *s, const screen_flags_t *sf
 
 
 static void draw_color_option(pw_screen_pos_t x, pw_screen_pos_t y) {
-    if(color_mode == (N_COLOR_MODES-1)) {
+    if(pw_color_mode == (N_COLOR_MODES-1)) {
         pw_img_t img = (pw_img_t) {
             .width = 48,
             .height = 16,
@@ -104,7 +112,6 @@ static void draw_color_option(pw_screen_pos_t x, pw_screen_pos_t y) {
         };
         pw_screen_draw_img(&img, x, y);
         x = 56;
-        pw_screen_clear_area(x, y, PW_SCREEN_WIDTH-x, 16);
     } else {
         pw_img_t img = (pw_img_t) {
             .width = 48,
@@ -114,8 +121,9 @@ static void draw_color_option(pw_screen_pos_t x, pw_screen_pos_t y) {
         };
         pw_screen_draw_img(&img, x, y);
         x = PW_SCREEN_WIDTH;
-        x = pw_screen_draw_integer(color_mode, x, y);
+        x = pw_screen_draw_integer(pw_color_mode, x, y);
     }
+    pw_screen_clear_area(x, y, PW_SCREEN_WIDTH-x, 16);
 }
 
 void pw_picowalker_settings_init_display(pw_state_t *s, const screen_flags_t *sf) {
@@ -198,7 +206,7 @@ void pw_picowalker_settings_update_display(pw_state_t *s, const screen_flags_t *
     draw_color_option(8, 16);
 
     // Draw battery percentage
-    pw_screen_pos_t y = 16;
+    pw_screen_pos_t y = 32;
     pw_screen_pos_t x = 8;
     pw_img_t img = (pw_img_t) {
         .width=48,

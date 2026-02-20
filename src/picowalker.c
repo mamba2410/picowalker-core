@@ -11,6 +11,7 @@
 #include "eeprom_map.h"
 #include "globals.h"
 #include "ir/ir.h"
+#include "picowalker_core.h"
 #include "picowalker_structures.h"
 #include "power.h"
 #include "rand.h"
@@ -28,6 +29,7 @@ struct {
 pw_state_t a1, a2;
 pw_state_t *current_state = &a1, *pending_state = &a2;
 screen_flags_t screen_flags;
+uint8_t pw_color_mode = 0;
 
 void (*pw_current_loop)(void);
 
@@ -64,7 +66,8 @@ void pw_setup() {
 
     pw_audio_volume = (health_data_cache.settings&SETTINGS_SOUND_MASK)>>SETTINGS_SOUND_OFFSET;
     pw_screen_set_brightness((health_data_cache.settings&SETTINGS_SHADE_MASK)>>SETTINGS_SHADE_OFFSET);
-
+    pw_color_mode = health_data_cache.color_mode;
+    
     if(walker_info_cache.flags & WALKER_INFO_FLAG_INIT) {
         current_state->sid = STATE_SPLASH;
         pending_state->sid = STATE_SPLASH;
