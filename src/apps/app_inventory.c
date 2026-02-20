@@ -197,7 +197,8 @@ static void draw_cursor(pw_state_t *s, const screen_flags_t *sf) {
         cx, cy,
         8, 8,
         addr,
-        PW_EEPROM_SIZE_IMG_ARROW
+        PW_EEPROM_SIZE_IMG_ARROW,
+        false
     );
 }
 
@@ -205,16 +206,32 @@ static void draw_cursor(pw_state_t *s, const screen_flags_t *sf) {
 static void draw_animated_sprite(pw_state_t *s, const screen_flags_t *sf) {
 
     uint8_t *buf = eeprom_buf;
-    pw_img_t sprite;
+    pw_img_t sprite = {
+        .width=32,
+        .height=24,
+        .data=buf,
+        .size=192, // 32*24/4
+        .lookup_table = {
+            .addr=-1,
+            .use_alt=true
+        }
+    };
 
     if(s->inventory.current_cursor == PI_EMPTY_SLOT) return;
     bool is_pokemon = s->inventory.current_substate == SUBSCREEN_FOUND && s->inventory.current_cursor < PI_EMPTY_SLOT;
 
 
     if(is_pokemon) {
-        pokemon_index_t pokemon_index = pw_pokemon_id_to_pokemon_index(gdetailed.entries[s->inventory.current_cursor]);
-        pw_pokemon_index_to_small_sprite(pokemon_index, buf, (sf->frame&ANIM_FRAME_NORMAL_TIME)>>ANIM_FRAME_NORMAL_TIME_OFFSET);
+        pw_eeprom_addr_t addr;
+        pokemon_summary_t pokemon;
+        pokemon_index_t pokemon_index = pw_pokemon_id_to_pokemon_index(gdetailed.entries[s->inventory.current_cursor], &pokemon);
+        pw_pokemon_index_to_small_sprite(pokemon_index, buf, (sf->frame&ANIM_FRAME_NORMAL_TIME)>>ANIM_FRAME_NORMAL_TIME_OFFSET, &addr);
+        sprite.lookup_table.addr = addr;
+        sprite.lookup_table.metadata.pokemon.species = pokemon.le_species;
+        sprite.lookup_table.metadata.pokemon.pokemon_flags_1 = pokemon.pokemon_flags_1;
+        sprite.lookup_table.metadata.pokemon.pokemon_flags_2 = pokemon.pokemon_flags_2;
     } else {
+        sprite.lookup_table.addr = PW_EEPROM_ADDR_IMG_TREASURE_LARGE;
         pw_eeprom_read(
             PW_EEPROM_ADDR_IMG_TREASURE_LARGE,
             buf,
@@ -222,9 +239,6 @@ static void draw_animated_sprite(pw_state_t *s, const screen_flags_t *sf) {
         );
     }
 
-    sprite = (pw_img_t) {
-        .data=buf, .width=32, .height=24, .size=32*24/4
-    };
     pw_screen_draw_img(&sprite, PW_SCREEN_WIDTH-32-4, PW_SCREEN_HEIGHT-16-24);
 
 }
@@ -242,17 +256,32 @@ static void draw_name(pw_state_t *s, const screen_flags_t *sf) {
 
     if(is_pokemon) {
         // we're looking at a pokemon
-        pokemon_index_t pokemon_index = pw_pokemon_id_to_pokemon_index(gdetailed.entries[s->inventory.current_cursor]);
+        pokemon_summary_t pokemon;
+        pokemon_index_t pokemon_index = pw_pokemon_id_to_pokemon_index(gdetailed.entries[s->inventory.current_cursor], &pokemon);
         pw_pokemon_index_to_name(pokemon_index, buf);
         sprite = (pw_img_t) {
-            .width=80, .height=16, .data=buf, .size=PW_EEPROM_SIZE_TEXT_POKEMON_NAME
+            .width=80,
+            .height=16,
+            .data=buf,
+            .size=PW_EEPROM_SIZE_TEXT_POKEMON_NAME,
+            .lookup_table = {
+                .addr=-1,
+                .use_alt=false
+            }
         };
     } else {
         // we're looking at an item
         uint8_t item_idx = pw_item_id_to_item_index(gdetailed.entries[s->inventory.current_cursor]);
         pw_item_index_to_name(item_idx, buf);
         sprite = (pw_img_t) {
-            .width=96, .height=16, .data=buf, PW_EEPROM_SIZE_TEXT_ITEM_NAME_SINGLE
+            .width=96,
+            .height=16,
+            .data=buf,
+            .size=PW_EEPROM_SIZE_TEXT_ITEM_NAME_SINGLE,
+            .lookup_table = {
+                .addr=-1,
+                .use_alt=false
+            }
         };
     }
 
@@ -268,31 +297,52 @@ static void pw_inventory_draw_screen1(pw_state_t *s, const screen_flags_t *sf) {
         0, 0,
         8, 16,
         PW_EEPROM_ADDR_IMG_MENU_ARROW_RETURN,
-        PW_EEPROM_SIZE_IMG_MENU_ARROW_RETURN
+        PW_EEPROM_SIZE_IMG_MENU_ARROW_RETURN,
+        false
     );
 
     pw_screen_draw_from_eeprom(
         PW_SCREEN_WIDTH-8, 0,
         8, 16,
         PW_EEPROM_ADDR_IMG_MENU_ARROW_RIGHT,
-        PW_EEPROM_SIZE_IMG_MENU_ARROW_RIGHT
+        PW_EEPROM_SIZE_IMG_MENU_ARROW_RIGHT,
+        false
     );
 
     pw_screen_draw_from_eeprom(
         8, 0,
         80, 16,
         PW_EEPROM_ADDR_IMG_MENU_TITLE_INVENTORY,
-        PW_EEPROM_SIZE_IMG_MENU_TITLE_INVENTORY
+        PW_EEPROM_SIZE_IMG_MENU_TITLE_INVENTORY,
+        false
     );
 
     // Draw icons
     uint8_t buf_pokeball[PW_EEPROM_SIZE_IMG_BALL];
     uint8_t buf_item[PW_EEPROM_SIZE_IMG_ITEM];
 
-    pw_img_t pokeball = {.height=8, .width=8, .data=buf_pokeball, .size=PW_EEPROM_SIZE_IMG_BALL};
+    pw_img_t pokeball = {
+        .width=8,
+        .height=8,
+        .data=buf_pokeball,
+        .size=PW_EEPROM_SIZE_IMG_BALL,
+        .lookup_table = {
+            .addr=PW_EEPROM_ADDR_IMG_BALL,
+            .use_alt=true
+        }
+    };
     pw_eeprom_read(PW_EEPROM_ADDR_IMG_BALL, buf_pokeball, PW_EEPROM_SIZE_IMG_BALL);
 
-    pw_img_t item = {.height=8, .width=8, .data=buf_item, .size=PW_EEPROM_SIZE_IMG_ITEM};
+    pw_img_t item = {
+        .width=8,
+        .height=8,
+        .data=buf_item,
+        .size=PW_EEPROM_SIZE_IMG_ITEM,
+        .lookup_table = {
+            .addr=PW_EEPROM_ADDR_IMG_ITEM,
+            .use_alt=true
+        }
+    };
     pw_eeprom_read(PW_EEPROM_ADDR_IMG_ITEM, buf_item, PW_EEPROM_SIZE_IMG_ITEM);
 
     uint8_t xs[] = {8, 24, 32, 40, 48};
@@ -319,7 +369,8 @@ static void pw_inventory_draw_screen1(pw_state_t *s, const screen_flags_t *sf) {
             xs[4], yp,
             8, 8,
             PW_EEPROM_ADDR_IMG_BALL_LIGHT,
-            PW_EEPROM_SIZE_IMG_BALL_LIGHT
+            PW_EEPROM_SIZE_IMG_BALL_LIGHT,
+            true
         );
     }
 
@@ -329,7 +380,8 @@ static void pw_inventory_draw_screen1(pw_state_t *s, const screen_flags_t *sf) {
             xs[4], yi,
             8, 8,
             PW_EEPROM_ADDR_IMG_ITEM_LIGHT,
-            PW_EEPROM_SIZE_IMG_ITEM_LIGHT
+            PW_EEPROM_SIZE_IMG_ITEM_LIGHT,
+            true
         );
     }
 
@@ -349,19 +401,30 @@ static void pw_inventory_draw_screen2(pw_state_t *s, const screen_flags_t *sf) {
         0, 0,
         8, 16,
         PW_EEPROM_ADDR_IMG_MENU_ARROW_LEFT,
-        PW_EEPROM_SIZE_IMG_MENU_ARROW_LEFT
+        PW_EEPROM_SIZE_IMG_MENU_ARROW_LEFT,
+        false
     );
 
     pw_screen_draw_from_eeprom(
         8, 0,
         80, 16,
         PW_EEPROM_ADDR_IMG_MENU_TITLE_INVENTORY,
-        PW_EEPROM_SIZE_IMG_MENU_TITLE_INVENTORY
+        PW_EEPROM_SIZE_IMG_MENU_TITLE_INVENTORY,
+        false
     );
 
 
     uint8_t buf_item[PW_EEPROM_SIZE_IMG_ITEM];
-    pw_img_t item = {.height=8, .width=8, .data=buf_item, .size=PW_EEPROM_SIZE_IMG_ITEM};
+    pw_img_t item = {
+        .width=8,
+        .height=8,
+        .data=buf_item,
+        .size=PW_EEPROM_SIZE_IMG_ITEM,
+        .lookup_table = {
+            .addr=PW_EEPROM_ADDR_IMG_ITEM,
+            .use_alt=true
+        }
+    };
     pw_eeprom_read(PW_EEPROM_ADDR_IMG_ITEM, buf_item, PW_EEPROM_SIZE_IMG_ITEM);
 
     uint8_t x0 = 16, y0 = 24;
@@ -382,7 +445,8 @@ static void pw_inventory_draw_screen2(pw_state_t *s, const screen_flags_t *sf) {
             PW_SCREEN_WIDTH-32-4, PW_SCREEN_HEIGHT-16-24,
             32, 24,
             PW_EEPROM_ADDR_IMG_PRESENT_LARGE,
-            PW_EEPROM_SIZE_IMG_PRESENT_LARGE
+            PW_EEPROM_SIZE_IMG_PRESENT_LARGE,
+            true
         );
 
         draw_name(s, sf);

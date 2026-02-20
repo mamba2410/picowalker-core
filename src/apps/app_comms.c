@@ -269,19 +269,22 @@ void pw_comms_init_display(pw_state_t *s, const screen_flags_t *sf) {
                 (PW_SCREEN_WIDTH-32)/2, PW_SCREEN_HEIGHT-32-16,
                 32, 32,
                 PW_EEPROM_ADDR_IMG_POKEWALKER_BIG,
-                PW_EEPROM_SIZE_IMG_POKEWALKER_BIG
+                PW_EEPROM_SIZE_IMG_POKEWALKER_BIG,
+                true
             );
             pw_screen_draw_from_eeprom(
                 (PW_SCREEN_WIDTH-8)/2, 0,
                 8, 16,
                 PW_EEPROM_ADDR_IMG_IR_ARCS,
-                PW_EEPROM_SIZE_IMG_IR_ARCS
+                PW_EEPROM_SIZE_IMG_IR_ARCS,
+                true
             );
             pw_screen_draw_from_eeprom(
                 0, PW_SCREEN_HEIGHT-16,
                 96, 16,
                 PW_EEPROM_ADDR_TEXT_CONNECTING,
-                PW_EEPROM_SIZE_TEXT_CONNECTING
+                PW_EEPROM_SIZE_TEXT_CONNECTING,
+                false
             );
             pw_screen_draw_text_box(0, PW_SCREEN_HEIGHT-16, PW_SCREEN_WIDTH, 16, PW_SCREEN_BLACK);
             break;
@@ -332,7 +335,8 @@ void pw_comms_init_display(pw_state_t *s, const screen_flags_t *sf) {
                 (PW_SCREEN_WIDTH-64)/2, 8,
                 64, 48,
                 PW_EEPROM_ADDR_IMG_POKEMON_LARGE_ANIMATED + ((sf->frame & ANIM_FRAME_DOUBLE_TIME)*PW_EEPROM_SIZE_IMG_POKEMON_LARGE_ANIMATED_FRAME),
-                PW_EEPROM_SIZE_IMG_POKEMON_LARGE_ANIMATED_FRAME
+                PW_EEPROM_SIZE_IMG_POKEMON_LARGE_ANIMATED_FRAME,
+                true
             );
             pw_screen_fill_area(0, 0, PW_SCREEN_WIDTH, 8, PW_SCREEN_BLACK);
             pw_screen_fill_area(0, PW_SCREEN_HEIGHT-8, PW_SCREEN_WIDTH, 8, PW_SCREEN_BLACK);
@@ -347,19 +351,44 @@ void pw_comms_init_display(pw_state_t *s, const screen_flags_t *sf) {
             break;
         }
         case COMM_SUBSTATE_FIRST_IDLE: {
-            pw_img_t img = {.height=32, .width=32, .size=256, .data=eeprom_buf};
+            pw_img_t img = {
+                .width=32, 
+                .height=32, 
+                .data=eeprom_buf,
+                .size=256, 
+                .lookup_table = {
+                    .addr=0, // PW_EEPROM_ADDR_IMG_POKEWALKER_BIG, // FLASH_IMG_POKEWALKER
+                    .use_alt=true
+                }
+            };
             pw_flash_read(PW_FLASH_IMG_POKEWALKER, img.data);
             pw_screen_draw_img(&img, (PW_SCREEN_WIDTH-32)/2, (PW_SCREEN_HEIGHT-32)/2);
 
-            img.width = 16;
-            img.height = 8;
-            img.size = 0x20;
-            pw_flash_read(PW_FLASH_IMG_FACE_NEUTRAL, img.data);
-            pw_screen_draw_img(&img, (PW_SCREEN_WIDTH-16)/2, (PW_SCREEN_HEIGHT-8)/2);
+            pw_img_t face = {
+                .width=16, 
+                .height=8, 
+                .data=eeprom_buf,
+                .size=32, 
+                .lookup_table = {
+                    .addr=-1,
+                    .use_alt=false
+                }
+            };
+            pw_flash_read(PW_FLASH_IMG_FACE_NEUTRAL, face.data);
+            pw_screen_draw_img(&face, (PW_SCREEN_WIDTH-16)/2, (PW_SCREEN_HEIGHT-8)/2);
             break;
         }
         case COMM_SUBSTATE_FIRST_SLAVE_PERFORM_REQUEST: {
-            pw_img_t face = {.width=16, .height=8, .size=32, .data=eeprom_buf};
+            pw_img_t face = {
+                .width=16,
+                .height=8,
+                .data=eeprom_buf,
+                .size=32,
+                .lookup_table = {
+                    .addr=-1, // FLASH_IMG_FACE_HAPPY,
+                    .use_alt=false
+                }
+            };
             pw_flash_read(PW_FLASH_IMG_FACE_HAPPY, face.data);
             pw_screen_draw_img(&face, (PW_SCREEN_WIDTH-16)/2, (PW_SCREEN_HEIGHT-8)/2);
             pw_screen_clear_area((PW_SCREEN_WIDTH-8)/2, 48, 8, 8);
@@ -399,7 +428,8 @@ void pw_comms_draw_update(pw_state_t *s, const screen_flags_t *sf) {
                     (PW_SCREEN_WIDTH-8)/2, 0,
                     8, 16,
                     PW_EEPROM_ADDR_IMG_IR_ARCS,
-                    PW_EEPROM_SIZE_IMG_IR_ARCS
+                    PW_EEPROM_SIZE_IMG_IR_ARCS,
+                    true
                 );
             } else {
                 pw_screen_clear_area((PW_SCREEN_WIDTH-8)/2, 0, 8, 16);
@@ -438,7 +468,8 @@ void pw_comms_draw_update(pw_state_t *s, const screen_flags_t *sf) {
                         (PW_SCREEN_WIDTH-32)/2, PW_SCREEN_HEIGHT-32-16,
                         32, 24,
                         PW_EEPROM_ADDR_IMG_RADAR_APPEAR_CLOUD,
-                        PW_EEPROM_SIZE_IMG_RADAR_APPEAR_CLOUD
+                        PW_EEPROM_SIZE_IMG_RADAR_APPEAR_CLOUD,
+                        true
                     );
                     break;
                 }
@@ -447,7 +478,8 @@ void pw_comms_draw_update(pw_state_t *s, const screen_flags_t *sf) {
                         (PW_SCREEN_WIDTH-64)/2, 8,
                         64, 48,
                         PW_EEPROM_ADDR_IMG_POKEMON_LARGE_ANIMATED,
-                        PW_EEPROM_SIZE_IMG_POKEMON_LARGE_ANIMATED
+                        PW_EEPROM_SIZE_IMG_POKEMON_LARGE_ANIMATED,
+                        true
                     );
                     //pw_screen_fill_area(0, 0, PW_SCREEN_WIDTH, 8, PW_SCREEN_BLACK);
                     //pw_screen_fill_area(0, PW_SCREEN_HEIGHT-8, PW_SCREEN_WIDTH, 8, PW_SCREEN_BLACK);
@@ -458,7 +490,8 @@ void pw_comms_draw_update(pw_state_t *s, const screen_flags_t *sf) {
                         (PW_SCREEN_WIDTH-64)/2, 8,
                         64, 48,
                         PW_EEPROM_ADDR_IMG_POKEMON_LARGE_ANIMATED+PW_EEPROM_SIZE_IMG_POKEMON_LARGE_ANIMATED_FRAME,
-                        PW_EEPROM_SIZE_IMG_POKEMON_LARGE_ANIMATED
+                        PW_EEPROM_SIZE_IMG_POKEMON_LARGE_ANIMATED,
+                        true
                     );
                     //pw_screen_fill_area(0, 0, PW_SCREEN_WIDTH, 8, PW_SCREEN_BLACK);
                     //pw_screen_fill_area(0, PW_SCREEN_HEIGHT-8, PW_SCREEN_WIDTH, 8, PW_SCREEN_BLACK);
@@ -470,7 +503,8 @@ void pw_comms_draw_update(pw_state_t *s, const screen_flags_t *sf) {
                         0, PW_SCREEN_HEIGHT-32,
                         80, 16,
                         PW_EEPROM_ADDR_TEXT_POKEMON_NAME,
-                        PW_EEPROM_SIZE_TEXT_POKEMON_NAME
+                        PW_EEPROM_SIZE_TEXT_POKEMON_NAME,
+                        false
                     );
                     pw_screen_draw_message(PW_SCREEN_HEIGHT-16, 13, 16);
                     pw_screen_draw_text_box(0, PW_SCREEN_HEIGHT-32, PW_SCREEN_WIDTH, 32, PW_SCREEN_BLACK);
@@ -489,7 +523,8 @@ void pw_comms_draw_update(pw_state_t *s, const screen_flags_t *sf) {
                         (PW_SCREEN_WIDTH-32)/2, 8,
                         32, 24,
                         PW_EEPROM_ADDR_IMG_POKEMON_SMALL_ANIMATED+((sf->frame & ANIM_FRAME_DOUBLE_TIME)*PW_EEPROM_SIZE_IMG_POKEMON_SMALL_ANIMATED_FRAME),
-                        PW_EEPROM_SIZE_IMG_POKEMON_SMALL_ANIMATED
+                        PW_EEPROM_SIZE_IMG_POKEMON_SMALL_ANIMATED,
+                        true
                     );
                     break;
                 }
@@ -519,7 +554,8 @@ void pw_comms_draw_update(pw_state_t *s, const screen_flags_t *sf) {
                         (PW_SCREEN_WIDTH-64)/2, 8,
                         64, 48,
                         PW_EEPROM_ADDR_IMG_POKEMON_LARGE_ANIMATED + ((sf->frame & ANIM_FRAME_DOUBLE_TIME)*PW_EEPROM_SIZE_IMG_POKEMON_LARGE_ANIMATED_FRAME),
-                        PW_EEPROM_SIZE_IMG_POKEMON_LARGE_ANIMATED_FRAME
+                        PW_EEPROM_SIZE_IMG_POKEMON_LARGE_ANIMATED_FRAME,
+                        true
                     );
                     break;
                 }
@@ -533,7 +569,8 @@ void pw_comms_draw_update(pw_state_t *s, const screen_flags_t *sf) {
                         (PW_SCREEN_WIDTH-32)/2, PW_SCREEN_HEIGHT-32-16,
                         32, 24,
                         PW_EEPROM_ADDR_IMG_RADAR_APPEAR_CLOUD,
-                        PW_EEPROM_SIZE_IMG_RADAR_APPEAR_CLOUD
+                        PW_EEPROM_SIZE_IMG_RADAR_APPEAR_CLOUD,
+                        true
                     );
                     break;
                 }
@@ -551,7 +588,8 @@ void pw_comms_draw_update(pw_state_t *s, const screen_flags_t *sf) {
                         0, PW_SCREEN_HEIGHT-32,
                         80, 16,
                         PW_EEPROM_ADDR_TEXT_POKEMON_NAME,
-                        PW_EEPROM_SIZE_TEXT_POKEMON_NAME
+                        PW_EEPROM_SIZE_TEXT_POKEMON_NAME,
+                        false
                     );
                     pw_screen_draw_message(PW_SCREEN_HEIGHT-16, 14, 16); // "has left"
                     pw_screen_draw_text_box(0, PW_SCREEN_HEIGHT-32, PW_SCREEN_WIDTH, 32, PW_SCREEN_BLACK);
@@ -572,7 +610,16 @@ void pw_comms_draw_update(pw_state_t *s, const screen_flags_t *sf) {
                 break;
             }
 
-            pw_img_t img = {.width=8, .height=8, .size=16, .data=eeprom_buf};
+            pw_img_t img = {
+                .width=8,
+                .height=8,
+                .data=eeprom_buf,
+                .size=16,
+                .lookup_table = {
+                    .addr=PW_FLASH_IMG_UP_ARROW,
+                    .use_alt=false
+                }
+            };
             if(sf->frame&ANIM_FRAME_NORMAL_TIME) {
                 pw_flash_read(PW_FLASH_IMG_UP_ARROW, img.data);
                 pw_screen_draw_img(&img, (PW_SCREEN_WIDTH-8)/2, 48);
@@ -588,7 +635,16 @@ void pw_comms_draw_update(pw_state_t *s, const screen_flags_t *sf) {
         }
         case COMM_SUBSTATE_FIRST_TIMEOUT: {
             pw_screen_clear_area((PW_SCREEN_WIDTH-8)/2, 0, 8, 8);
-            pw_img_t face = {.width=16, .height=8, .size=32, .data=eeprom_buf};
+            pw_img_t face = {
+                .width=16,
+                .height=8,
+                .data=eeprom_buf,
+                .size=32,
+                .lookup_table = {
+                    .addr=PW_FLASH_IMG_FACE_SAD,
+                    .use_alt=false
+                }
+            };
             pw_flash_read(PW_FLASH_IMG_FACE_SAD, face.data);
             pw_screen_draw_img(&face, (PW_SCREEN_WIDTH-16)/2, (PW_SCREEN_HEIGHT-8)/2);
             s->comms.timer--;
@@ -601,7 +657,16 @@ void pw_comms_draw_update(pw_state_t *s, const screen_flags_t *sf) {
             }
 
             if(sf->frame&ANIM_FRAME_NORMAL_TIME) {
-                pw_img_t img = {.width=8, .height=8, .size=16, .data=eeprom_buf};
+                pw_img_t img = {
+                    .width=8,
+                    .height=8,
+                    .data=eeprom_buf,
+                    .size=16,
+                    .lookup_table = {
+                        .addr=PW_FLASH_IMG_IR_ACTIVE,
+                        .use_alt=false
+                    }
+                };
                 pw_flash_read(PW_FLASH_IMG_IR_ACTIVE, img.data);
                 pw_screen_draw_img(&img, (PW_SCREEN_WIDTH-8)/2, 0);
             } else {

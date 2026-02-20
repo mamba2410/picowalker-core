@@ -58,7 +58,8 @@ void pw_splash_init_display(pw_state_t *s, const screen_flags_t *sf) {
             PW_SCREEN_WIDTH-64, 0,
             64, 48,
             PW_EEPROM_ADDR_IMG_POKEMON_LARGE_ANIMATED_FRAME2,
-            PW_EEPROM_SIZE_IMG_POKEMON_LARGE_ANIMATED_FRAME
+            PW_EEPROM_SIZE_IMG_POKEMON_LARGE_ANIMATED_FRAME,
+            true
         );
     }
 
@@ -66,7 +67,8 @@ void pw_splash_init_display(pw_state_t *s, const screen_flags_t *sf) {
         0, PW_SCREEN_HEIGHT-24-16,
         32, 24,
         PW_EEPROM_ADDR_IMG_ROUTE_LARGE,
-        PW_EEPROM_SIZE_IMG_ROUTE_LARGE
+        PW_EEPROM_SIZE_IMG_ROUTE_LARGE,
+        true
     );
 
     for(uint8_t i = 0; i < 3; i++) {
@@ -75,7 +77,8 @@ void pw_splash_init_display(pw_state_t *s, const screen_flags_t *sf) {
                 i*8, PW_SCREEN_HEIGHT-8,
                 8, 8,
                 PW_EEPROM_ADDR_IMG_BALL,
-                PW_EEPROM_SIZE_IMG_BALL
+                PW_EEPROM_SIZE_IMG_BALL,
+                true
             );
         }
     }
@@ -86,7 +89,8 @@ void pw_splash_init_display(pw_state_t *s, const screen_flags_t *sf) {
                 24+i*8, PW_SCREEN_HEIGHT-8,
                 8, 8,
                 PW_EEPROM_ADDR_IMG_ITEM,
-                PW_EEPROM_SIZE_IMG_ITEM
+                PW_EEPROM_SIZE_IMG_ITEM,
+                true
             );
         }
     }
@@ -98,7 +102,8 @@ void pw_splash_init_display(pw_state_t *s, const screen_flags_t *sf) {
                 16+i*8, PW_SCREEN_HEIGHT-16,
                 8, 8,
                 PW_EEPROM_ADDR_IMG_CARD_SUITS+i*PW_EEPROM_SIZE_IMG_CARD_SUIT_SYMBOL,
-                PW_EEPROM_SIZE_IMG_CARD_SUIT_SYMBOL
+                PW_EEPROM_SIZE_IMG_CARD_SUIT_SYMBOL,
+                true
             );
         }
 
@@ -109,7 +114,8 @@ void pw_splash_init_display(pw_state_t *s, const screen_flags_t *sf) {
             0, PW_SCREEN_HEIGHT-16,
             8, 8,
             PW_EEPROM_ADDR_IMG_BALL_LIGHT,
-            PW_EEPROM_SIZE_IMG_BALL_LIGHT
+            PW_EEPROM_SIZE_IMG_BALL_LIGHT,
+            true
         );
     }
 
@@ -118,7 +124,8 @@ void pw_splash_init_display(pw_state_t *s, const screen_flags_t *sf) {
             8, PW_SCREEN_HEIGHT-16,
             8, 8,
             PW_EEPROM_ADDR_IMG_ITEM_LIGHT,
-            PW_EEPROM_SIZE_IMG_ITEM_LIGHT
+            PW_EEPROM_SIZE_IMG_ITEM_LIGHT,
+            true
         );
     }
 
@@ -140,7 +147,8 @@ void pw_splash_update_display(pw_state_t *s, const screen_flags_t *sf) {
             PW_SCREEN_WIDTH-64, 0,
             64, 48,
             frame_addr,
-            PW_EEPROM_SIZE_IMG_POKEMON_LARGE_ANIMATED_FRAME
+            PW_EEPROM_SIZE_IMG_POKEMON_LARGE_ANIMATED_FRAME,
+            true
         );
 
     }

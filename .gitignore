@@ -1,5 +1,4 @@
-build/*
-build*
+build/
 rom/*
 lib/*
 doxygen/

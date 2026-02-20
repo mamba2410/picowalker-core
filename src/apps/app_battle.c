@@ -590,12 +590,33 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
 
 void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
 
-    pw_img_t our_sprite   = {.width=32, .height=24, .size=192, .data=decompression_buf};
-    pw_img_t their_sprite = {.width=32, .height=24, .size=192, .data=decompression_buf+192};
+    pw_eeprom_addr_t our_addr;
+    pw_img_t our_sprite = {
+        .width=32,
+        .height=24,
+        .data=decompression_buf,
+        .size=192,
+        .lookup_table = {
+            .addr=-1,
+            .use_alt=false
+        }
+    };
+    pw_pokemon_index_to_small_sprite(PIDX_WALKING, our_sprite.data, (sf->frame&ANIM_FRAME_DOUBLE_TIME)>>ANIM_FRAME_DOUBLE_TIME_OFFSET, &our_addr);
+    our_sprite.lookup_table.addr = our_addr;
 
-    pw_pokemon_index_to_small_sprite(s->battle.chosen_pokemon+1, their_sprite.data, (sf->frame&ANIM_FRAME_DOUBLE_TIME)>>ANIM_FRAME_DOUBLE_TIME_OFFSET);
-
-    pw_pokemon_index_to_small_sprite(PIDX_WALKING, our_sprite.data, (sf->frame&ANIM_FRAME_DOUBLE_TIME)>>ANIM_FRAME_DOUBLE_TIME_OFFSET);
+    pw_eeprom_addr_t their_addr;
+    pw_img_t their_sprite = {
+        .width=32,
+        .height=24,
+        .data=decompression_buf+192,
+        .size=192,
+        .lookup_table = {
+            .addr=-1,
+            .use_alt=false
+        }
+    };
+    pw_pokemon_index_to_small_sprite(s->battle.chosen_pokemon+1, their_sprite.data, (sf->frame&ANIM_FRAME_DOUBLE_TIME)>>ANIM_FRAME_DOUBLE_TIME_OFFSET, &their_addr);
+    their_sprite.lookup_table.addr = their_addr;
 
     switch(s->battle.current_substate) {
     case BATTLE_OPENING: {
@@ -612,7 +633,16 @@ void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
             PW_SCREEN_BLACK
         );
 
-        pw_img_t health_bar = {.width=8, .height=8, .data=eeprom_buf, .size=16};
+        pw_img_t health_bar = {
+            .width=8,
+            .height=8,
+            .data=eeprom_buf,
+            .size=16,
+            .lookup_table = {
+                .addr=PW_EEPROM_ADDR_IMG_RADAR_HP_BLIP,
+                .use_alt=true
+            }
+        };
         pw_eeprom_read(PW_EEPROM_ADDR_IMG_RADAR_HP_BLIP, eeprom_buf, PW_EEPROM_SIZE_IMG_RADAR_HP_BLIP);
 
         int8_t health = (s->battle.current_hp&THEIR_HP_MASK) >> THEIR_HP_OFFSET;
@@ -633,7 +663,8 @@ void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
             0, PW_SCREEN_HEIGHT-32,
             96, 32,
             PW_EEPROM_ADDR_TEXT_RADAR_ACTION,
-            PW_EEPROM_SIZE_TEXT_RADAR_ACTION
+            PW_EEPROM_SIZE_TEXT_RADAR_ACTION,
+            false
         );
         break;
     }
@@ -718,7 +749,8 @@ void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
             THEIR_NORMAL_X, THEIR_NORMAL_Y,
             32, 24,
             PW_EEPROM_ADDR_IMG_RADAR_APPEAR_CLOUD,
-            PW_EEPROM_SIZE_IMG_RADAR_APPEAR_CLOUD
+            PW_EEPROM_SIZE_IMG_RADAR_APPEAR_CLOUD,
+            true
         );
         break;
     }
@@ -732,7 +764,8 @@ void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
             WOBBLE_INITIAL_Y, WOBBLE_INITIAL_Y,
             8, 8,
             PW_EEPROM_ADDR_IMG_BALL,
-            PW_EEPROM_SIZE_IMG_BALL
+            PW_EEPROM_SIZE_IMG_BALL,
+            true
         );
         break;
     }
@@ -762,7 +795,16 @@ void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
 
 
 static void draw_our_hp_bar(pw_img_t *battle_buffer, uint8_t hp) {
-    pw_img_t hp_sprite = {.width=8, .height=8, .data=decompression_buf, .size=PW_EEPROM_SIZE_IMG_RADAR_HP_BLIP};
+     pw_img_t hp_sprite = {
+        .width=8,
+        .height=8,
+        .data=decompression_buf,
+        .size=PW_EEPROM_SIZE_IMG_RADAR_HP_BLIP,
+        .lookup_table = {
+            .addr=PW_EEPROM_ADDR_IMG_RADAR_HP_BLIP,
+            .use_alt=true
+        }
+    };
     pw_eeprom_read(PW_EEPROM_ADDR_IMG_RADAR_HP_BLIP, hp_sprite.data, PW_EEPROM_SIZE_IMG_RADAR_HP_BLIP);
 
     for(uint8_t i = 0; i < hp; i++) {
@@ -772,7 +814,16 @@ static void draw_our_hp_bar(pw_img_t *battle_buffer, uint8_t hp) {
 }
 
 static void draw_their_hp_bar(pw_img_t *battle_buffer, uint8_t hp) {
-    pw_img_t hp_sprite = {.width=8, .height=8, .data=decompression_buf, .size=PW_EEPROM_SIZE_IMG_RADAR_HP_BLIP};
+    pw_img_t hp_sprite = {
+        .width=8,
+        .height=8,
+        .data=decompression_buf,
+        .size=PW_EEPROM_SIZE_IMG_RADAR_HP_BLIP,
+        .lookup_table = {
+            .addr=PW_EEPROM_ADDR_IMG_RADAR_HP_BLIP,
+            .use_alt=true
+        }
+    };
     pw_eeprom_read(PW_EEPROM_ADDR_IMG_RADAR_HP_BLIP, hp_sprite.data, PW_EEPROM_SIZE_IMG_RADAR_HP_BLIP);
 
     for(uint8_t i = 0; i < hp; i++) {
@@ -810,9 +861,27 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
         return;
     }
 
-    pw_img_t our_sprite   = {.width=32, .height=24, .size=192, .data=eeprom_buf};
+    pw_img_t our_sprite   = {
+        .width=32,
+        .height=24,
+        .data=eeprom_buf,
+        .size=192,
+        .lookup_table = {
+            .addr=-1,
+            .use_alt=false
+        }
+    };
     //pw_img_t their_sprite = {.width=32, .height=24, .size=192, .data=decompression_buf};
-    pw_img_t their_sprite = {.width=32, .height=24, .size=192, .data=eeprom_buf+192};
+    pw_img_t their_sprite = {
+        .width=32,
+        .height=24,
+        .data=eeprom_buf+192,
+        .size=192,
+        .lookup_table = {
+            .addr=-1,
+            .use_alt=false
+        }
+    };
     pw_img_t battle_buffer;
     pw_screen_get_blank_image(&battle_buffer, 96, 32);
     if(battle_buffer.size == 0) {
@@ -820,9 +889,11 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
         return;
     }
 
-    pw_pokemon_index_to_small_sprite(s->battle.chosen_pokemon+1, their_sprite.data, (sf->frame&ANIM_FRAME_DOUBLE_TIME)>>ANIM_FRAME_DOUBLE_TIME_OFFSET);
-
-    pw_pokemon_index_to_small_sprite(PIDX_WALKING, our_sprite.data, (sf->frame&ANIM_FRAME_DOUBLE_TIME)>>ANIM_FRAME_DOUBLE_TIME_OFFSET);
+    pw_eeprom_addr_t our_addr;
+    pw_pokemon_index_to_small_sprite(PIDX_WALKING, our_sprite.data, (sf->frame&ANIM_FRAME_DOUBLE_TIME)>>ANIM_FRAME_DOUBLE_TIME_OFFSET, &our_addr);
+    
+    pw_eeprom_addr_t their_addr;
+    pw_pokemon_index_to_small_sprite(s->battle.chosen_pokemon+1, their_sprite.data, (sf->frame&ANIM_FRAME_DOUBLE_TIME)>>ANIM_FRAME_DOUBLE_TIME_OFFSET, &their_addr);
 
     switch(s->battle.current_substate) {
     case BATTLE_OPENING: {
@@ -856,12 +927,30 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
 
         if(s->battle.anim_frame == (ATTACK_ANIM_LENGTH+1)/2) {
             if(their_action == ACTION_SPECIAL) {
-                pw_img_t crit_hit = {.width = 16, .height = 32, .data=decompression_buf, .size=PW_EEPROM_SIZE_IMG_RADAR_CRITICAL_HIT};
+                pw_img_t crit_hit = {
+                    .width = 16,
+                    .height = 32,
+                    .data=decompression_buf,
+                    .size=PW_EEPROM_SIZE_IMG_RADAR_CRITICAL_HIT,
+                    .lookup_table = {
+                        .addr=PW_EEPROM_ADDR_IMG_RADAR_CRITICAL_HIT,
+                        .use_alt=true
+                    }
+                };
                 pw_eeprom_read(PW_EEPROM_ADDR_IMG_RADAR_CRITICAL_HIT, crit_hit.data, PW_EEPROM_SIZE_IMG_RADAR_CRITICAL_HIT);
                 pw_screen_overlay_img(&battle_buffer, &crit_hit, (PW_SCREEN_WIDTH-16)/2, 0);
 
             } else if(their_action != ACTION_EVADE) {
-                pw_img_t normal_hit = {.width = 16, .height = 32, .data=decompression_buf, .size=PW_EEPROM_SIZE_IMG_RADAR_ATTACK_HIT};
+                pw_img_t normal_hit = {
+                    .width = 16,
+                    .height = 32,
+                    .data=decompression_buf,
+                    .size=PW_EEPROM_SIZE_IMG_RADAR_ATTACK_HIT,
+                    .lookup_table = {
+                        .addr=PW_EEPROM_ADDR_IMG_RADAR_ATTACK_HIT,
+                        .use_alt=true
+                    }
+                };
                 pw_eeprom_read(PW_EEPROM_ADDR_IMG_RADAR_ATTACK_HIT, normal_hit.data, PW_EEPROM_SIZE_IMG_RADAR_ATTACK_HIT);
                 pw_screen_overlay_img(&battle_buffer, &normal_hit, (PW_SCREEN_WIDTH-16)/2, 0);
             }
@@ -882,7 +971,16 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
 
         if(s->battle.anim_frame == (ATTACK_ANIM_LENGTH+1)/2) {
             if(our_action != ACTION_EVADE) {
-                pw_img_t normal_hit = {.width = 16, .height = 32, .data=decompression_buf, .size=PW_EEPROM_SIZE_IMG_RADAR_ATTACK_HIT};
+                pw_img_t normal_hit = {
+                    .width = 16,
+                    .height = 32,
+                    .data=decompression_buf,
+                    .size=PW_EEPROM_SIZE_IMG_RADAR_ATTACK_HIT,
+                    .lookup_table = {
+                        .addr=PW_EEPROM_ADDR_IMG_RADAR_ATTACK_HIT,
+                        .use_alt=true
+                    }
+                };
                 pw_eeprom_read(PW_EEPROM_ADDR_IMG_RADAR_ATTACK_HIT, normal_hit.data, PW_EEPROM_SIZE_IMG_RADAR_ATTACK_HIT);
                 pw_screen_overlay_img(&battle_buffer, &normal_hit, (PW_SCREEN_WIDTH-16)/2, 0);
             }
@@ -911,7 +1009,16 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
         pw_screen_overlay_img(&battle_buffer, &our_sprite, THEIR_ATTACK_XS[0][0], 8);
         pw_screen_overlay_img(&battle_buffer, &their_sprite, THEIR_ATTACK_XS[1][0], 0);
 
-        pw_img_t ball = {.width=8, .height=8, .size=16, .data=decompression_buf};
+        pw_img_t ball = {
+            .width=8, 
+            .height=8,
+            .data=decompression_buf,
+            .size=16, 
+            .lookup_table = {
+                .addr=PW_EEPROM_ADDR_IMG_BALL,
+                .use_alt=true
+            }
+        };
         pw_eeprom_read(PW_EEPROM_ADDR_IMG_BALL, ball.data, PW_EEPROM_SIZE_IMG_BALL);
         pw_screen_overlay_img(&battle_buffer, &ball, POKEBALL_THROW_XS[s->battle.anim_frame], POKEBALL_THROW_YS[s->battle.anim_frame]);
 
@@ -948,7 +1055,16 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
 
         pw_screen_overlay_img(&battle_buffer, &our_sprite, THEIR_ATTACK_XS[0][0], 8);
 
-        pw_img_t ball = {.width=8, .height=8, .size=16, .data=decompression_buf};
+        pw_img_t ball = {
+            .width=8,
+            .height=8,
+            .data=decompression_buf,
+            .size=16,
+            .lookup_table = {
+                .addr=PW_EEPROM_ADDR_IMG_BALL,
+                .use_alt=true
+            }
+        };
         pw_eeprom_read(PW_EEPROM_ADDR_IMG_BALL, ball.data, PW_EEPROM_SIZE_IMG_BALL);
         pw_screen_overlay_img(&battle_buffer, &ball, x, 16);
 
@@ -967,11 +1083,29 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
     case BATTLE_CATCH_STARS: {
         pw_screen_overlay_img(&battle_buffer, &our_sprite, THEIR_ATTACK_XS[0][0], 8);
 
-        pw_img_t star = {.width=8, .height=8, .size=16, .data=decompression_buf};
+        pw_img_t star = {
+            .width=8,
+            .height=8,
+            .data=decompression_buf,
+            .size=16,
+            .lookup_table = {
+                .addr=PW_EEPROM_ADDR_IMG_RADAR_CATCH_EFFECT,
+                .use_alt=true
+            }
+        };
         pw_eeprom_read(PW_EEPROM_ADDR_IMG_RADAR_CATCH_EFFECT, star.data, PW_EEPROM_SIZE_IMG_RADAR_CATCH_EFFECT);
         pw_screen_overlay_img(&battle_buffer, &star, THEIR_NORMAL_X, THEIR_NORMAL_Y+8-s->battle.anim_frame);
 
-        pw_img_t ball = {.width=8, .height=8, .size=16, .data=decompression_buf};
+        pw_img_t ball = {
+            .width=8,
+            .height=8,
+            .data=decompression_buf,
+            .size=16,
+            .lookup_table = {
+                .addr=PW_EEPROM_ADDR_IMG_BALL,
+                .use_alt=true
+            }
+        };
         pw_eeprom_read(PW_EEPROM_ADDR_IMG_BALL, ball.data, PW_EEPROM_SIZE_IMG_BALL);
         pw_screen_overlay_img(&battle_buffer, &ball, THEIR_NORMAL_X+8, 16);
 

@@ -102,7 +102,8 @@ typedef struct {
     /* +0x10 */ uint16_t walk_minute_counter;   // BE in walker
     /* +0x12 */ uint8_t  steps_this_watt;
     /* +0x13 */ uint8_t  event_log_index;
-    /* +0x14 */ uint8_t  padding[3];
+    /* +0x14 */ uint8_t  padding[2];
+    /* +0x16 */ uint8_t  color_mode;
     /* +0x17 */ uint8_t  settings;              // [0]=special_map, [1..2]=volume, [3..6]=contrast
 } health_data_t;
 

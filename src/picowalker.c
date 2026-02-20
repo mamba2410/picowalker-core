@@ -11,6 +11,7 @@
 #include "eeprom_map.h"
 #include "globals.h"
 #include "ir/ir.h"
+#include "picowalker_core.h"
 #include "picowalker_structures.h"
 #include "power.h"
 #include "rand.h"
@@ -28,6 +29,7 @@ struct {
 pw_state_t a1, a2;
 pw_state_t *current_state = &a1, *pending_state = &a2;
 screen_flags_t screen_flags;
+uint8_t pw_color_mode = 0;
 
 void (*pw_current_loop)(void);
 
@@ -64,7 +66,8 @@ void pw_setup() {
 
     pw_audio_volume = (health_data_cache.settings&SETTINGS_SOUND_MASK)>>SETTINGS_SOUND_OFFSET;
     pw_screen_set_brightness((health_data_cache.settings&SETTINGS_SHADE_MASK)>>SETTINGS_SHADE_OFFSET);
-
+    pw_color_mode = health_data_cache.color_mode;
+    
     if(walker_info_cache.flags & WALKER_INFO_FLAG_INIT) {
         current_state->sid = STATE_SPLASH;
         pending_state->sid = STATE_SPLASH;
@@ -96,7 +99,7 @@ void pw_normal_loop() {
     uint64_t td;
 
     // Skip accel/battery checks if we can't afford to hang around
-    /*
+
     if(!is_in_time_sensitive_state(current_state->sid)) {
         walker_timings.now = pw_time_get_us();
         td = (walker_timings.prev_accel_check>walker_timings.now)?(walker_timings.prev_accel_check-walker_timings.now):(walker_timings.now-walker_timings.prev_accel_check);
@@ -104,10 +107,10 @@ void pw_normal_loop() {
             walker_timings.prev_accel_check = walker_timings.now;
             pw_accel_process_steps();
 
-            (void)pw_power_process_battery();
+            // (void)pw_power_process_battery();
         }
     }
-    */
+    
 
     // Update power management
     pw_power_update();
@@ -150,7 +153,8 @@ void pw_normal_loop() {
                     0, 0,
                     8, 8,
                     PW_EEPROM_ADDR_IMG_LOW_BATTERY,
-                    PW_EEPROM_SIZE_IMG_LOW_BATTERY
+                    PW_EEPROM_SIZE_IMG_LOW_BATTERY,
+                    true
                 );
             } else {
                 pw_screen_clear_area(0, 0, 8, 8);
