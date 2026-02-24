@@ -112,6 +112,7 @@ static void draw_color_option(pw_screen_pos_t x, pw_screen_pos_t y) {
         };
         pw_screen_draw_img(&img, x, y);
         x = 56;
+        pw_screen_clear_area(x, y, PW_SCREEN_WIDTH-x, 16);
     } else {
         pw_img_t img = (pw_img_t) {
             .width = 48,
@@ -123,7 +124,6 @@ static void draw_color_option(pw_screen_pos_t x, pw_screen_pos_t y) {
         x = PW_SCREEN_WIDTH;
         x = pw_screen_draw_integer(pw_color_mode, x, y);
     }
-    pw_screen_clear_area(x, y, PW_SCREEN_WIDTH-x, 16);
 }
 
 void pw_picowalker_settings_init_display(pw_state_t *s, const screen_flags_t *sf) {
