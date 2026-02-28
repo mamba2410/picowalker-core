@@ -70,5 +70,6 @@ ir_err_t pw_action_send_large_raw_data_from_pointer(uint8_t *src, uint16_t dst, 
 ir_err_t pw_ir_eeprom_do_write(pw_packet_t *packet, size_t len);
 void pw_ir_start_walk();
 void pw_ir_end_walk();
+ir_err_t pw_ir_end_peer_play();
 
 #endif /* PW_IR_ACTIONS_H */

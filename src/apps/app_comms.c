@@ -206,6 +206,29 @@ void pw_comms_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf)
         err = IR_OK;
         break;
     }
+    case COMM_SUBSTATE_CALCULATE_PEER_PLAY_GIFT: {
+        // TODO: Read peer's data from 0xf6c0
+        // TODO: Calculate gift
+        //uint32_t seed = max(20000, 
+        //10*(peer->current_watts + health_data_cache.current_watts)
+        //+ peer->current_steps + health_data_cache.current_steps);
+        // TODO: Check if space in peer play inventory
+        // if so, do more calcs to get item
+        // else, gift watts equal to max(99, seed/200)
+
+        // TODO: Log event, special peer play log
+
+        // TODO: Record who we played with (copy TeamData from 0xdc00 to array in 0xde24)
+
+
+        err = pw_ir_end_peer_play();
+
+        // Move on to showing the animation
+        comms->current_substate = COMM_SUBSTATE_DISPLAY_PEER_PLAY_ANIMATION;
+        comms->anim_frame = 0;
+        comms->final_anim_frame = PEER_PLAY_ANIM_FRAMES;
+        break;
+    }
     case COMM_SUBSTATE_DISPLAY_WALK_END_ANIMATION:
     case COMM_SUBSTATE_DISPLAY_WALK_START_ANIMATION: {
         if(comms->anim_frame >= comms->final_anim_frame) {

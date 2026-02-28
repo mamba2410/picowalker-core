@@ -165,6 +165,31 @@ typedef struct {
     /* +0x24 */ uint16_t nickname[10];
 } pokemon_info_t;
 
+
+/*
+ * size: 0x224 = 548 bytes
+ * dmitry: struct TeamData
+ */
+typedef struct {
+    uint8_t unk0[8];
+    unique_identity_data_t uid;
+    uint16_t tid;
+    uint16_t sid;
+    uint8_t unk1[4];
+    uint16_t trainer_name[8];
+    struct {
+        uint32_t flags;
+        uint16_t val;
+        uint16_t always_ffff;
+    } unk2[3];
+    pokemon_info_t team_info[6];
+    uint8_t unk3[0x72]; // zero
+    uint8_t unk4[10];
+    uint8_t unk5[0x1c]; // zero
+    uint16_t route_name[16];
+    uint8_t unk6[0x18];
+} peer_battle_data_t;
+
 /*
  *  size: 0x2c = 44 bytes
  *  dmitry: struct EventPokeExtraData

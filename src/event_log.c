@@ -90,3 +90,21 @@ void pw_log_event(event_log_item_t *item, route_info_t *ri, event_log_type_t eve
 
 }
 
+
+/*
+ * Add peer play specific data to the event log item which the normal function doesn't touch.
+ * After this, call `pw_log_event()` with the same `item` ad it should work fine
+ */
+void pw_log_setup_peer_play_event(event_log_item_t *item, peer_play_data_t *peer_data) {
+    item->le_other_species = peer_data->le_species;
+    for(uint8_t i = 0; i < 8; i++) {
+        item->other_trainer_name[i] = peer_data->trainer_name[i];
+    }
+
+    for(uint8_t i = 0; i < 11; i++) {
+        item->other_pokemon_name[i] = peer_data->pokemon_name[i];
+    }
+
+    item->other_pokemon_flags = peer_data->pokemon_flags_1; // TODO: flag shenanegans
+}
+
