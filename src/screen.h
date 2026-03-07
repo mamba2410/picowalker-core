@@ -31,6 +31,7 @@ void pw_screen_overlay_text_box(pw_img_t *img, pw_screen_dim_t w, pw_screen_dim_
 pw_screen_pos_t pw_screen_draw_integer_with_overline(uint32_t n, pw_screen_pos_t right_x, pw_screen_pos_t y, pw_screen_color_t c);
 void pw_screen_draw_from_eeprom_with_text_box(pw_screen_pos_t x, pw_screen_pos_t y, pw_screen_dim_t w, pw_screen_dim_t h, pw_eeprom_addr_t addr, size_t len, pw_screen_color_t c);
 void pw_screen_draw_message_with_text_box(pw_screen_pos_t y, uint8_t message_index, pw_screen_dim_t h, pw_screen_color_t c);
+void pw_screen_draw_item_name_and_message(pw_eeprom_addr_t item_name_addr, pw_eeprom_addr_t message_addr, pw_screen_color_t c);
 void pw_screen_draw_pokemon_name_and_message(pw_eeprom_addr_t poke_addr, pw_eeprom_addr_t message_addr, pw_screen_color_t c);
 void pw_screen_overlay_img(pw_img_t *base, pw_img_t *img, pw_screen_pos_t x, pw_screen_pos_t y);
 void pw_screen_get_blank_image(pw_img_t *img, pw_screen_dim_t w, pw_screen_dim_t h);

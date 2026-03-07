@@ -58,6 +58,10 @@ const char* const PW_COMM_SUBSTATE_NAMES[N_COMM_SUBSTATE] = {
     [COMM_SUBSTATE_COMPLETED] = "COMM_SUBSTATE_COMPLETED",
 };
 
+// Forward declarations of static functions
+static void animation_peer_play(app_comms_t *comms, const screen_flags_t *sf);
+
+
 void pw_comms_init(pw_state_t *s, const screen_flags_t *sf) {
     (void)sf;
     //pw_eeprom_write_health_data(&health_data_cache);
@@ -68,9 +72,8 @@ void pw_comms_init(pw_state_t *s, const screen_flags_t *sf) {
         s->comms.current_substate = COMM_SUBSTATE_FIRST_IDLE;
     } else {
         s->comms.first_comms = false;
-        // TODO: stop for debugging
         s->comms.current_substate = COMM_SUBSTATE_FINDING_PEER;
-        //s->comms.current_substate = COMM_SUBSTATE_DISPLAY_WALK_END_ANIMATION;
+        //s->comms.current_substate = COMM_SUBSTATE_DISPLAY_PEER_PLAY_ANIMATION;
     }
 
     s->comms.advertising_attempts = 0;  // advertising attempts
@@ -78,7 +81,12 @@ void pw_comms_init(pw_state_t *s, const screen_flags_t *sf) {
     s->comms.timer = 0;
     s->comms.anim_frame = 0;
     s->comms.final_anim_frame = 0;
-    //s->comms.final_anim_frame = WALK_END_ANIM_FRAMES;
+    //s->comms.final_anim_frame = PEER_PLAY_ANIM_FRAMES;
+    //pw_eeprom_read(
+    //    PW_EEPROM_ADDR_ROUTE_ITEMS+2,
+    //    (uint8_t*)&s->comms.gift_item,
+    //    2
+    //);
 
     pw_eeprom_write_walker_info(&walker_info_cache);
     pw_eeprom_write_health_data(&health_data_cache);
@@ -229,6 +237,7 @@ void pw_comms_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf)
         comms->final_anim_frame = PEER_PLAY_ANIM_FRAMES;
         break;
     }
+    case COMM_SUBSTATE_DISPLAY_PEER_PLAY_ANIMATION:
     case COMM_SUBSTATE_DISPLAY_WALK_END_ANIMATION:
     case COMM_SUBSTATE_DISPLAY_WALK_START_ANIMATION: {
         if(comms->anim_frame >= comms->final_anim_frame) {
@@ -342,7 +351,7 @@ void pw_comms_init_display(pw_state_t *s, const screen_flags_t *sf) {
         case COMM_SUBSTATE_CANNOT_CONNECT_AGAIN: { break; }
         case COMM_SUBSTATE_COULD_NOT_RECEIVE: { break; }
         case COMM_SUBSTATE_DISPLAY_PEER_PLAY_ANIMATION: {
-            // TODO: Draw bars, text box, remove arc
+            animation_peer_play(&s->comms, sf);
             break;
         }
         case COMM_SUBSTATE_DISPLAY_WALK_START_ANIMATION: {
@@ -415,8 +424,8 @@ void pw_comms_init_display(pw_state_t *s, const screen_flags_t *sf) {
             pw_flash_read(PW_FLASH_IMG_FACE_HAPPY, face.data);
             pw_screen_draw_img(&face, (PW_SCREEN_WIDTH-16)/2, (PW_SCREEN_HEIGHT-8)/2);
             pw_screen_clear_area((PW_SCREEN_WIDTH-8)/2, 48, 8, 8);
-                                                            break;
-                                                        }
+            break;
+        }
         default: {
             break;
         }
@@ -623,7 +632,10 @@ void pw_comms_draw_update(pw_state_t *s, const screen_flags_t *sf) {
             break;
         }
         // TODO: fill in
-        case COMM_SUBSTATE_DISPLAY_PEER_PLAY_ANIMATION:
+        case COMM_SUBSTATE_DISPLAY_PEER_PLAY_ANIMATION: {
+            animation_peer_play(&s->comms, sf);
+            break;
+        }
         case COMM_SUBSTATE_DISPLAY_ITEM_GIFT_ANIMATION:
         case COMM_SUBSTATE_DISPLAY_POKE_GIFT_ANIMATION:
         case COMM_SUBSTATE_FIRST_IDLE: {
@@ -713,3 +725,90 @@ void pw_comms_deinit(pw_state_t *s, const screen_flags_t *sf) {
     pw_ir_sleep();
     pw_ir_deinit();
 }
+
+
+static void draw_peer_pair_at(pw_img_t *pokemon_buffer, pw_screen_pos_t peer_x, const screen_flags_t *sf) {
+    pw_img_t sprite = {
+        .height = 24,
+        .width = 32,
+        .data = eeprom_buf,
+        .size = 24*32/4
+    };
+    pw_eeprom_read(
+        PW_EEPROM_ADDR_IMG_POKEMON_SMALL_ANIMATED + ((sf->frame&ANIM_FRAME_DOUBLE_TIME)>>ANIM_FRAME_DOUBLE_TIME_OFFSET)*PW_EEPROM_SIZE_IMG_POKEMON_SMALL_ANIMATED_FRAME,
+        sprite.data,
+        PW_EEPROM_SIZE_IMG_POKEMON_SMALL_ANIMATED_FRAME
+    );
+
+    pw_screen_overlay_img(pokemon_buffer, &sprite, 56, 4);
+
+    pw_eeprom_read(
+        PW_EEPROM_ADDR_IMG_CURRENT_PEER_POKEMON_ANIMATED_SMALL+ ((sf->frame&ANIM_FRAME_DOUBLE_TIME)>>ANIM_FRAME_DOUBLE_TIME_OFFSET)*PW_EEPROM_SIZE_IMG_POKEMON_SMALL_ANIMATED_FRAME,
+        sprite.data,
+        PW_EEPROM_SIZE_IMG_POKEMON_SMALL_ANIMATED_FRAME
+    );
+    pw_screen_overlay_img(pokemon_buffer, &sprite, peer_x, 4);
+
+}
+
+static void animation_peer_play(app_comms_t *comms, const screen_flags_t *sf) {
+
+    if(comms->anim_frame == 0) {
+        pw_screen_clear_area(0, PW_SCREEN_HEIGHT/2, PW_SCREEN_WIDTH, PW_SCREEN_HEIGHT/2);
+    }
+
+    if(comms->anim_frame < 8) { // Peer walking in
+        pw_img_t pokemon_buffer;
+        pw_screen_get_blank_image(&pokemon_buffer, PW_SCREEN_WIDTH, PW_SCREEN_HEIGHT/2);
+        draw_peer_pair_at(&pokemon_buffer, comms->anim_frame, sf);
+        pw_screen_draw_img(&pokemon_buffer, 0, 0);
+
+    }
+    else if(comms->anim_frame < 8+8) { // "Peer has arrived" message
+        pw_img_t pokemon_buffer;
+        pw_screen_get_blank_image(&pokemon_buffer, PW_SCREEN_WIDTH, PW_SCREEN_HEIGHT/2);
+        draw_peer_pair_at(&pokemon_buffer, 8, sf);
+        pw_screen_draw_img(&pokemon_buffer, 0, 0);
+        pw_screen_draw_pokemon_name_and_message(
+            PW_EEPROM_ADDR_TEXT_CURRENT_PEER_POKEMON_NAME,
+            PW_EEPROM_ADDR_TEXT_HAS_ARRIVED,
+            PW_SCREEN_BLACK
+        );
+    }
+    else if(comms->anim_frame < 8+8+8) { // "Went for a walk"
+        if(comms->anim_frame == 8+8) { pw_screen_clear_area(0, 32, PW_SCREEN_WIDTH, 16); }
+        pw_img_t pokemon_buffer;
+        pw_screen_get_blank_image(&pokemon_buffer, PW_SCREEN_WIDTH, PW_SCREEN_HEIGHT/2);
+        draw_peer_pair_at(&pokemon_buffer, 8, sf);
+        pw_screen_draw_img(&pokemon_buffer, 0, 0);
+        pw_screen_draw_message_with_text_box(48, 47, 16, PW_SCREEN_BLACK);
+        // TODO: draw music notes based on something
+    }
+    else if(comms->anim_frame < 8+8+8+8) { // "Here's a gift"
+        if(comms->anim_frame == 8+8+8) {
+            pw_screen_clear_area(0, 0, PW_SCREEN_WIDTH, 32);
+            pw_img_t gift = {
+                .width=32,
+                .height=24,
+                .data=eeprom_buf,
+                .size=32*24/4
+            };
+            pw_eeprom_read(PW_EEPROM_ADDR_IMG_PRESENT_LARGE, gift.data, PW_EEPROM_SIZE_IMG_PRESENT_LARGE);
+            pw_screen_draw_img(&gift, (PW_SCREEN_WIDTH-32)/2, 4);
+            pw_screen_draw_message_with_text_box(48, 49, 16, PW_SCREEN_BLACK); // "Here's a gift"
+        }
+    }
+    else if(comms->anim_frame < 8+8+8+8+8) { // "XX received"
+        if(comms->anim_frame == 8+8+8+8) {
+            uint8_t item_index = pw_item_id_to_item_index(comms->gift_item);
+            pw_screen_draw_item_name_and_message(
+                PW_EEPROM_ADDR_TEXT_ITEM_NAMES + item_index*PW_EEPROM_SIZE_TEXT_ITEM_NAME_SINGLE,
+                PW_EEPROM_ADDR_TEXT_RECV,
+                PW_SCREEN_BLACK
+            );
+        }
+    }
+
+    comms->anim_frame += 1;
+}
+
