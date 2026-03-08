@@ -5,6 +5,7 @@
 #include <stddef.h>
 
 #include "../states.h"
+#include "../ir/actions.h"
 
 /// @file app_comms.h
 
