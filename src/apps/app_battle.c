@@ -590,7 +590,12 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
 
 void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
 
+    route_info_t route_info;
+    pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO, (uint8_t*)(&route_info), sizeof(route_info_t));
+
     pw_eeprom_addr_t our_addr;
+    pokemon_summary_t our_pokemon;
+
     pw_img_t our_sprite = {
         .width=32,
         .height=24,
@@ -598,13 +603,19 @@ void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
         .size=192,
         .lookup_table = {
             .addr=-1,
-            .use_alt=false
+            .use_alt=true
         }
     };
-    pw_pokemon_index_to_small_sprite(PIDX_WALKING, our_sprite.data, (sf->frame&ANIM_FRAME_DOUBLE_TIME)>>ANIM_FRAME_DOUBLE_TIME_OFFSET, &our_addr);
+    pokemon_index_t our_index = pw_pokemon_id_to_pokemon_index(route_info.pokemon_summary.le_species, &our_pokemon);
+    pw_pokemon_index_to_small_sprite(our_index, our_sprite.data, (sf->frame&ANIM_FRAME_DOUBLE_TIME)>>ANIM_FRAME_DOUBLE_TIME_OFFSET, &our_addr);
     our_sprite.lookup_table.addr = our_addr;
+    our_sprite.lookup_table.metadata.pokemon.species = our_pokemon.le_species;
+    our_sprite.lookup_table.metadata.pokemon.pokemon_flags_1 = our_pokemon.pokemon_flags_1;
+    our_sprite.lookup_table.metadata.pokemon.pokemon_flags_2 = our_pokemon.pokemon_flags_2;
 
     pw_eeprom_addr_t their_addr;
+    pokemon_summary_t their_pokemon;
+
     pw_img_t their_sprite = {
         .width=32,
         .height=24,
@@ -612,11 +623,15 @@ void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
         .size=192,
         .lookup_table = {
             .addr=-1,
-            .use_alt=false
+            .use_alt=true
         }
     };
-    pw_pokemon_index_to_small_sprite(s->battle.chosen_pokemon+1, their_sprite.data, (sf->frame&ANIM_FRAME_DOUBLE_TIME)>>ANIM_FRAME_DOUBLE_TIME_OFFSET, &their_addr);
+    pokemon_index_t their_index = pw_pokemon_id_to_pokemon_index(route_info.route_pokemon[s->battle.chosen_pokemon+1].le_species, &their_pokemon);
+    pw_pokemon_index_to_small_sprite(their_index, their_sprite.data, (sf->frame&ANIM_FRAME_DOUBLE_TIME)>>ANIM_FRAME_DOUBLE_TIME_OFFSET, &their_addr);
     their_sprite.lookup_table.addr = their_addr;
+    their_sprite.lookup_table.metadata.pokemon.species = their_pokemon.le_species;
+    their_sprite.lookup_table.metadata.pokemon.pokemon_flags_1 = their_pokemon.pokemon_flags_1;
+    their_sprite.lookup_table.metadata.pokemon.pokemon_flags_2 = their_pokemon.pokemon_flags_2;
 
     switch(s->battle.current_substate) {
     case BATTLE_OPENING: {
@@ -842,6 +857,30 @@ void battle_draw_hp_bars(pw_img_t *battle_buffer, pw_state_t *s) {
 
 }
 
+void draw_hp_bars(pw_state_t *s) {
+
+    pw_img_t hp_sprite = {
+        .width=8,
+        .height=8,
+        .data=decompression_buf,
+        .size=PW_EEPROM_SIZE_IMG_RADAR_HP_BLIP,
+        .lookup_table = {
+            .addr=PW_EEPROM_ADDR_IMG_RADAR_HP_BLIP,
+            .use_alt=true
+        }
+    };
+    pw_eeprom_read(PW_EEPROM_ADDR_IMG_RADAR_HP_BLIP, hp_sprite.data, PW_EEPROM_SIZE_IMG_RADAR_HP_BLIP);
+
+    uint8_t their_hp = (s->battle.current_hp&THEIR_HP_MASK)>>THEIR_HP_OFFSET;
+    for(uint8_t i = 0; i < their_hp; i++) {
+        pw_screen_draw_img(&hp_sprite, 8*(i+1), 24);
+    }
+
+    uint8_t our_hp = (s->battle.current_hp&OUR_HP_MASK)>>OUR_HP_OFFSET;
+    for(uint8_t i = 0; i < our_hp; i++) {
+        pw_screen_draw_img(&hp_sprite, PW_SCREEN_WIDTH/2+8*(i+1), 0);
+    }
+}
 /*
  * coords:
  *   - i attack, they attack: me attack + they hit ("i attacked")-> me hit + they attack ("they attacked")
@@ -861,6 +900,11 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
         return;
     }
 
+    route_info_t route_info;
+    pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO, (uint8_t*)(&route_info), sizeof(route_info_t));
+
+    pw_eeprom_addr_t our_addr;
+    pokemon_summary_t our_pokemon;
     pw_img_t our_sprite   = {
         .width=32,
         .height=24,
@@ -868,10 +912,18 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
         .size=192,
         .lookup_table = {
             .addr=-1,
-            .use_alt=false
+            .use_alt=true
         }
     };
-    //pw_img_t their_sprite = {.width=32, .height=24, .size=192, .data=decompression_buf};
+    pokemon_index_t our_index = pw_pokemon_id_to_pokemon_index(route_info.pokemon_summary.le_species, &our_pokemon);
+    pw_pokemon_index_to_small_sprite(our_index, our_sprite.data, (sf->frame&ANIM_FRAME_DOUBLE_TIME)>>ANIM_FRAME_DOUBLE_TIME_OFFSET, &our_addr);
+    our_sprite.lookup_table.addr = our_addr;
+    our_sprite.lookup_table.metadata.pokemon.species = our_pokemon.le_species;
+    our_sprite.lookup_table.metadata.pokemon.pokemon_flags_1 = our_pokemon.pokemon_flags_1;
+    our_sprite.lookup_table.metadata.pokemon.pokemon_flags_2 = our_pokemon.pokemon_flags_2;
+
+    pw_eeprom_addr_t their_addr;
+    pokemon_summary_t their_pokemon;
     pw_img_t their_sprite = {
         .width=32,
         .height=24,
@@ -879,22 +931,20 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
         .size=192,
         .lookup_table = {
             .addr=-1,
-            .use_alt=false
+            .use_alt=true
         }
     };
-    pw_img_t battle_buffer;
-    pw_screen_get_blank_image(&battle_buffer, 96, 32);
-    if(battle_buffer.size == 0) {
-        pw_log_error("Couldn't get blank image for battles\n");
-        return;
-    }
-
-    pw_eeprom_addr_t our_addr;
-    pw_pokemon_index_to_small_sprite(PIDX_WALKING, our_sprite.data, (sf->frame&ANIM_FRAME_DOUBLE_TIME)>>ANIM_FRAME_DOUBLE_TIME_OFFSET, &our_addr);
+    pokemon_index_t their_index = pw_pokemon_id_to_pokemon_index(route_info.route_pokemon[s->battle.chosen_pokemon+1].le_species, &their_pokemon);
+    pw_pokemon_index_to_small_sprite(their_index, their_sprite.data, (sf->frame&ANIM_FRAME_DOUBLE_TIME)>>ANIM_FRAME_DOUBLE_TIME_OFFSET, &their_addr);
+    their_sprite.lookup_table.addr = their_addr;
+    their_sprite.lookup_table.metadata.pokemon.species = their_pokemon.le_species;
+    their_sprite.lookup_table.metadata.pokemon.pokemon_flags_1 = their_pokemon.pokemon_flags_1;
+    their_sprite.lookup_table.metadata.pokemon.pokemon_flags_2 = their_pokemon.pokemon_flags_2;
     
-    pw_eeprom_addr_t their_addr;
-    pw_pokemon_index_to_small_sprite(s->battle.chosen_pokemon+1, their_sprite.data, (sf->frame&ANIM_FRAME_DOUBLE_TIME)>>ANIM_FRAME_DOUBLE_TIME_OFFSET, &their_addr);
-
+    uint8_t count = 0;
+    pw_img_queue_t queue[5];
+    pw_screen_clear_area(0, 0, 96, 32);
+    
     switch(s->battle.current_substate) {
     case BATTLE_OPENING: {
         if(s->battle.anim_frame > 0) s->battle.anim_frame--;
@@ -902,28 +952,26 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
         break;
     }
     case BATTLE_APPEARED: {
-        pw_screen_overlay_img(&battle_buffer, &their_sprite, 8, 0);
-        pw_screen_overlay_img(&battle_buffer, &our_sprite, PW_SCREEN_WIDTH/2+8, 8);
-        battle_draw_hp_bars(&battle_buffer, s);
-
-        pw_screen_draw_img(&battle_buffer, 0, 0);
+        queue[count++] = (pw_img_queue_t){&our_sprite, PW_SCREEN_WIDTH/2+8, 8};
+        queue[count++] = (pw_img_queue_t){&their_sprite, 8, 0};
+        pw_screen_draw_queue(queue, count);
+        draw_hp_bars(s);
         break;
     }
     case BATTLE_CHOOSING: {
-        pw_screen_overlay_img(&battle_buffer, &their_sprite, 8, 0);
-        pw_screen_overlay_img(&battle_buffer, &our_sprite, PW_SCREEN_WIDTH/2+8, 8);
-        battle_draw_hp_bars(&battle_buffer, s);
-
-        pw_screen_draw_img(&battle_buffer, 0, 0);
+        queue[count++] = (pw_img_queue_t){&our_sprite, PW_SCREEN_WIDTH/2+8, 8};
+        queue[count++] = (pw_img_queue_t){&their_sprite, 8, 0};
+        pw_screen_draw_queue(queue, count);
+        draw_hp_bars(s);
         break;
     }
     case BATTLE_OUR_ACTION: {
         //uint8_t our_action = (s->battle.actions&OUR_ACTION_MASK)>>OUR_ACTION_OFFSET;
         uint8_t their_action = (s->battle.actions&THEIR_ACTION_MASK)>>THEIR_ACTION_OFFSET;
 
-        pw_screen_overlay_img(&battle_buffer, &our_sprite, OUR_ATTACK_XS[0][s->battle.anim_frame], 8);
-        pw_screen_overlay_img(&battle_buffer, &their_sprite, OUR_ATTACK_XS[1][s->battle.anim_frame], 0);
-        battle_draw_hp_bars(&battle_buffer, s);
+        queue[count++] = (pw_img_queue_t){&our_sprite, OUR_ATTACK_XS[0][s->battle.anim_frame], 8};
+        queue[count++] = (pw_img_queue_t){&their_sprite, OUR_ATTACK_XS[1][s->battle.anim_frame], 0};
+        draw_hp_bars(s);
 
         if(s->battle.anim_frame == (ATTACK_ANIM_LENGTH+1)/2) {
             if(their_action == ACTION_SPECIAL) {
@@ -938,7 +986,7 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
                     }
                 };
                 pw_eeprom_read(PW_EEPROM_ADDR_IMG_RADAR_CRITICAL_HIT, crit_hit.data, PW_EEPROM_SIZE_IMG_RADAR_CRITICAL_HIT);
-                pw_screen_overlay_img(&battle_buffer, &crit_hit, (PW_SCREEN_WIDTH-16)/2, 0);
+                queue[count++] = (pw_img_queue_t){&crit_hit, (PW_SCREEN_WIDTH-16)/2, 0};
 
             } else if(their_action != ACTION_EVADE) {
                 pw_img_t normal_hit = {
@@ -952,12 +1000,12 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
                     }
                 };
                 pw_eeprom_read(PW_EEPROM_ADDR_IMG_RADAR_ATTACK_HIT, normal_hit.data, PW_EEPROM_SIZE_IMG_RADAR_ATTACK_HIT);
-                pw_screen_overlay_img(&battle_buffer, &normal_hit, (PW_SCREEN_WIDTH-16)/2, 0);
+                queue[count++] = (pw_img_queue_t){&normal_hit, (PW_SCREEN_WIDTH-16)/2, 0};
             }
 
         }
 
-        pw_screen_draw_img(&battle_buffer, 0, 0);
+        pw_screen_draw_queue(queue, count);
         s->battle.anim_frame++;
         break;
     }
@@ -965,9 +1013,9 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
         uint8_t our_action = (s->battle.actions&OUR_ACTION_MASK)>>OUR_ACTION_OFFSET;
         //uint8_t their_action = (s->battle.actions&THEIR_ACTION_MASK)>>THEIR_ACTION_OFFSET;
 
-        pw_screen_overlay_img(&battle_buffer, &our_sprite, THEIR_ATTACK_XS[0][s->battle.anim_frame], 8);
-        pw_screen_overlay_img(&battle_buffer, &their_sprite, THEIR_ATTACK_XS[1][s->battle.anim_frame], 0);
-        battle_draw_hp_bars(&battle_buffer, s);
+        queue[count++] = (pw_img_queue_t){&our_sprite, THEIR_ATTACK_XS[0][s->battle.anim_frame], 8};
+        queue[count++] = (pw_img_queue_t){&their_sprite, THEIR_ATTACK_XS[1][s->battle.anim_frame], 0};
+        draw_hp_bars(s);
 
         if(s->battle.anim_frame == (ATTACK_ANIM_LENGTH+1)/2) {
             if(our_action != ACTION_EVADE) {
@@ -982,11 +1030,11 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
                     }
                 };
                 pw_eeprom_read(PW_EEPROM_ADDR_IMG_RADAR_ATTACK_HIT, normal_hit.data, PW_EEPROM_SIZE_IMG_RADAR_ATTACK_HIT);
-                pw_screen_overlay_img(&battle_buffer, &normal_hit, (PW_SCREEN_WIDTH-16)/2, 0);
+                queue[count++] = (pw_img_queue_t){&normal_hit, (PW_SCREEN_WIDTH-16)/2, 0};
             }
         }
 
-        pw_screen_draw_img(&battle_buffer, 0, 0);
+        pw_screen_draw_queue(queue, count);
         s->battle.anim_frame++;
         break;
     }
@@ -998,17 +1046,17 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
         break;
     }
     case BATTLE_STAREDOWN: {
-        pw_screen_overlay_img(&battle_buffer, &our_sprite, THEIR_ATTACK_XS[0][0], 8);
-        pw_screen_overlay_img(&battle_buffer, &their_sprite, THEIR_ATTACK_XS[1][0], 0);
-        battle_draw_hp_bars(&battle_buffer, s);
-        pw_screen_draw_img(&battle_buffer, 0, 0);
+        queue[count++] = (pw_img_queue_t){&our_sprite, THEIR_ATTACK_XS[0][0], 8};
+        queue[count++] = (pw_img_queue_t){&their_sprite, THEIR_ATTACK_XS[1][0], 0};
+        draw_hp_bars(s);
+        pw_screen_draw_queue(queue, count);
         s->battle.anim_frame++;
         break;
     }
     case BATTLE_THREW_BALL: {
-        pw_screen_overlay_img(&battle_buffer, &our_sprite, THEIR_ATTACK_XS[0][0], 8);
-        pw_screen_overlay_img(&battle_buffer, &their_sprite, THEIR_ATTACK_XS[1][0], 0);
-
+        queue[count++] = (pw_img_queue_t){&our_sprite, THEIR_ATTACK_XS[0][0], 8};
+        queue[count++] = (pw_img_queue_t){&their_sprite, THEIR_ATTACK_XS[1][0], 0};
+        
         pw_img_t ball = {
             .width=8, 
             .height=8,
@@ -1020,9 +1068,9 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
             }
         };
         pw_eeprom_read(PW_EEPROM_ADDR_IMG_BALL, ball.data, PW_EEPROM_SIZE_IMG_BALL);
-        pw_screen_overlay_img(&battle_buffer, &ball, POKEBALL_THROW_XS[s->battle.anim_frame], POKEBALL_THROW_YS[s->battle.anim_frame]);
 
-        pw_screen_draw_img(&battle_buffer, 0, 0);
+        queue[count++] = (pw_img_queue_t){&ball, POKEBALL_THROW_XS[s->battle.anim_frame], POKEBALL_THROW_YS[s->battle.anim_frame]};
+        pw_screen_draw_queue(queue, count);
         s->battle.anim_frame++;
         break;
     }
@@ -1053,7 +1101,7 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
         }
         }
 
-        pw_screen_overlay_img(&battle_buffer, &our_sprite, THEIR_ATTACK_XS[0][0], 8);
+        queue[count++] = (pw_img_queue_t){&our_sprite, THEIR_ATTACK_XS[0][0], 8};
 
         pw_img_t ball = {
             .width=8,
@@ -1066,22 +1114,21 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
             }
         };
         pw_eeprom_read(PW_EEPROM_ADDR_IMG_BALL, ball.data, PW_EEPROM_SIZE_IMG_BALL);
-        pw_screen_overlay_img(&battle_buffer, &ball, x, 16);
 
-        pw_screen_draw_img(&battle_buffer, 0, 0);
+        queue[count++] = (pw_img_queue_t){&ball, x, 16};
+        pw_screen_draw_queue(queue, count);
         s->battle.anim_frame++;
         break;
     }
     case BATTLE_ALMOST_HAD_IT: {
-        pw_screen_overlay_img(&battle_buffer, &our_sprite, THEIR_ATTACK_XS[0][0], 8);
-        pw_screen_overlay_img(&battle_buffer, &their_sprite, THEIR_ATTACK_XS[1][0], 8);
-
-        pw_screen_draw_img(&battle_buffer, 0, 0);
+        queue[count++] = (pw_img_queue_t){&our_sprite, THEIR_ATTACK_XS[0][0], 8};
+        queue[count++] = (pw_img_queue_t){&their_sprite, THEIR_ATTACK_XS[1][0], 8};
+        pw_screen_draw_queue(queue, count);
         s->battle.anim_frame++;
         break;
     }
     case BATTLE_CATCH_STARS: {
-        pw_screen_overlay_img(&battle_buffer, &our_sprite, THEIR_ATTACK_XS[0][0], 8);
+        queue[count++] = (pw_img_queue_t){&our_sprite, THEIR_ATTACK_XS[0][0], 8};
 
         pw_img_t star = {
             .width=8,
@@ -1094,7 +1141,7 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
             }
         };
         pw_eeprom_read(PW_EEPROM_ADDR_IMG_RADAR_CATCH_EFFECT, star.data, PW_EEPROM_SIZE_IMG_RADAR_CATCH_EFFECT);
-        pw_screen_overlay_img(&battle_buffer, &star, THEIR_NORMAL_X, THEIR_NORMAL_Y+8-s->battle.anim_frame);
+        queue[count++] = (pw_img_queue_t){&star, THEIR_NORMAL_X, THEIR_NORMAL_Y+8-s->battle.anim_frame};
 
         pw_img_t ball = {
             .width=8,
@@ -1107,9 +1154,8 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
             }
         };
         pw_eeprom_read(PW_EEPROM_ADDR_IMG_BALL, ball.data, PW_EEPROM_SIZE_IMG_BALL);
-        pw_screen_overlay_img(&battle_buffer, &ball, THEIR_NORMAL_X+8, 16);
-
-        pw_screen_draw_img(&battle_buffer, 0, 0);
+        queue[count++] = (pw_img_queue_t){&ball, THEIR_NORMAL_X+8, 16};
+        pw_screen_draw_queue(queue, count);
         s->battle.anim_frame++;
         break;
     }

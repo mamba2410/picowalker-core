@@ -444,3 +444,11 @@ void pw_screen_overlay_img(pw_img_t *base, pw_img_t *img, pw_screen_pos_t x, pw_
 
 }
 
+/**
+ * Post Processing method for overlaying images.
+ */
+void pw_screen_draw_queue(pw_img_queue_t *queue, uint8_t count){
+    for (uint8_t i =0; i < count; i++) {
+        pw_screen_draw_img(queue[i].img, queue[i].x, queue[i].y);
+    }
+}
