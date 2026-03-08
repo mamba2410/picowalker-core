@@ -222,6 +222,7 @@ void pw_comms_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf)
         // Move on to showing the animation
         comms->current_substate = COMM_SUBSTATE_DISPLAY_PEER_PLAY_ANIMATION;
         comms->anim_frame = 0;
+        comms->final_anim_frame = PEER_PLAY_ANIM_FRAMES;
         break;
     }
     case COMM_SUBSTATE_CANNOT_COMPLETE:
