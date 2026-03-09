@@ -242,7 +242,7 @@ void pw_poke_radar_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t
     case RADAR_CHOOSING: {
         if(s->radar.invisible_timer <= 0 && s->radar.active_timer <= 0) {
             s->radar.current_substate = RADAR_FAILED;
-	    pw_audio_play_sound(SOUND_MINIGAME_FAIL);
+	    pw_audio_play_sound(SOUND_BATTLE_FLED);
             PW_SET_REQUEST(s->requests, PW_REQUEST_REDRAW);
         }
         break;
