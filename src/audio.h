@@ -13,10 +13,16 @@
 #define SOUND_POKERADAR_FOUND_STH 3
 #define SOUND_SELECTION_MISS 4
 #define SOUND_DOWSING_FOUND_ITEM 5
-#define SOUND_POKEMON_CAUGHT 7
-#define SOUND_POKEMON_ENCOUNTER 10
-#define SOUND_MINIGAME_FAIL 14
-#define SOUND_POKEBALL_THROW 15
+#define SOUND_BATTLE_UNKNOWN_6          6   // Success Sound?
+#define SOUND_BATTLE_CAUGHT             7
+#define SOUND_BATTLE_UNKNOWN_8          8  // Mono-tone sound . . . . .
+#define SOUND_BATTLE_UNKNOWN_9          9  // Special Sound? 
+#define SOUND_BATTLE_ENCOUNTER          10
+#define SOUND_BATTLE_HIT                11
+#define SOUND_BATTLE_EVADE              12
+#define SOUND_BATTLE_CRITICAL           13
+#define SOUND_BATTLE_FLED               14
+#define SOUND_BATTLE_POKEBALL_THROW     15
 
 
 extern void pw_audio_init();

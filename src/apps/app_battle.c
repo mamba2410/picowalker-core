@@ -136,7 +136,7 @@ void pw_battle_init(pw_state_t *s, const screen_flags_t *sf) {
     s->battle.wobbles = 0;
     s->battle.update_hp = 0;
 
-    pw_audio_play_sound(SOUND_POKEMON_ENCOUNTER);
+    pw_audio_play_sound(SOUND_BATTLE_ENCOUNTER);
 }
 
 /**
@@ -204,12 +204,10 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
                 case ACTION_EVADE: {
                     substate_queue[0] = BATTLE_STAREDOWN;
                     substate_queue[1] = BATTLE_CHOOSING;
-		    pw_audio_play_sound(SOUND_NAVIGATE_MENU);
                     break;
                 }
                 case ACTION_SPECIAL: {
                     substate_queue[0] = BATTLE_THEY_FLED;
-		    pw_audio_play_sound(SOUND_MINIGAME_FAIL);
                     break;
                 }
                 }
@@ -257,14 +255,25 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
             uint8_t our_hp   = (s->battle.current_hp&OUR_HP_MASK)>>OUR_HP_OFFSET;
             uint8_t their_hp = (s->battle.current_hp&THEIR_HP_MASK)>>THEIR_HP_OFFSET;
 
-            if(our_action != ACTION_EVADE) {
-                switch(their_action) {
-                    case ACTION_ATTACK: our_hp -= 1; break;
-                    case ACTION_SPECIAL: our_hp -= 1; break;
-                    case ACTION_EVADE: our_hp -= 1; break;
-                }
+            switch(our_action) {
+                case ACTION_ATTACK:
+                    if (their_action == ACTION_EVADE) {
+                        our_hp -= 1;
+                        pw_audio_play_sound(SOUND_BATTLE_HIT);
+                    } else {
+                        our_hp -= 1;
+                        pw_audio_play_sound(SOUND_BATTLE_HIT);
+                    }
+                    break;
+                case ACTION_EVADE:
+                    if (their_action == ACTION_ATTACK || their_action == ACTION_SPECIAL) {
+                        pw_audio_play_sound(SOUND_BATTLE_EVADE);
+                    }
+                    break;
+                case ACTION_SPECIAL:
+                    our_hp -= 1;
+                    break;
             }
-
             s->battle.update_hp &= ~0x01;
             s->battle.current_hp = our_hp<<OUR_HP_OFFSET | their_hp<<THEIR_HP_OFFSET;
         }
@@ -292,15 +301,31 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
             uint8_t our_hp   = (s->battle.current_hp&OUR_HP_MASK)>>OUR_HP_OFFSET;
             uint8_t their_hp = (s->battle.current_hp&THEIR_HP_MASK)>>THEIR_HP_OFFSET;
 
-            if(our_action == ACTION_EVADE) {
-                if(their_action == ACTION_ATTACK) their_hp -= 1;
-            } else {
-                switch(their_action) {
-                    case ACTION_ATTACK: their_hp -= 1; break;
-                    case ACTION_SPECIAL: their_hp -= 2; break;
-                }
+            switch(their_action) {
+                case ACTION_ATTACK:
+                    if (our_action == ACTION_EVADE) {
+                        their_hp -= 1;
+                        pw_audio_play_sound(SOUND_BATTLE_HIT);
+                    } else {
+                        their_hp -= 1;
+                        pw_audio_play_sound(SOUND_BATTLE_HIT);
+                    }
+                    break;
+                case ACTION_EVADE:
+                    if (our_action == ACTION_ATTACK) {
+                        pw_audio_play_sound(SOUND_BATTLE_EVADE);
+                    }
+                    break;
+                case ACTION_SPECIAL:
+                    if (our_action == ACTION_EVADE) {
+                        their_hp -= 1;
+                        pw_audio_play_sound(SOUND_BATTLE_HIT);
+                    } else {
+                        their_hp -= 2;
+                        pw_audio_play_sound(SOUND_BATTLE_CRITICAL);
+                    }
+                    break;
             }
-
             s->battle.update_hp &= ~0x02;
             s->battle.current_hp = our_hp<<OUR_HP_OFFSET | their_hp<<THEIR_HP_OFFSET;
         }
@@ -328,6 +353,9 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
         break;
     }
     case BATTLE_THEY_FLED: {
+        if(s->battle.anim_frame == 3) {
+            pw_audio_play_sound(SOUND_BATTLE_FLED);
+        }
         if(s->battle.anim_frame >= MESSAGE_DISPLAY_ANIM_LENGTH) {
             event_log_item_t *event_log = (event_log_item_t*)(decompression_buf);
             route_info_t *route_info = (route_info_t*)(decompression_buf + sizeof(event_log_item_t));
@@ -351,12 +379,11 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
         break;
     }
     case BATTLE_CATCH_SETUP: {
-
+        pw_audio_play_sound(SOUND_BATTLE_POKEBALL_THROW);
         substate_queue[0] = BATTLE_THREW_BALL;
         substate_queue[1] = BATTLE_CLOUD_ANIM;
 
         int8_t health = (s->battle.current_hp&THEIR_HP_MASK) >> THEIR_HP_OFFSET;
-        uint8_t catch_chance = CATCH_CHANCES[health-1];
         if(health <= 0) {
             substate_queue[0] = BATTLE_THEY_FLED;
             s->battle.substate_queue_len = 1;
@@ -366,6 +393,7 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
         // 1-3 wobbles, can flee at three wobbles
         bool caught = true;
         uint8_t n_wobbles = 0;
+        uint8_t catch_chance = CATCH_CHANCES[health-1];
         while((n_wobbles < 3) && caught) {
             n_wobbles++;
             uint8_t pct = pw_rand()%100;
@@ -447,6 +475,9 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
         break;
     }
     case BATTLE_POKEMON_CAUGHT: {
+        if(s->battle.anim_frame <= MESSAGE_DISPLAY_ANIM_LENGTH) {
+            pw_audio_play_sound(SOUND_BATTLE_CAUGHT);
+        }
         if(s->battle.anim_frame >= MESSAGE_DISPLAY_ANIM_LENGTH) { }
         break;
     }
@@ -562,13 +593,14 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
         event_log_item_t *event_log = (event_log_item_t*)(decompression_buf);
         route_info_t *route_info = (route_info_t*)(decompression_buf + sizeof(event_log_item_t));
         pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO, (uint8_t*)route_info, sizeof(route_info_t));
-
-
         // TODO: Read special route flag
         pw_log_event(event_log, route_info, event_log_type, 0, false, s->battle.chosen_pokemon+1);
         break;
     }
     case BATTLE_CATCH_STARS: {
+        if (s->battle.anim_frame == 3) {
+            pw_audio_play_sound(SOUND_NAVIGATE_MENU);
+        }
         if(s->battle.anim_frame >= CATCH_ANIM_LENGTH) {
             s->battle.substate_queue_index++;
             s->battle.anim_frame = 0;
@@ -1043,6 +1075,7 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
     }
     case BATTLE_THEY_FLED: {
         // TODO: animation
+        s->battle.anim_frame++;
         break;
     }
     case BATTLE_STAREDOWN: {
@@ -1160,6 +1193,7 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
         break;
     }
     case BATTLE_POKEMON_CAUGHT: {
+        s->battle.anim_frame++;
         break;
     }
     default: {
@@ -1198,7 +1232,6 @@ void pw_battle_handle_input(pw_state_t *s, const screen_flags_t *sf, pw_buttons_
         }
         case PW_BUTTON_M: {
             pw_battle_switch_substate(s, BATTLE_CATCH_SETUP);
-	    pw_audio_play_sound(SOUND_POKEBALL_THROW);
             break;
         }
         }
