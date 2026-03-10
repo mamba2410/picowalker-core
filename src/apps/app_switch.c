@@ -6,6 +6,7 @@
 #include "../states.h"
 #include "../eeprom_map.h"
 #include "../screen.h"
+#include "../audio.h"
 #include "../buttons.h"
 #include "../types.h"
 
@@ -167,20 +168,25 @@ void pw_switch_handle_input(pw_state_t *s, const screen_flags_t *sf, pw_buttons_
     case PW_BUTTON_L: {
         if(s->switches.cursor == 0) {
             s->switches.current_substate = SWITCHES_TO_SPLASH;
+            pw_audio_play_sound(SOUND_NAVIGATE_BACK);
             break;
         }
         s->switches.cursor = (s->switches.cursor-1+3)%3;
+        pw_audio_play_sound(SOUND_CURSOR_MOVE);
+        break;
+    }
+    case PW_BUTTON_M: {
+        s->switches.current_substate = SWITCHES_WRITE_INV;
+        pw_audio_play_sound(SOUND_NAVIGATE_MENU);
         break;
     }
     case PW_BUTTON_R: {
         if(s->switches.cursor >= 2) break;
         s->switches.cursor = (s->switches.cursor+1)%3;
+        pw_audio_play_sound(SOUND_CURSOR_MOVE);
         break;
     }
-    case PW_BUTTON_M: {
-        s->switches.current_substate = SWITCHES_WRITE_INV;
-        break;
-    }
+
     }
 
     PW_SET_REQUEST(s->requests, PW_REQUEST_REDRAW);
