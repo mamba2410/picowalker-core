@@ -5,6 +5,7 @@
 #include "../eeprom.h"
 #include "../eeprom_map.h"
 #include "../screen.h"
+#include "../audio.h"
 #include "../buttons.h"
 #include "../globals.h"
 #include "../types.h"
@@ -118,6 +119,7 @@ void pw_inventory_handle_input(pw_state_t *s, const screen_flags_t *sf, pw_butto
  *  9 = special/gifted item
  */
 static void pw_inventory_move_cursor(pw_state_t *s, int8_t m) {
+    uint8_t old_substate = s->inventory.current_substate;
 
     switch(s->inventory.current_substate) {
     case SUBSCREEN_FOUND: {
@@ -136,10 +138,14 @@ static void pw_inventory_move_cursor(pw_state_t *s, int8_t m) {
             if(gbrief.n_peer_play_items > 0) {
                 s->inventory.current_substate = SUBSCREEN_PRESENTS;  // change to presents screen
                 s->inventory.current_cursor = 0;
+                pw_audio_play_sound(SOUND_CURSOR_MOVE);
             } else {
                 s->inventory.current_cursor = 9;
+                pw_audio_play_sound(SOUND_NAVIGATE_BACK);
                 pw_inventory_move_cursor(s, -1);   // laziest way of setting cursor to last non-empty slot
             }
+        } else if(old_substate == s->inventory.current_substate) {
+            pw_audio_play_sound(SOUND_CURSOR_MOVE);
         }
         break;
     }
@@ -148,9 +154,13 @@ static void pw_inventory_move_cursor(pw_state_t *s, int8_t m) {
         if(s->inventory.current_cursor < 0) {
             s->inventory.current_substate = SUBSCREEN_FOUND;
             s->inventory.current_cursor = 10;
+            pw_audio_play_sound(SOUND_CURSOR_MOVE);
             pw_inventory_move_cursor(s, -1);   // laziest way of setting cursor to last non-empty slot
         } else if(s->inventory.current_cursor >= gbrief.n_peer_play_items) {
             s->inventory.current_cursor = gbrief.n_peer_play_items-1;
+            pw_audio_play_sound(SOUND_NAVIGATE_BACK);
+        } else {
+            pw_audio_play_sound(SOUND_CURSOR_MOVE);
         }
 
         break;
@@ -504,11 +514,13 @@ void pw_inventory_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t 
     switch(s->inventory.current_substate) {
     case SUBSTATE_GO_TO_SPLASH: {
         p->sid = STATE_SPLASH;
+        pw_audio_play_sound(SOUND_NAVIGATE_MENU);
         break;
     }
     case SUBSTATE_GO_TO_MENU: {
         p->sid = STATE_MAIN_MENU;
         p->menu.cursor = 4;
+        pw_audio_play_sound(SOUND_NAVIGATE_BACK);
         break;
     }
     default:
