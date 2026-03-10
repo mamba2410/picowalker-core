@@ -1174,6 +1174,7 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
         };
         pw_eeprom_read(PW_EEPROM_ADDR_IMG_RADAR_CATCH_EFFECT, star.data, PW_EEPROM_SIZE_IMG_RADAR_CATCH_EFFECT);
         queue[count++] = (pw_img_queue_t){&star, THEIR_NORMAL_X, THEIR_NORMAL_Y+8-s->battle.anim_frame};
+        queue[count++] = (pw_img_queue_t){&star, THEIR_NORMAL_X+16, THEIR_NORMAL_Y+8-s->battle.anim_frame};
 
         pw_img_t ball = {
             .width=8,
@@ -1192,6 +1193,22 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
         break;
     }
     case BATTLE_POKEMON_CAUGHT: {
+        queue[count++] = (pw_img_queue_t){&our_sprite, THEIR_ATTACK_XS[0][0], 8};
+
+        pw_img_t ball = {
+            .width=8,
+            .height=8,
+            .data=decompression_buf,
+            .size=16,
+            .lookup_table = {
+                .addr=PW_EEPROM_ADDR_IMG_BALL,
+                .use_alt=true
+            }
+        };
+        pw_eeprom_read(PW_EEPROM_ADDR_IMG_BALL, ball.data, PW_EEPROM_SIZE_IMG_BALL);
+        queue[count++] = (pw_img_queue_t){&ball, THEIR_NORMAL_X+8, 16};
+        pw_screen_draw_queue(queue, count);
+
         s->battle.anim_frame++;
         break;
     }
