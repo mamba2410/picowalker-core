@@ -975,8 +975,7 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
     
     uint8_t count = 0;
     pw_img_queue_t queue[5];
-    pw_screen_clear_area(0, 0, 96, 32);
-    
+    if (s->battle.current_substate != BATTLE_OPENING) pw_screen_clear_area(0, 0, 96, 32);
     switch(s->battle.current_substate) {
     case BATTLE_OPENING: {
         if(s->battle.anim_frame > 0) s->battle.anim_frame--;
