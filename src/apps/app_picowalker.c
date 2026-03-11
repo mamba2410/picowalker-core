@@ -99,31 +99,25 @@ void pw_picowalker_settings_handle_input(pw_state_t *s, const screen_flags_t *sf
 
 
 static void draw_color_option(pw_screen_pos_t x, pw_screen_pos_t y) {
+    pw_img_t img = (pw_img_t) {
+        .width = 48,
+        .height = 16,
+        .size = 48*16/4,
+        .lookup_table = {
+            .addr=-1,
+            .use_alt=false
+        }
+    };
+
     if(pw_color_mode == (N_COLOR_MODES-1)) {
-        pw_img_t img = (pw_img_t) {
-            .width = 48,
-            .height = 16,
-            .data = color_fancy_text,
-            .size = 48*16/4,
-            .lookup_table = {
-                .addr=-1,
-                .use_alt=false
-            }
-        };
-        pw_screen_draw_img(&img, x, y);
-        x = 56;
-        pw_screen_clear_area(x, y, PW_SCREEN_WIDTH-x, 16);
+        img.data = color_fancy_text;
     } else {
-        pw_img_t img = (pw_img_t) {
-            .width = 48,
-            .height = 16,
-            .data = grey_fancy_text,
-            .size = 48*16/4
-        };
-        pw_screen_draw_img(&img, x, y);
-        x = PW_SCREEN_WIDTH;
-        x = pw_screen_draw_integer(pw_color_mode, x, y);
+        img.data = grey_fancy_text;
     }
+
+    pw_screen_draw_img(&img, x, y);
+    x = PW_SCREEN_WIDTH;
+    x = pw_screen_draw_integer(pw_color_mode, x, y);
 }
 
 void pw_picowalker_settings_init_display(pw_state_t *s, const screen_flags_t *sf) {
@@ -131,6 +125,9 @@ void pw_picowalker_settings_init_display(pw_state_t *s, const screen_flags_t *sf
     (void)sf;
     pw_screen_pos_t x, y;
 
+    s->picowalker.previous_color_mode = pw_color_mode;
+    pw_screen_clear();
+    
     // Title bar
     pw_img_t img = (pw_img_t){
         .width=80,
@@ -186,6 +183,11 @@ void pw_picowalker_settings_init_display(pw_state_t *s, const screen_flags_t *sf
 
 
 void pw_picowalker_settings_update_display(pw_state_t *s, const screen_flags_t *sf) {
+    if(pw_color_mode != s->picowalker.previous_color_mode) {
+        pw_picowalker_settings_init_display(s, sf);
+        return;
+    }
+
     pw_eeprom_addr_t addr = sf->frame&ANIM_FRAME_NORMAL_TIME?PW_EEPROM_ADDR_IMG_ARROW_RIGHT_NORMAL:
                          PW_EEPROM_ADDR_IMG_ARROW_RIGHT_OFFSET;
     pw_screen_draw_from_eeprom(

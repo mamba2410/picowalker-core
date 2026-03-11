@@ -148,6 +148,7 @@ typedef struct {
 typedef struct {
     uint8_t current_substate;
     int8_t cursor;
+    uint8_t previous_color_mode;
 } app_picowalker_t;
 
 typedef struct {
