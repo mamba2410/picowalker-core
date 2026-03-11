@@ -90,7 +90,7 @@ const pw_screen_pos_t THEIR_ATTACK_XS[2][ATTACK_ANIM_LENGTH] = {
 
 const pw_screen_pos_t POKEBALL_THROW_XS[6] = { 44, 40, 36, 32, 28, 24 };
 const pw_screen_pos_t POKEBALL_THROW_YS[6] = { 20, 14,  9,  6,  4,  6 };
-const int8_t POKEMON_ENTER_XS[4] = { -16, -4, 8, 8 };
+const pw_screen_pos_t POKEMON_ENTER_XS[6] = { -16, -8, -4,  0,  4,  8 };
 
 
 #define WOBBLE_INITIAL_X 16
@@ -153,10 +153,17 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
     case BATTLE_OPENING: {
         if(s->battle.anim_frame <= 0) {
             pw_battle_switch_substate(s, BATTLE_APPEARED);
+            s->battle.anim_frame = 0;
         }
         break;
     }
     case BATTLE_APPEARED: {
+        if(s->battle.anim_frame >= 5) {
+            pw_battle_switch_substate(s, BATTLE_CHOOSING);
+            s->battle.anim_frame = 0;
+        } else {
+            s->battle.anim_frame++;
+        }
         break;
     }
     case BATTLE_CHOOSING: {
@@ -658,7 +665,7 @@ void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
             .use_alt=true
         }
     };
-    pokemon_index_t their_index = pw_pokemon_id_to_pokemon_index(route_info.route_pokemon[s->battle.chosen_pokemon+1].le_species, &their_pokemon);
+    pokemon_index_t their_index = pw_pokemon_id_to_pokemon_index(route_info.route_pokemon[s->battle.chosen_pokemon].le_species, &their_pokemon);
     pw_pokemon_index_to_small_sprite(their_index, their_sprite.data, (sf->frame&ANIM_FRAME_DOUBLE_TIME)>>ANIM_FRAME_DOUBLE_TIME_OFFSET, &their_addr);
     their_sprite.lookup_table.addr = their_addr;
     their_sprite.lookup_table.metadata.pokemon.species = their_pokemon.le_species;
@@ -671,7 +678,7 @@ void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
         break;
     }
     case BATTLE_APPEARED: {
-        pw_screen_draw_img(&their_sprite, THEIR_NORMAL_X, THEIR_NORMAL_Y);
+        // pw_screen_draw_img(&their_sprite, THEIR_NORMAL_X, THEIR_NORMAL_Y);
         pw_screen_draw_img(&our_sprite, OUR_NORMAL_X, OUR_NORMAL_Y);
 
         pw_screen_draw_pokemon_name_and_message(
@@ -928,8 +935,10 @@ void draw_hp_bars(pw_state_t *s) {
 void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
     if(s->battle.current_substate != s->battle.previous_substate) {
         s->battle.previous_substate = s->battle.current_substate;
-        pw_battle_init_display(s, sf);
-        return;
+        if(s->battle.current_substate != BATTLE_APPEARED) {
+            pw_battle_init_display(s, sf);
+            return;
+        }
     }
 
     route_info_t route_info;
@@ -966,7 +975,7 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
             .use_alt=true
         }
     };
-    pokemon_index_t their_index = pw_pokemon_id_to_pokemon_index(route_info.route_pokemon[s->battle.chosen_pokemon+1].le_species, &their_pokemon);
+    pokemon_index_t their_index = pw_pokemon_id_to_pokemon_index(route_info.route_pokemon[s->battle.chosen_pokemon].le_species, &their_pokemon);
     pw_pokemon_index_to_small_sprite(their_index, their_sprite.data, (sf->frame&ANIM_FRAME_DOUBLE_TIME)>>ANIM_FRAME_DOUBLE_TIME_OFFSET, &their_addr);
     their_sprite.lookup_table.addr = their_addr;
     their_sprite.lookup_table.metadata.pokemon.species = their_pokemon.le_species;
@@ -984,7 +993,7 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
     }
     case BATTLE_APPEARED: {
         queue[count++] = (pw_img_queue_t){&our_sprite, PW_SCREEN_WIDTH/2+8, 8};
-        queue[count++] = (pw_img_queue_t){&their_sprite, 8, 0};
+        queue[count++] = (pw_img_queue_t){&their_sprite, POKEMON_ENTER_XS[s->battle.anim_frame], 0};//8, 0};
         pw_screen_draw_queue(queue, count);
         draw_hp_bars(s);
         break;
