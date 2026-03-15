@@ -23,6 +23,7 @@
 
 ir_err_t pw_ir_eeprom_do_write(pw_packet_t *packet, size_t len);
 ir_err_t pw_ir_identity_ack(pw_packet_t *packet);
+static void create_peer_play_data(peer_play_data_t *ppd);
 
 /*
  *  Listen for a packet.
@@ -325,6 +326,9 @@ ir_err_t pw_action_slave_perform_request(app_comms_t *comms, pw_packet_t *packet
         );
         packet->cmd = CMD_PEER_PLAY_DX;
         packet->extra = EXTRA_BYTE_FROM_WALKER;
+        create_peer_play_data((peer_play_data_t*)packet->payload);
+
+        /*
         peer_play_data_t *ppd = (peer_play_data_t*)packet->payload;
 
         // Read `walker_info_t`
@@ -357,6 +361,7 @@ ir_err_t pw_action_slave_perform_request(app_comms_t *comms, pw_packet_t *packet
         for(size_t i = 0; i < 11; i++) {
             ppd->pokemon_name[i] = ri->pokemon_nickname[i];
         }
+        */
 
         err = pw_ir_send_packet(packet, 8+sizeof(peer_play_data_t), &n_rw);
         break;
@@ -552,31 +557,8 @@ ir_err_t pw_action_peer_play(app_comms_t *comms, pw_packet_t *packet, size_t max
         packet->cmd = CMD_PEER_PLAY_DX;
         packet->extra = 1;
 
-        // TODO: Actually make proper peer_play_data_t
-        // eg peer_play_data_t *ppd = packet->payload
-        packet->payload[0x00] = 0x0f;    // current steps = 9999
-        packet->payload[0x01] = 0x27;
-        packet->payload[0x02] = 0;
-        packet->payload[0x03] = 0;
-        packet->payload[0x04] = 0x0f;    // current watts = 9999
-        packet->payload[0x05] = 0x27;
-        // 0x0e, 0x0f padding
-        packet->payload[0x08] = 1;   // identity_data_t.unk0
-        packet->payload[0x09] = 0;
-        packet->payload[0x0a] = 0;
-        packet->payload[0x0b] = 0;
-        packet->payload[0x0c] = 7;   // identity_data_t.unk2
-        packet->payload[0x0d] = 0;
-        // species
-        pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO+0, packet->bytes+0x16, 2);
-        // 22 bytes pokemon nickname
-        pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO+10, packet->bytes+0x18, 22);
-        // 16 bytes trainer name
-        pw_eeprom_read(PW_EEPROM_ADDR_IDENTITY_DATA_1+72, packet->bytes+0x2e, 16);
-        // 1 byte pokemon gender
-        pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO+13, packet->bytes+0x3e, 1);
-        // 1 byte pokeIsSpecial
-        pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO+14, packet->bytes+0x3f, 1);
+        create_peer_play_data((peer_play_data_t*)packet->payload);
+
 
         // TODO: move sizze to #define
         err = pw_ir_send_packet(packet, 0x40, &n_read);;
@@ -1088,6 +1070,28 @@ ir_err_t pw_ir_end_peer_play(app_comms_t *comms) {
     pw_peer_shuffle_team_data();
 
     return IR_OK;
+}
+
+
+static void create_peer_play_data(peer_play_data_t *ppd) {
+    ppd->le_current_steps = health_data_cache.today_steps;
+    ppd->le_current_watts = health_data_cache.current_watts;
+    //ppd->le_current_steps = 9999;
+    //ppd->le_current_watts = 9999;
+
+    ppd->le_unk0 = walker_info_cache.le_unk0;
+    ppd->le_unk2 = walker_info_cache.le_unk2;
+
+    pokemon_summary_t *ps = (pokemon_summary_t*)eeprom_buf;
+    pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO+0, (uint8_t*)ps, sizeof(pokemon_summary_t));
+
+    ppd->le_species = ps->le_species;
+    ppd->pokemon_flags_1 = ps->pokemon_flags_1;
+    ppd->pokemon_flags_2 = ps->pokemon_flags_2;
+
+    pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO+10, (uint8_t*)ppd->pokemon_name, 22);
+    pw_eeprom_read(PW_EEPROM_ADDR_IDENTITY_DATA_1+72, (uint8_t*)ppd->trainer_name, 16);
+
 }
 
 
