@@ -121,8 +121,8 @@ void pw_log_event(event_log_item_t *item, route_info_t *ri, event_log_type_t eve
  */
 void pw_log_setup_peer_play_event(event_log_item_t *item, peer_play_data_t *peer_data) {
     item->le_other_species = peer_data->le_species;
-    item->be_other_watts = swap_bytes_u16(peer_data->le_current_watts);
-    item->be_other_steps = swap_bytes_u32(peer_data->le_current_steps);
+    item->be_other_watts = peer_data->be_current_watts;
+    item->be_other_steps = peer_data->be_current_steps;
     item->le_unk0 = peer_data->le_unk0;
     item->le_unk2 = peer_data->le_unk2;
 

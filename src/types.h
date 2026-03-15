@@ -117,8 +117,8 @@ typedef struct {
  *  dmitry: struct PeerPlayData
  */
 typedef struct {    // Dmitry struct PeerPlayData
-    /* +0x00 */ uint32_t le_current_steps;
-    /* +0x04 */ uint16_t le_current_watts;
+    /* +0x00 */ uint32_t be_current_steps;
+    /* +0x04 */ uint16_t be_current_watts;
     /* +0x06 */ uint8_t padding[2];
     /* +0x08 */ uint32_t le_unk0;
     /* +0x0c */ uint16_t le_unk2;
