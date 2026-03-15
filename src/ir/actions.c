@@ -1073,6 +1073,7 @@ ir_err_t pw_ir_end_peer_play(app_comms_t *comms) {
 
     { // Limit pointer scope
         event_log_item_t *item = (event_log_item_t*)eeprom_buf;
+        memset(item, 0, sizeof(*item));
         route_info_t *route_info = (route_info_t*)(eeprom_buf + sizeof(event_log_item_t));
         pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO, (uint8_t*)route_info, PW_EEPROM_SIZE_ROUTE_INFO);
 
