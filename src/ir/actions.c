@@ -890,11 +890,12 @@ void pw_ir_start_walk() {
 
     info->identity_data = peer_info_cache.identity_data;
 
-    //info->protocol_ver = peer_info_cache.protocol_ver;
-    info->protocol_ver = 0x02;
+    info->protocol_ver = peer_info_cache.protocol_ver;
+    //info->protocol_ver = 0x02;
     info->protocol_subver = peer_info_cache.protocol_subver;
     info->unk5 = peer_info_cache.unk5;
-    info->unk8 = 0x02;
+    //info->unk8 = 0x02;
+    info->unk8 = peer_info_cache.unk8;
 
     pw_eeprom_write_walker_info(info);
     info = 0;
