@@ -75,7 +75,7 @@ void pw_switch_init_display(pw_state_t *s, const screen_flags_t *sf) {
         8, 16,
         PW_EEPROM_ADDR_IMG_MENU_ARROW_RETURN,
         PW_EEPROM_SIZE_IMG_MENU_ARROW_RETURN,
-        false
+        true
     );
 
     pw_screen_draw_from_eeprom(
@@ -101,7 +101,7 @@ void pw_switch_init_display(pw_state_t *s, const screen_flags_t *sf) {
         8, 8,
         PW_EEPROM_ADDR_IMG_ARROW_UP_NORMAL,
         PW_EEPROM_SIZE_IMG_ARROW,
-        false
+        true
     );
 }
 
@@ -136,7 +136,7 @@ void pw_switch_update_display(pw_state_t *s, const screen_flags_t *sf) {
             8, 8,
             PW_EEPROM_ADDR_IMG_ARROW_UP_NORMAL,
             PW_EEPROM_SIZE_IMG_ARROW,
-            false
+            true
         );
     } else {
         pw_screen_draw_from_eeprom(
@@ -144,7 +144,7 @@ void pw_switch_update_display(pw_state_t *s, const screen_flags_t *sf) {
             8, 8,
             PW_EEPROM_ADDR_IMG_ARROW_UP_OFFSET,
             PW_EEPROM_SIZE_IMG_ARROW,
-            false
+            true
         );
     }
 
@@ -154,7 +154,7 @@ void pw_switch_update_display(pw_state_t *s, const screen_flags_t *sf) {
             width, 16,
             addr,
             size,
-            false
+            true
         );
         pw_screen_draw_text_box(0, PW_SCREEN_HEIGHT-16, PW_SCREEN_WIDTH, 16, PW_SCREEN_BLACK);
         s->switches.prev_cursor = s->switches.cursor;

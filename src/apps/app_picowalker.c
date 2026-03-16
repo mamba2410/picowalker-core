@@ -145,7 +145,7 @@ void pw_picowalker_settings_init_display(pw_state_t *s, const screen_flags_t *sf
         8, 16,
         PW_EEPROM_ADDR_IMG_MENU_ARROW_RETURN,
         PW_EEPROM_SIZE_IMG_MENU_ARROW_RETURN,
-        false
+        true
     );
 
     draw_color_option(8, 16);
@@ -195,7 +195,7 @@ void pw_picowalker_settings_update_display(pw_state_t *s, const screen_flags_t *
         8, 8,
         addr,
         PW_EEPROM_SIZE_IMG_ARROW,
-        false
+        true
     );
     for(int8_t i = 0; i < N_ENTRIES; i++) {
         if(i == s->picowalker.cursor) continue;

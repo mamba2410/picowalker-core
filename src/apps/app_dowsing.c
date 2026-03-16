@@ -157,7 +157,7 @@ void pw_dowsing_init_display(pw_state_t *s, const screen_flags_t *sf) {
                     8, 8,
                     PW_EEPROM_ADDR_IMG_ARROW_UP_NORMAL,
                     PW_EEPROM_SIZE_IMG_ARROW,
-                    false
+                    true
                 );
             } else {
                 pw_screen_draw_from_eeprom(
@@ -165,7 +165,7 @@ void pw_dowsing_init_display(pw_state_t *s, const screen_flags_t *sf) {
                     8, 8,
                     PW_EEPROM_ADDR_IMG_ARROW_UP_OFFSET,
                     PW_EEPROM_SIZE_IMG_ARROW,
-                    false
+                    true
                 );
             }
         }
@@ -234,7 +234,7 @@ static void choosing_draw_update(pw_state_t *s, const screen_flags_t *sf) {
         8, 8,
         addr,
         PW_EEPROM_SIZE_IMG_ARROW,
-        false
+        true
     );
 
 }
@@ -265,7 +265,7 @@ static void replace_item_draw_update(pw_state_t *s, const screen_flags_t *sf) {
             8, 8,
             PW_EEPROM_ADDR_IMG_ARROW_UP_NORMAL,
             PW_EEPROM_SIZE_IMG_ARROW,
-            false
+            true
         );
     } else {
         pw_screen_draw_from_eeprom(
@@ -273,7 +273,7 @@ static void replace_item_draw_update(pw_state_t *s, const screen_flags_t *sf) {
             8, 8,
             PW_EEPROM_ADDR_IMG_ARROW_UP_OFFSET,
             PW_EEPROM_SIZE_IMG_ARROW,
-            false
+            true
         );
     }
 

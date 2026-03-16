@@ -208,7 +208,7 @@ static void draw_cursor(pw_state_t *s, const screen_flags_t *sf) {
         8, 8,
         addr,
         PW_EEPROM_SIZE_IMG_ARROW,
-        false
+        true
     );
 }
 
@@ -308,7 +308,7 @@ static void pw_inventory_draw_screen1(pw_state_t *s, const screen_flags_t *sf) {
         8, 16,
         PW_EEPROM_ADDR_IMG_MENU_ARROW_RETURN,
         PW_EEPROM_SIZE_IMG_MENU_ARROW_RETURN,
-        false
+        true
     );
 
     pw_screen_draw_from_eeprom(
@@ -316,7 +316,7 @@ static void pw_inventory_draw_screen1(pw_state_t *s, const screen_flags_t *sf) {
         8, 16,
         PW_EEPROM_ADDR_IMG_MENU_ARROW_RIGHT,
         PW_EEPROM_SIZE_IMG_MENU_ARROW_RIGHT,
-        false
+        true
     );
 
     pw_screen_draw_from_eeprom(
@@ -412,7 +412,7 @@ static void pw_inventory_draw_screen2(pw_state_t *s, const screen_flags_t *sf) {
         8, 16,
         PW_EEPROM_ADDR_IMG_MENU_ARROW_LEFT,
         PW_EEPROM_SIZE_IMG_MENU_ARROW_LEFT,
-        false
+        true
     );
 
     pw_screen_draw_from_eeprom(

@@ -39,7 +39,7 @@ static void draw_cursor_update(pw_state_t *s, const screen_flags_t *sf) {
         8, 8,
         (sf->frame&ANIM_FRAME_NORMAL_TIME)? PW_EEPROM_ADDR_IMG_ARROW_RIGHT_NORMAL:PW_EEPROM_ADDR_IMG_ARROW_RIGHT_OFFSET,
         PW_EEPROM_SIZE_IMG_ARROW,
-        false
+        true
     );
 
     for(uint8_t i = 0; i < 4; i++) {
