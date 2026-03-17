@@ -90,7 +90,7 @@ const pw_screen_pos_t THEIR_ATTACK_XS[2][ATTACK_ANIM_LENGTH] = {
 
 const pw_screen_pos_t POKEBALL_THROW_XS[6] = { 44, 40, 36, 32, 28, 24 };
 const pw_screen_pos_t POKEBALL_THROW_YS[6] = { 20, 14,  9,  6,  4,  6 };
-const pw_screen_pos_t POKEMON_ENTER_XS[6] = { -16, -8, -4,  0,  4,  8 };
+const pw_screen_pos_t POKEMON_ENTER_XS[4] = { -16, -4, 8, 8 };
 
 
 #define WOBBLE_INITIAL_X 16
@@ -135,6 +135,7 @@ void pw_battle_init(pw_state_t *s, const screen_flags_t *sf) {
     s->battle.current_hp = (4<<OUR_HP_OFFSET) | (4<<THEIR_HP_OFFSET);
     s->battle.wobbles = 0;
     s->battle.update_hp = 0;
+    s->battle.user_input = false;
 
     pw_audio_play_sound(SOUND_BATTLE_ENCOUNTER);
 }
@@ -158,11 +159,10 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
         break;
     }
     case BATTLE_APPEARED: {
-        if(s->battle.anim_frame >= 5) {
+        if(s->battle.user_input) {
             pw_battle_switch_substate(s, BATTLE_CHOOSING);
             s->battle.anim_frame = 0;
-        } else {
-            s->battle.anim_frame++;
+            s->battle.user_input = false;
         }
         break;
     }
@@ -264,7 +264,7 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
 
             switch(our_action) {
                 case ACTION_ATTACK:
-                    if (their_action == ACTION_EVADE) {
+                    if(their_action == ACTION_EVADE) {
                         our_hp -= 1;
                         pw_audio_play_sound(SOUND_BATTLE_HIT);
                     } else {
@@ -273,7 +273,7 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
                     }
                     break;
                 case ACTION_EVADE:
-                    if (their_action == ACTION_ATTACK || their_action == ACTION_SPECIAL) {
+                    if(their_action == ACTION_ATTACK || their_action == ACTION_SPECIAL) {
                         pw_audio_play_sound(SOUND_BATTLE_EVADE);
                     }
                     break;
@@ -310,7 +310,7 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
 
             switch(their_action) {
                 case ACTION_ATTACK:
-                    if (our_action == ACTION_EVADE) {
+                    if(our_action == ACTION_EVADE) {
                         their_hp -= 1;
                         pw_audio_play_sound(SOUND_BATTLE_HIT);
                     } else {
@@ -319,12 +319,12 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
                     }
                     break;
                 case ACTION_EVADE:
-                    if (our_action == ACTION_ATTACK) {
+                    if(our_action == ACTION_ATTACK) {
                         pw_audio_play_sound(SOUND_BATTLE_EVADE);
                     }
                     break;
                 case ACTION_SPECIAL:
-                    if (our_action == ACTION_EVADE) {
+                    if(our_action == ACTION_EVADE) {
                         their_hp -= 1;
                         pw_audio_play_sound(SOUND_BATTLE_HIT);
                     } else {
@@ -360,10 +360,7 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
         break;
     }
     case BATTLE_THEY_FLED: {
-        if(s->battle.anim_frame == 3) {
-            pw_audio_play_sound(SOUND_BATTLE_FLED);
-        }
-        if(s->battle.anim_frame >= MESSAGE_DISPLAY_ANIM_LENGTH) {
+        if(s->battle.user_input) {
             event_log_item_t *event_log = (event_log_item_t*)(decompression_buf);
             route_info_t *route_info = (route_info_t*)(decompression_buf + sizeof(event_log_item_t));
             pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO, (uint8_t*)route_info, sizeof(route_info_t));
@@ -482,9 +479,6 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
         break;
     }
     case BATTLE_POKEMON_CAUGHT: {
-        if(s->battle.anim_frame <= MESSAGE_DISPLAY_ANIM_LENGTH) {
-            pw_audio_play_sound(SOUND_BATTLE_CAUGHT);
-        }
         if(s->battle.anim_frame >= MESSAGE_DISPLAY_ANIM_LENGTH) { }
         break;
     }
@@ -605,9 +599,6 @@ void pw_battle_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
         break;
     }
     case BATTLE_CATCH_STARS: {
-        if (s->battle.anim_frame == 3) {
-            pw_audio_play_sound(SOUND_NAVIGATE_MENU);
-        }
         if(s->battle.anim_frame >= CATCH_ANIM_LENGTH) {
             s->battle.substate_queue_index++;
             s->battle.anim_frame = 0;
@@ -681,12 +672,6 @@ void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
         // pw_screen_draw_img(&their_sprite, THEIR_NORMAL_X, THEIR_NORMAL_Y);
         pw_screen_draw_img(&our_sprite, OUR_NORMAL_X, OUR_NORMAL_Y);
 
-        pw_screen_draw_pokemon_name_and_message(
-            PW_EEPROM_ADDR_TEXT_POKEMON_NAMES + s->battle.chosen_pokemon*PW_EEPROM_SIZE_TEXT_POKEMON_NAME,
-            PW_EEPROM_ADDR_TEXT_APPEARED,
-            PW_SCREEN_BLACK
-        );
-
         pw_img_t health_bar = {
             .width=8,
             .height=8,
@@ -699,12 +684,7 @@ void pw_battle_init_display(pw_state_t *s, const screen_flags_t *sf) {
         };
         pw_eeprom_read(PW_EEPROM_ADDR_IMG_RADAR_HP_BLIP, eeprom_buf, PW_EEPROM_SIZE_IMG_RADAR_HP_BLIP);
 
-        int8_t health = (s->battle.current_hp&THEIR_HP_MASK) >> THEIR_HP_OFFSET;
-        for(int8_t i = 0; i < health; i++) {
-            pw_screen_draw_img(&health_bar, 8*(i+1), 24);
-        }
-
-        health = (s->battle.current_hp&OUR_HP_MASK) >> OUR_HP_OFFSET;
+        int8_t health = (s->battle.current_hp&OUR_HP_MASK) >> OUR_HP_OFFSET;
         for(int8_t i = 0; i < health; i++) {
             pw_screen_draw_img(&health_bar, PW_SCREEN_WIDTH/2 + 8*(i+1), 0);
         }
@@ -984,7 +964,7 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
     
     uint8_t count = 0;
     pw_img_queue_t queue[5];
-    if (s->battle.current_substate != BATTLE_OPENING) pw_screen_clear_area(0, 0, 96, 32);
+    if(s->battle.current_substate != BATTLE_OPENING) pw_screen_clear_area(0, 0, 96, 32);
     switch(s->battle.current_substate) {
     case BATTLE_OPENING: {
         if(s->battle.anim_frame > 0) s->battle.anim_frame--;
@@ -995,7 +975,28 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
         queue[count++] = (pw_img_queue_t){&our_sprite, PW_SCREEN_WIDTH/2+8, 8};
         queue[count++] = (pw_img_queue_t){&their_sprite, POKEMON_ENTER_XS[s->battle.anim_frame], 0};//8, 0};
         pw_screen_draw_queue(queue, count);
-        draw_hp_bars(s);
+
+        if(s->battle.anim_frame == 3) {
+            draw_hp_bars(s);
+            pw_screen_draw_pokemon_name_and_message(
+                PW_EEPROM_ADDR_TEXT_POKEMON_NAMES + s->battle.chosen_pokemon*PW_EEPROM_SIZE_TEXT_POKEMON_NAME,
+                PW_EEPROM_ADDR_TEXT_APPEARED,
+                PW_SCREEN_BLACK
+            );
+            if(sf->frame & ANIM_FRAME_NORMAL_TIME) {
+                pw_screen_draw_from_eeprom(
+                    PW_SCREEN_WIDTH - 9,
+                    PW_SCREEN_HEIGHT - 9,
+                    8, 8,
+                    PW_EEPROM_ADDR_IMG_MORE_MESSAGE,
+                    PW_EEPROM_SIZE_IMG_MORE_MESSAGE,
+                    false
+                );
+            } else {
+                pw_screen_clear_area(PW_SCREEN_WIDTH - 9, PW_SCREEN_HEIGHT - 9, 8, 8);
+            }
+        }
+        if(s->battle.anim_frame < 3) s->battle.anim_frame++;
         break;
     }
     case BATTLE_CHOOSING: {
@@ -1082,6 +1083,21 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
         break;
     }
     case BATTLE_THEY_FLED: {
+        if(s->battle.anim_frame == 2) {
+            pw_audio_play_sound(SOUND_BATTLE_FLED);
+        }
+        if(sf->frame&ANIM_FRAME_NORMAL_TIME) {
+            pw_screen_draw_from_eeprom(
+                PW_SCREEN_WIDTH - 9,
+                PW_SCREEN_HEIGHT - 9,
+                8, 8,
+                PW_EEPROM_ADDR_IMG_MORE_MESSAGE,
+                PW_EEPROM_SIZE_IMG_MORE_MESSAGE,
+                false
+            );
+        } else {
+            pw_screen_clear_area(PW_SCREEN_WIDTH - 9, PW_SCREEN_HEIGHT - 9, 8, 8);
+        }
         // TODO: animation
         s->battle.anim_frame++;
         break;
@@ -1171,6 +1187,10 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
     case BATTLE_CATCH_STARS: {
         queue[count++] = (pw_img_queue_t){&our_sprite, THEIR_ATTACK_XS[0][0], 8};
 
+        if(s->battle.anim_frame == 2) {
+            pw_audio_play_sound(SOUND_NAVIGATE_MENU);
+        }
+
         pw_img_t star = {
             .width=8,
             .height=8,
@@ -1204,6 +1224,10 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
     case BATTLE_POKEMON_CAUGHT: {
         queue[count++] = (pw_img_queue_t){&our_sprite, THEIR_ATTACK_XS[0][0], 8};
 
+        if(s->battle.anim_frame == 2) {
+            pw_audio_play_sound(SOUND_BATTLE_CAUGHT);
+        }
+        
         pw_img_t ball = {
             .width=8,
             .height=8,
@@ -1218,6 +1242,18 @@ void pw_battle_update_display(pw_state_t *s, const screen_flags_t *sf) {
         queue[count++] = (pw_img_queue_t){&ball, THEIR_NORMAL_X+8, 16};
         pw_screen_draw_queue(queue, count);
 
+        if(sf->frame&ANIM_FRAME_NORMAL_TIME) {
+            pw_screen_draw_from_eeprom(
+                PW_SCREEN_WIDTH - 9,
+                PW_SCREEN_HEIGHT - 9,
+                8, 8,
+                PW_EEPROM_ADDR_IMG_MORE_MESSAGE,
+                PW_EEPROM_SIZE_IMG_MORE_MESSAGE,
+                false
+            );
+        } else {
+            pw_screen_clear_area(PW_SCREEN_WIDTH - 9, PW_SCREEN_HEIGHT - 9, 8, 8);
+        }
         s->battle.anim_frame++;
         break;
     }
@@ -1238,7 +1274,7 @@ void pw_battle_handle_input(pw_state_t *s, const screen_flags_t *sf, pw_buttons_
     (void)sf;
     switch(s->battle.current_substate) {
     case BATTLE_APPEARED: {
-        pw_battle_switch_substate(s, BATTLE_CHOOSING);
+        s->battle.user_input = true;
         break;
     }
     case BATTLE_CHOOSING: {
@@ -1267,6 +1303,9 @@ void pw_battle_handle_input(pw_state_t *s, const screen_flags_t *sf, pw_buttons_
         break;
     }
     case BATTLE_THEY_FLED:
+        s->battle.user_input = true;
+        break;
+
     case BATTLE_WE_LOST: {
         s->battle.anim_frame = 99; // Make sure to run things before leaving
         //s->battle.current_substate = BATTLE_GO_TO_SPLASH;

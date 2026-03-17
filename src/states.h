@@ -131,6 +131,7 @@ typedef struct {
     uint8_t substate_queue_len;
     uint8_t wobbles;
     uint8_t update_hp; // bit 0 = ours, bit 1 = theirs
+    bool user_input;
 } app_battle_t;
 
 typedef struct {
