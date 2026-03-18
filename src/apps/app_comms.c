@@ -449,6 +449,18 @@ void pw_comms_draw_update(pw_state_t *s, const screen_flags_t *sf) {
                 pw_comms_init_display(s, sf);
                 s->comms.anim_frame++;
             }
+            if (sf->frame & ANIM_FRAME_NORMAL_TIME) {
+                pw_screen_draw_from_eeprom(
+                    PW_SCREEN_WIDTH - 9,
+                    PW_SCREEN_HEIGHT - 9,
+                    8, 8,
+                    PW_EEPROM_ADDR_IMG_MORE_MESSAGE,
+                    PW_EEPROM_SIZE_IMG_MORE_MESSAGE,
+                    false
+                );
+            } else {
+                pw_screen_clear_area(PW_SCREEN_WIDTH - 9, PW_SCREEN_HEIGHT - 9, 8, 8);
+            }
             break;
         }
         case COMM_SUBSTATE_DISPLAY_WALK_START_ANIMATION: {
