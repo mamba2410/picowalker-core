@@ -6,6 +6,7 @@
 #include "../states.h"
 #include "../buttons.h"
 #include "../screen.h"
+#include "../audio.h"
 #include "../eeprom_map.h"
 #include "../flash.h"
 #include "../ir/ir.h"
@@ -521,6 +522,7 @@ void pw_comms_draw_update(pw_state_t *s, const screen_flags_t *sf) {
                     );
                     pw_screen_draw_message(PW_SCREEN_HEIGHT-16, 13, 16);
                     pw_screen_draw_text_box(0, PW_SCREEN_HEIGHT-32, PW_SCREEN_WIDTH, 32, PW_SCREEN_BLACK);
+                    pw_audio_play_sound(SOUND_BATTLE_CAUGHT);
                     break;
                 }
                 case 9:
@@ -606,6 +608,7 @@ void pw_comms_draw_update(pw_state_t *s, const screen_flags_t *sf) {
                     );
                     pw_screen_draw_message(PW_SCREEN_HEIGHT-16, 14, 16); // "has left"
                     pw_screen_draw_text_box(0, PW_SCREEN_HEIGHT-32, PW_SCREEN_WIDTH, 32, PW_SCREEN_BLACK);
+                    pw_audio_play_sound(SOUND_BATTLE_CAUGHT);
                 }
                 default: break;
             }
