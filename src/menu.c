@@ -303,7 +303,18 @@ void pw_menu_update_display(pw_state_t *s, const screen_flags_t *sf) {
             pw_eeprom_read(addr, eeprom_buf, PW_EEPROM_SIZE_TEXT_NEED_WATTS);
             pw_screen_overlay_text_box(&img, PW_SCREEN_WIDTH, 16, PW_SCREEN_BLACK);
             pw_screen_draw_img(&img, 0, PW_SCREEN_HEIGHT-16);
-
+            if (sf->frame & ANIM_FRAME_NORMAL_TIME) {
+                pw_screen_draw_from_eeprom(
+                    PW_SCREEN_WIDTH - 9,
+                    PW_SCREEN_HEIGHT - 9,
+                    8, 8,
+                    PW_EEPROM_ADDR_IMG_MORE_MESSAGE,
+                    PW_EEPROM_SIZE_IMG_MORE_MESSAGE,
+                    false
+                );
+            } else {
+                pw_screen_clear_area(PW_SCREEN_WIDTH - 9, PW_SCREEN_HEIGHT - 9, 8, 8);
+            }
             break;
         }
         case MS_CLICKED: { break; }
