@@ -410,6 +410,7 @@ void pw_comms_draw_update(pw_state_t *s, const screen_flags_t *sf) {
         case COMM_SUBSTATE_FINDING_PEER:
         case COMM_SUBSTATE_DETERMINE_ROLE:
         case COMM_SUBSTATE_AWAITING_SLAVE_ACK:
+        case COMM_SUBSTATE_SLAVE_PERFORM_REQUEST:
         case COMM_SUBSTATE_START_PEER_PLAY:
         case COMM_SUBSTATE_PEER_PLAY_ACK:
         case COMM_SUBSTATE_SEND_MASTER_SPRITES:
@@ -668,21 +669,16 @@ void pw_comms_draw_update(pw_state_t *s, const screen_flags_t *sf) {
                 s->comms.anim_frame++;
             }
 
-            if(sf->frame&ANIM_FRAME_NORMAL_TIME) {
-                pw_img_t img = {
-                    .width=8,
-                    .height=8,
-                    .data=eeprom_buf,
-                    .size=16,
-                    .lookup_table = {
-                        .addr=PW_FLASH_IMG_IR_ACTIVE,
-                        .use_alt=false
-                    }
-                };
-                pw_flash_read(PW_FLASH_IMG_IR_ACTIVE, img.data);
-                pw_screen_draw_img(&img, (PW_SCREEN_WIDTH-8)/2, 0);
+            if(sf->frame & ANIM_FRAME_NORMAL_TIME) {
+                pw_screen_draw_from_eeprom(
+                    (PW_SCREEN_WIDTH-8)/2, 0,
+                    8, 16,
+                    PW_EEPROM_ADDR_IMG_IR_ARCS,
+                    PW_EEPROM_SIZE_IMG_IR_ARCS,
+                    true
+                );
             } else {
-                pw_screen_clear_area((PW_SCREEN_WIDTH-8)/2, 0, 8, 8);
+                pw_screen_clear_area((PW_SCREEN_WIDTH-8)/2, 0, 8, 16);
             }
             break;
         }
