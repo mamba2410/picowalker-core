@@ -25,6 +25,7 @@ static uint8_t img_buf[128];
 static void check_guess_draw_init(pw_state_t *s, const screen_flags_t *sf);
 //static void replace_item_draw_update(pw_state_t *s, const screen_flags_t *sf);
 static void selected_draw_update(pw_state_t *s, const screen_flags_t *sf);
+static void awaiting_draw_update(pw_state_t *s, const screen_flags_t *sf);
 static void choosing_draw_update(pw_state_t *s, const screen_flags_t *sf);
 static void choosing_draw_init(pw_state_t *s, const screen_flags_t *sf);
 
@@ -54,7 +55,7 @@ state_void_func_t const draw_update_funcs[N_DOWSING_STATES] = {
     [DOWSING_CHECK_GUESS]   = pw_empty_event,
     [DOWSING_GIVE_ITEM]     = pw_empty_event,
     [DOWSING_QUITTING]      = pw_empty_event,
-    [DOWSING_AWAIT_INPUT]   = pw_empty_event,
+    [DOWSING_AWAIT_INPUT]   = awaiting_draw_update,
     [DOWSING_REVEAL_ITEM]   = pw_empty_event,
     [DOWSING_GO_TO_SWITCH]  = pw_empty_event,
 
@@ -125,7 +126,6 @@ void pw_dowsing_init(pw_state_t *s, const screen_flags_t *sf) {
     s->dowsing.choices_remaining = 2; // set tries left
     s->dowsing.user_input = false;
     s->dowsing.bush_shakes = 0;
-
     s->dowsing.current_cursor = s->dowsing.previous_cursor = 0;
     s->dowsing.current_substate = s->dowsing.previous_substate = DOWSING_ENTRY;
 
@@ -157,7 +157,7 @@ void pw_dowsing_init_display(pw_state_t *s, const screen_flags_t *sf) {
                     8, 8,
                     PW_EEPROM_ADDR_IMG_ARROW_UP_NORMAL,
                     PW_EEPROM_SIZE_IMG_ARROW,
-                    false
+                    true
                 );
             } else {
                 pw_screen_draw_from_eeprom(
@@ -165,7 +165,7 @@ void pw_dowsing_init_display(pw_state_t *s, const screen_flags_t *sf) {
                     8, 8,
                     PW_EEPROM_ADDR_IMG_ARROW_UP_OFFSET,
                     PW_EEPROM_SIZE_IMG_ARROW,
-                    false
+                    true
                 );
             }
         }
@@ -234,7 +234,7 @@ static void choosing_draw_update(pw_state_t *s, const screen_flags_t *sf) {
         8, 8,
         addr,
         PW_EEPROM_SIZE_IMG_ARROW,
-        false
+        true
     );
 
 }
@@ -251,9 +251,31 @@ static void selected_draw_update(pw_state_t *s, const screen_flags_t *sf) {
     );
     y = (sf->frame&ANIM_FRAME_NORMAL_TIME)?BUSH_HEIGHT:BUSH_HEIGHT+16-2;
     pw_screen_clear_area(16*s->dowsing.current_cursor, y, 16, 2);
+
+    pw_screen_draw_from_eeprom(
+        0, 0,
+        32, 24,
+        PW_EEPROM_ADDR_IMG_ROUTE_LARGE,
+        PW_EEPROM_SIZE_IMG_ROUTE_LARGE,
+        true
+    );
 }
 
-
+static void awaiting_draw_update(pw_state_t *s, const screen_flags_t *sf) {
+    (void)s;
+    if (sf->frame&ANIM_FRAME_NORMAL_TIME) {
+        pw_screen_draw_from_eeprom(
+            PW_SCREEN_WIDTH - 9,
+            PW_SCREEN_HEIGHT - 9,
+            8, 8,
+            PW_EEPROM_ADDR_IMG_MORE_MESSAGE,
+            PW_EEPROM_SIZE_IMG_MORE_MESSAGE,
+            false
+        );
+    } else {
+        pw_screen_clear_area(PW_SCREEN_WIDTH - 9, PW_SCREEN_HEIGHT - 9, 8, 8);
+    }
+}
 /*
 static void replace_item_draw_update(pw_state_t *s, const screen_flags_t *sf) {
     for(uint8_t i = 0; i < 3; i++) {
@@ -265,7 +287,7 @@ static void replace_item_draw_update(pw_state_t *s, const screen_flags_t *sf) {
             8, 8,
             PW_EEPROM_ADDR_IMG_ARROW_UP_NORMAL,
             PW_EEPROM_SIZE_IMG_ARROW,
-            false
+            true
         );
     } else {
         pw_screen_draw_from_eeprom(
@@ -273,7 +295,7 @@ static void replace_item_draw_update(pw_state_t *s, const screen_flags_t *sf) {
             8, 8,
             PW_EEPROM_ADDR_IMG_ARROW_UP_OFFSET,
             PW_EEPROM_SIZE_IMG_ARROW,
-            false
+            true
         );
     }
 
@@ -323,6 +345,17 @@ static void check_guess_draw_init(pw_state_t *s, const screen_flags_t *sf) {
         PW_EEPROM_SIZE_IMG_CHAR,
         false
     );
+
+    pw_screen_draw_from_eeprom(
+        0, 0,
+        32, 24,
+        PW_EEPROM_ADDR_IMG_ROUTE_LARGE,
+        PW_EEPROM_SIZE_IMG_ROUTE_LARGE,
+        true
+    );
+
+    choosing_draw_update(s, sf);
+
     s->dowsing.current_substate = s->dowsing.current_substate;
 
 }
@@ -416,6 +449,7 @@ void pw_dowsing_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *s
                 s->dowsing.user_input = false;
                 s->dowsing.current_substate = DOWSING_AWAIT_INPUT;
                 s->dowsing.next_substate = DOWSING_INTERMEDIATE;
+                switch_substate(s, DOWSING_AWAIT_INPUT);
             } else {
                 s->dowsing.choices_remaining = 0;  // we got it wrong
                 switch_substate(s, DOWSING_REVEAL_ITEM);
@@ -446,9 +480,10 @@ void pw_dowsing_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *s
             //pw_screen_draw_text_box(0, PW_SCREEN_HEIGHT-16, PW_SCREEN_WIDTH, 16, 0x3);
         }
 
-        s->dowsing.user_input = 0;
+        s->dowsing.user_input = false;
         s->dowsing.current_substate = DOWSING_AWAIT_INPUT;
         s->dowsing.next_substate = DOWSING_CHOOSING;
+        switch_substate(s, DOWSING_AWAIT_INPUT);
         break;
     }
     case DOWSING_GIVE_ITEM: {
@@ -494,7 +529,6 @@ void pw_dowsing_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *s
 
         if( avail >= 3 ) {
             s->dowsing.current_cursor = 0;
-
             s->dowsing.user_input = false;
             s->dowsing.current_substate = DOWSING_AWAIT_INPUT;
             s->dowsing.next_substate = DOWSING_GO_TO_SWITCH;
@@ -517,7 +551,7 @@ void pw_dowsing_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *s
         pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO, (uint8_t*)route_info, sizeof(route_info_t));
         // TODO: Read special route flag
         pw_log_event(event_log, route_info, EVENT_TYPE_ITEM_DOWSED, s->dowsing.chosen_item, false, 0);
-
+        switch_substate(s, DOWSING_AWAIT_INPUT);
         break;
     }
     case DOWSING_REVEAL_ITEM: {
@@ -536,6 +570,7 @@ void pw_dowsing_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *s
             s->dowsing.user_input = false;
             s->dowsing.current_substate = DOWSING_AWAIT_INPUT;
             s->dowsing.next_substate = DOWSING_QUITTING;
+            switch_substate(s, DOWSING_AWAIT_INPUT);
         }
         break;
     }

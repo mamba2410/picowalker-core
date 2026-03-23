@@ -131,6 +131,7 @@ typedef struct {
     uint8_t substate_queue_len;
     uint8_t wobbles;
     uint8_t update_hp; // bit 0 = ours, bit 1 = theirs
+    bool user_input;
 } app_battle_t;
 
 typedef struct {
@@ -148,6 +149,7 @@ typedef struct {
 typedef struct {
     uint8_t current_substate;
     int8_t cursor;
+    uint8_t previous_color_mode;
 } app_picowalker_t;
 
 typedef struct {

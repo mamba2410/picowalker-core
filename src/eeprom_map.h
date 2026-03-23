@@ -111,10 +111,10 @@
 #define PW_EEPROM_SIZE_IMG_MENU_ARROW_RETURN 32
 //#define PW_EEPROM_ADDR_0x0618 0x0618  // unused
 //#define PW_EEPROM_SIZE_0x0618 40
-#define PW_EEPROM_ADDR_0x0638 0x0638  // symbol for "have more message" in the bottom right of messages. orred into last 8 columns (thus 16 bytes). applied after 0x0648
-#define PW_EEPROM_SIZE_0x0638 16
-#define PW_EEPROM_ADDR_0x0648 0x0648  // symbol for "have more messages" in the bottom right of messages. each byte here is anded with each col of last 8 in the message. both bitplanes (so you can make it black or keep as is). applied before 0x0638
-#define PW_EEPROM_SIZE_0x0648 8
+#define PW_EEPROM_ADDR_IMG_MORE_MESSAGE 0x0638  // symbol for "have more message" in the bottom right of messages. orred into last 8 columns (thus 16 bytes). applied after 0x0648
+#define PW_EEPROM_SIZE_IMG_MORE_MESSAGE 16
+#define PW_EEPROM_ADDR_IMG_MORE_MESSAGES 0x0648  // symbol for "have more messages" in the bottom right of messages. each byte here is anded with each col of last 8 in the message. both bitplanes (so you can make it black or keep as is). applied before 0x0638
+#define PW_EEPROM_SIZE_IMG_MORE_MESSAGES 8
 #define PW_EEPROM_ADDR_0x0650 0x0650  // medicine vial (?) icon 8x8
 #define PW_EEPROM_SIZE_0x0650 16
 #define PW_EEPROM_ADDR_IMG_LOW_BATTERY 0x0660  // low battery icon 8x8

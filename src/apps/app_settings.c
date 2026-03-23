@@ -103,7 +103,7 @@ void pw_settings_init_display(pw_state_t *s, const screen_flags_t *sf) {
             8, 16,
             PW_EEPROM_ADDR_IMG_MENU_ARROW_RETURN,
             PW_EEPROM_SIZE_IMG_MENU_ARROW_RETURN,
-            false
+            true
         );
         pw_screen_draw_from_eeprom(
             8, 16,
@@ -140,7 +140,7 @@ void pw_settings_init_display(pw_state_t *s, const screen_flags_t *sf) {
             8, 8,
             PW_EEPROM_ADDR_IMG_ARROW_RIGHT_INVERT,
             PW_EEPROM_SIZE_IMG_ARROW,
-            false
+            true
         );
         pw_screen_draw_from_eeprom(
             8, 40,
@@ -171,7 +171,7 @@ void pw_settings_init_display(pw_state_t *s, const screen_flags_t *sf) {
             8, 8,
             addr,
             PW_EEPROM_SIZE_IMG_ARROW,
-            false
+            true
         );
 
         break;
@@ -182,7 +182,7 @@ void pw_settings_init_display(pw_state_t *s, const screen_flags_t *sf) {
             8, 8,
             PW_EEPROM_ADDR_IMG_ARROW_RIGHT_INVERT,
             PW_EEPROM_SIZE_IMG_ARROW,
-            false
+            true
         );
         pw_img_t shade_bars = {
             .width=8,
@@ -211,7 +211,7 @@ void pw_settings_init_display(pw_state_t *s, const screen_flags_t *sf) {
             8, 8,
             addr,
             PW_EEPROM_SIZE_IMG_ARROW,
-            false
+            true
         );
 
         pw_screen_pos_t x = 8+N_SHADE_OPTIONS*8;
@@ -240,7 +240,7 @@ void pw_settings_update_display(pw_state_t *s, const screen_flags_t *sf) {
             8, 8,
             addr,
             PW_EEPROM_SIZE_IMG_ARROW,
-            false
+            true
         );
         for(int i = 0; i < N_MAIN_OPTIONS; i++) {
             if(i == s->settings.main_cursor) continue;
@@ -261,7 +261,7 @@ void pw_settings_update_display(pw_state_t *s, const screen_flags_t *sf) {
             8, 8,
             addr,
             PW_EEPROM_SIZE_IMG_ARROW,
-            false
+            true
         );
         for(int i = 0; i < N_SOUND_OPTIONS; i++) {
             if(i == s->settings.sub_cursor) continue;
@@ -280,7 +280,7 @@ void pw_settings_update_display(pw_state_t *s, const screen_flags_t *sf) {
                 8, 8,
                 addr,
                 PW_EEPROM_SIZE_IMG_ARROW,
-                false
+                true
             );
             for(int i = 0; i < N_SHADE_OPTIONS; i++) {
                 if(i == s->settings.sub_cursor) continue;

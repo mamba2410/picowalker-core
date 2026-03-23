@@ -39,7 +39,7 @@ static void draw_cursor_update(pw_state_t *s, const screen_flags_t *sf) {
         8, 8,
         (sf->frame&ANIM_FRAME_NORMAL_TIME)? PW_EEPROM_ADDR_IMG_ARROW_RIGHT_NORMAL:PW_EEPROM_ADDR_IMG_ARROW_RIGHT_OFFSET,
         PW_EEPROM_SIZE_IMG_ARROW,
-        false
+        true
     );
 
     for(uint8_t i = 0; i < 4; i++) {
@@ -169,6 +169,18 @@ void pw_poke_radar_update_display(pw_state_t *s, const screen_flags_t *sf) {
     }
     case RADAR_FAILED: {
         draw_cursor_update(s, sf);
+        if (sf->frame & ANIM_FRAME_NORMAL_TIME) {
+            pw_screen_draw_from_eeprom(
+                PW_SCREEN_WIDTH - 9,
+                PW_SCREEN_HEIGHT - 9,
+                8, 8,
+                PW_EEPROM_ADDR_IMG_MORE_MESSAGE,
+                PW_EEPROM_SIZE_IMG_MORE_MESSAGE,
+                false
+            );
+        } else {
+            pw_screen_clear_area(PW_SCREEN_WIDTH - 9, PW_SCREEN_HEIGHT - 9, 8, 8);
+        }
         break;
     }
     case RADAR_START_BATTLE: {
@@ -242,7 +254,7 @@ void pw_poke_radar_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t
     case RADAR_CHOOSING: {
         if(s->radar.invisible_timer <= 0 && s->radar.active_timer <= 0) {
             s->radar.current_substate = RADAR_FAILED;
-	    pw_audio_play_sound(SOUND_MINIGAME_FAIL);
+	        pw_audio_play_sound(SOUND_BATTLE_FLED);
             PW_SET_REQUEST(s->requests, PW_REQUEST_REDRAW);
         }
         break;

@@ -52,14 +52,14 @@ void pw_trainer_card_init_display(pw_state_t *s, const screen_flags_t *sf) {
         8, 16,
         PW_EEPROM_ADDR_IMG_MENU_ARROW_RETURN,
         PW_EEPROM_SIZE_IMG_MENU_ARROW_RETURN,
-        false
+        true
     );
     pw_screen_draw_from_eeprom(
         PW_SCREEN_WIDTH-8, 0,
         8, 16,
         PW_EEPROM_ADDR_IMG_MENU_ARROW_RIGHT,
         PW_EEPROM_SIZE_IMG_MENU_ARROW_RIGHT,
-        false
+        true
     );
 
     pw_screen_draw_from_eeprom(
@@ -111,7 +111,7 @@ void pw_trainer_card_draw_dayview(uint8_t day, uint32_t day_steps,
         8, 16,
         PW_EEPROM_ADDR_IMG_MENU_ARROW_LEFT,
         PW_EEPROM_SIZE_IMG_MENU_ARROW_LEFT,
-        false
+        true
     );
     x+=8;
 
@@ -147,7 +147,7 @@ void pw_trainer_card_draw_dayview(uint8_t day, uint32_t day_steps,
         8, 16,
         PW_EEPROM_ADDR_IMG_MENU_ARROW_RIGHT,
         PW_EEPROM_SIZE_IMG_MENU_ARROW_RIGHT,
-        false
+        true
     );
     x+=8;
 

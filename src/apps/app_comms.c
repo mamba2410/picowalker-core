@@ -6,6 +6,7 @@
 #include "../states.h"
 #include "../buttons.h"
 #include "../screen.h"
+#include "../audio.h"
 #include "../eeprom_map.h"
 #include "../flash.h"
 #include "../ir/ir.h"
@@ -410,6 +411,7 @@ void pw_comms_draw_update(pw_state_t *s, const screen_flags_t *sf) {
         case COMM_SUBSTATE_FINDING_PEER:
         case COMM_SUBSTATE_DETERMINE_ROLE:
         case COMM_SUBSTATE_AWAITING_SLAVE_ACK:
+        case COMM_SUBSTATE_SLAVE_PERFORM_REQUEST:
         case COMM_SUBSTATE_START_PEER_PLAY:
         case COMM_SUBSTATE_PEER_PLAY_ACK:
         case COMM_SUBSTATE_SEND_MASTER_SPRITES:
@@ -448,6 +450,18 @@ void pw_comms_draw_update(pw_state_t *s, const screen_flags_t *sf) {
             if(s->comms.anim_frame == 0) {
                 pw_comms_init_display(s, sf);
                 s->comms.anim_frame++;
+            }
+            if (sf->frame & ANIM_FRAME_NORMAL_TIME) {
+                pw_screen_draw_from_eeprom(
+                    PW_SCREEN_WIDTH - 9,
+                    PW_SCREEN_HEIGHT - 9,
+                    8, 8,
+                    PW_EEPROM_ADDR_IMG_MORE_MESSAGE,
+                    PW_EEPROM_SIZE_IMG_MORE_MESSAGE,
+                    false
+                );
+            } else {
+                pw_screen_clear_area(PW_SCREEN_WIDTH - 9, PW_SCREEN_HEIGHT - 9, 8, 8);
             }
             break;
         }
@@ -508,6 +522,7 @@ void pw_comms_draw_update(pw_state_t *s, const screen_flags_t *sf) {
                     );
                     pw_screen_draw_message(PW_SCREEN_HEIGHT-16, 13, 16);
                     pw_screen_draw_text_box(0, PW_SCREEN_HEIGHT-32, PW_SCREEN_WIDTH, 32, PW_SCREEN_BLACK);
+                    pw_audio_play_sound(SOUND_BATTLE_CAUGHT);
                     break;
                 }
                 case 9:
@@ -593,6 +608,7 @@ void pw_comms_draw_update(pw_state_t *s, const screen_flags_t *sf) {
                     );
                     pw_screen_draw_message(PW_SCREEN_HEIGHT-16, 14, 16); // "has left"
                     pw_screen_draw_text_box(0, PW_SCREEN_HEIGHT-32, PW_SCREEN_WIDTH, 32, PW_SCREEN_BLACK);
+                    pw_audio_play_sound(SOUND_BATTLE_CAUGHT);
                 }
                 default: break;
             }
@@ -656,21 +672,16 @@ void pw_comms_draw_update(pw_state_t *s, const screen_flags_t *sf) {
                 s->comms.anim_frame++;
             }
 
-            if(sf->frame&ANIM_FRAME_NORMAL_TIME) {
-                pw_img_t img = {
-                    .width=8,
-                    .height=8,
-                    .data=eeprom_buf,
-                    .size=16,
-                    .lookup_table = {
-                        .addr=PW_FLASH_IMG_IR_ACTIVE,
-                        .use_alt=false
-                    }
-                };
-                pw_flash_read(PW_FLASH_IMG_IR_ACTIVE, img.data);
-                pw_screen_draw_img(&img, (PW_SCREEN_WIDTH-8)/2, 0);
+            if(sf->frame & ANIM_FRAME_NORMAL_TIME) {
+                pw_screen_draw_from_eeprom(
+                    (PW_SCREEN_WIDTH-8)/2, 0,
+                    8, 16,
+                    PW_EEPROM_ADDR_IMG_IR_ARCS,
+                    PW_EEPROM_SIZE_IMG_IR_ARCS,
+                    true
+                );
             } else {
-                pw_screen_clear_area((PW_SCREEN_WIDTH-8)/2, 0, 8, 8);
+                pw_screen_clear_area((PW_SCREEN_WIDTH-8)/2, 0, 8, 16);
             }
             break;
         }

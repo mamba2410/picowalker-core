@@ -11,6 +11,15 @@
 
 #define SCREEN_REDRAW_DELAY_US  250000  // 250ms
 
+/**
+ * An image queue data structure for pokewalker images 
+ * post processing
+ */
+typedef struct pw_img_queue_s {
+    pw_img_t *img;
+    pw_screen_pos_t x;
+    pw_screen_pos_t y;
+} pw_img_queue_t;
 
 /*
  *  Derived functions
@@ -34,7 +43,7 @@ void pw_screen_draw_message_with_text_box(pw_screen_pos_t y, uint8_t message_ind
 void pw_screen_draw_pokemon_name_and_message(pw_eeprom_addr_t poke_addr, pw_eeprom_addr_t message_addr, pw_screen_color_t c);
 void pw_screen_overlay_img(pw_img_t *base, pw_img_t *img, pw_screen_pos_t x, pw_screen_pos_t y);
 void pw_screen_get_blank_image(pw_img_t *img, pw_screen_dim_t w, pw_screen_dim_t h);
-
+void pw_screen_draw_queue(pw_img_queue_t *queue, uint8_t count);
 
 /*
  * Functions defined by the driver
