@@ -295,6 +295,7 @@ void pw_menu_update_display(pw_state_t *s, const screen_flags_t *sf) {
                 .height=16,
                 .data=eeprom_buf,
                 .size=PW_EEPROM_SIZE_TEXT_NEED_WATTS,
+                .is_flipped=false,
                 .lookup_table = {
                     .addr=addr,
                     .use_alt=false

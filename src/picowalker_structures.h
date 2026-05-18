@@ -60,6 +60,7 @@ typedef struct pw_img_s {
     pw_screen_dim_t width, height;
     uint8_t *data;
     size_t size;
+    bool is_flipped: 1;
 
     struct {
         pw_eeprom_addr_t addr;

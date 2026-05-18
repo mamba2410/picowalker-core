@@ -137,6 +137,7 @@ void pw_dowsing_init_display(pw_state_t *s, const screen_flags_t *sf) {
         .height=16, 
         .data=img_buf,
         .size=PW_EEPROM_SIZE_IMG_DOWSING_BUSH_DARK,
+        .is_flipped=false,
         .lookup_table = {
             .addr=PW_EEPROM_ADDR_IMG_DOWSING_BUSH_DARK,
             .use_alt=true
@@ -507,6 +508,7 @@ void pw_dowsing_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *s
             .height=32,
             .data=eeprom_buf,
             .size=2*PW_EEPROM_SIZE_TEXT_FOUND,
+            .is_flipped=false,
             .lookup_table = {
                 .addr=PW_EEPROM_ADDR_TEXT_ITEM_NAMES,
                 .use_alt=false
