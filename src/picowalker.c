@@ -30,6 +30,7 @@ pw_state_t a1, a2;
 pw_state_t *current_state = &a1, *pending_state = &a2;
 screen_flags_t screen_flags;
 uint8_t pw_color_mode = 0;
+bool pw_is_walking = false;
 
 void (*pw_current_loop)(void);
 

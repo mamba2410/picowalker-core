@@ -50,6 +50,11 @@ extern int pw_power_get_mode();
 extern uint8_t pw_color_mode;
 
 /**
+ * Walking animation for the splash screen
+ */
+extern bool pw_is_walking;
+
+/**
  * Debug log functions
  */
 #define pw_log_error(s, ...) pw_log_write("[Error] " s __VA_OPT__(,) __VA_ARGS__)

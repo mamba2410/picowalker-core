@@ -12,12 +12,22 @@
 #include "../types.h"
 #include "../globals.h"
 
+#include "../picowalker_core.h"
+
 /// @file app_splash.c
 
 enum {
     SPLASH_NORMAL,
     SPLASH_GO_TO_MENU,
 };
+
+enum {
+    IDLE,
+    WALKING,
+    STROLLING,
+};
+
+const pw_screen_pos_t origin = 32;
 
 void pw_splash_init(pw_state_t *s, const screen_flags_t *sf) {
     (void)sf;
@@ -52,6 +62,12 @@ void pw_splash_handle_input(pw_state_t *s, const screen_flags_t *sf, pw_buttons_
 }
 
 void pw_splash_init_display(pw_state_t *s, const screen_flags_t *sf) {
+
+    s->splash.walking = IDLE;
+    s->splash.offset = 0;
+    s->splash.anim_frame = 0;
+    s->splash.is_flipped = false;
+
     (void)sf;
     if(s->splash.inventory.caught_pokemon & INV_WALKING_POKEMON) {
         pw_screen_draw_from_eeprom(
@@ -143,16 +159,97 @@ void pw_splash_update_display(pw_state_t *s, const screen_flags_t *sf) {
     }
 
     if(s->splash.inventory.caught_pokemon & INV_WALKING_POKEMON) {
-        pw_screen_draw_from_eeprom(
-            PW_SCREEN_WIDTH-64, 0,
-            64, 48,
-            frame_addr,
-            PW_EEPROM_SIZE_IMG_POKEMON_LARGE_ANIMATED_FRAME,
-            true
-        );
 
+        pw_screen_clear_area(32, 0, 64, 48);
+        switch(s->splash.walking) {
+            case IDLE: {
+                pw_screen_draw_from_eeprom(
+                    PW_SCREEN_WIDTH-64, 0,
+                    64, 48,
+                    frame_addr,
+                    PW_EEPROM_SIZE_IMG_POKEMON_LARGE_ANIMATED_FRAME,
+                    true
+                );
+                if (pw_is_walking) s->splash.walking = WALKING;
+                break;
+            }
+            case WALKING: {
+                pw_screen_draw_from_eeprom(
+                    origin + s->splash.offset, 0,
+                    64, 48,
+                    frame_addr,
+                    PW_EEPROM_SIZE_IMG_POKEMON_LARGE_ANIMATED_FRAME,
+                    true
+                );
+
+                // Move right if still walking, move left if done walking...
+                if (pw_is_walking) {
+                    if (s->splash.offset >= PW_SCREEN_WIDTH - origin) {
+                        s->splash.walking = STROLLING;
+                        s->splash.offset = (PW_SCREEN_WIDTH - origin);
+                    }
+                    else s->splash.offset += 4;
+                }
+                else {
+                    if (s->splash.offset <= 0) {
+                        s->splash.walking = IDLE;
+                        s->splash.offset = 0;
+                    }
+                    else s->splash.offset -= 4;
+                }
+                break;
+            }
+            case STROLLING: {
+                if (pw_is_walking) {
+                    if (s->splash.offset <= 0 && !s->splash.is_flipped) {
+                        s->splash.is_flipped = true;
+                        s->splash.offset = 0;
+                    }
+
+                    if (s->splash.offset >= 32 && s->splash.is_flipped) {
+                        s->splash.is_flipped = false;
+                        s->splash.offset = 32;
+                    }
+
+                    if(sf->frame&ANIM_FRAME_DOUBLE_TIME) {
+                        frame_addr = PW_EEPROM_ADDR_IMG_POKEMON_SMALL_ANIMATED_FRAME1;
+                    } else {
+                        frame_addr = PW_EEPROM_ADDR_IMG_POKEMON_SMALL_ANIMATED_FRAME2;
+                    }
+
+                    pw_img_t img = {
+                        .width=32, 
+                        .height=24,
+                        .data=decompression_buf,
+                        .size=PW_EEPROM_SIZE_IMG_POKEMON_SMALL_ANIMATED_FRAME, 
+                        .is_flipped=s->splash.is_flipped,
+                        .lookup_table = {
+                            .addr=frame_addr,
+                            .use_alt=true
+                        }
+                    };
+                    pw_eeprom_read(frame_addr, img.data, PW_EEPROM_SIZE_IMG_POKEMON_SMALL_ANIMATED_FRAME);
+
+                    pw_screen_draw_img(&img, origin + s->splash.offset, 24);
+                    
+                    if (s->splash.anim_frame >= 3 && s->splash.anim_frame % 2 == 0) {
+                        if (img.is_flipped) s->splash.offset += 4;
+                        else s->splash.offset -= 4;
+                        s->splash.anim_frame = 0;
+                    }
+                    s->splash.anim_frame++;
+                }
+                else {
+                    s->splash.walking = WALKING;
+                    s->splash.offset = (PW_SCREEN_WIDTH - origin);
+                    s->splash.anim_frame = 0;
+                }
+                break;
+            }
+        }
     }
 
+    if (pw_is_walking) pw_accel_process_steps();
     pw_screen_pos_t left_x = pw_screen_draw_integer_with_overline(health_data_cache.today_steps, PW_SCREEN_WIDTH, PW_SCREEN_HEIGHT-16, PW_SCREEN_BLACK);
     pw_screen_draw_horiz_line(0, PW_SCREEN_HEIGHT-16, left_x, PW_SCREEN_BLACK);
 
