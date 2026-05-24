@@ -103,6 +103,7 @@ static void draw_color_option(pw_screen_pos_t x, pw_screen_pos_t y) {
         .width = 48,
         .height = 16,
         .size = 48*16/4,
+        .is_flipped=false,
         .lookup_table = {
             .addr=-1,
             .use_alt=false
@@ -134,6 +135,7 @@ void pw_picowalker_settings_init_display(pw_state_t *s, const screen_flags_t *sf
         .height=16,
         .data=picowalker_border_text,
         .size=80*16/4,
+        .is_flipped=false,
         .lookup_table = {
             .addr=-1,
             .use_alt=false
@@ -158,6 +160,7 @@ void pw_picowalker_settings_init_display(pw_state_t *s, const screen_flags_t *sf
         .height=16,
         .data=battery_fancy_text,
         .size=32*16/4, // 48*16/4
+        .is_flipped=false,
         .lookup_table = {
             .addr=-1,
             .use_alt=false
@@ -173,6 +176,7 @@ void pw_picowalker_settings_init_display(pw_state_t *s, const screen_flags_t *sf
         .height=16,
         .data=percent_char,
         .size=8*16/4,
+        .is_flipped=false,
         .lookup_table = {
             .addr=-1,
             .use_alt=false
@@ -215,6 +219,7 @@ void pw_picowalker_settings_update_display(pw_state_t *s, const screen_flags_t *
         .height=16,
         .data=battery_fancy_text,
         .size=32*16/4, // 48*16/4
+        .is_flipped=false,
         .lookup_table = {
             .addr=-1,
             .use_alt=false
@@ -230,6 +235,7 @@ void pw_picowalker_settings_update_display(pw_state_t *s, const screen_flags_t *
         .height=16,
         .data=percent_char,
         .size=8*16/4,
+        .is_flipped=false,
         .lookup_table = {
             .addr=-1,
             .use_alt=false

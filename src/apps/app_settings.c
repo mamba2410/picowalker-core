@@ -125,6 +125,7 @@ void pw_settings_init_display(pw_state_t *s, const screen_flags_t *sf) {
             .height=16,
             .data=picowalker_fancy_text,
             .size=88*16/4,
+            .is_flipped=false,
             .lookup_table = {
                 .addr=-1,
                 .use_alt=false
@@ -189,6 +190,7 @@ void pw_settings_init_display(pw_state_t *s, const screen_flags_t *sf) {
             .height=16,
             .data=eeprom_buf,
             .size=PW_EEPROM_ADDR_IMG_CONTRAST_DEMONSTRATOR,
+            .is_flipped=false,
             .lookup_table = {
                 .addr=PW_EEPROM_ADDR_IMG_CONTRAST_DEMONSTRATOR,
                 .use_alt=true

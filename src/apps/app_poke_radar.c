@@ -89,6 +89,7 @@ void pw_poke_radar_init_display(pw_state_t *s, const screen_flags_t *sf) {
             .height=24,
             .data=eeprom_buf,
             .size=192,
+            .is_flipped=false,
             .lookup_table = {
                 .addr=PW_EEPROM_ADDR_IMG_RADAR_BUSH,
                 .use_alt=true

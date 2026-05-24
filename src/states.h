@@ -40,6 +40,10 @@ typedef struct {
     pw_brief_inventory_t inventory;
     int8_t menu_cursor;
     uint8_t current_substate;
+    uint8_t walking;
+    uint8_t offset;
+    uint8_t anim_frame;
+    uint8_t is_flipped;
 } app_splash_t;
 
 /*

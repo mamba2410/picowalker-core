@@ -357,6 +357,7 @@ void pw_comms_init_display(pw_state_t *s, const screen_flags_t *sf) {
                 .height=32, 
                 .data=eeprom_buf,
                 .size=256, 
+                .is_flipped=false,
                 .lookup_table = {
                     .addr=0, // PW_EEPROM_ADDR_IMG_POKEWALKER_BIG, // FLASH_IMG_POKEWALKER
                     .use_alt=true
@@ -370,6 +371,7 @@ void pw_comms_init_display(pw_state_t *s, const screen_flags_t *sf) {
                 .height=8, 
                 .data=eeprom_buf,
                 .size=32, 
+                .is_flipped=false,
                 .lookup_table = {
                     .addr=-1,
                     .use_alt=false
@@ -385,6 +387,7 @@ void pw_comms_init_display(pw_state_t *s, const screen_flags_t *sf) {
                 .height=8,
                 .data=eeprom_buf,
                 .size=32,
+                .is_flipped=false,
                 .lookup_table = {
                     .addr=-1, // FLASH_IMG_FACE_HAPPY,
                     .use_alt=false
@@ -631,6 +634,7 @@ void pw_comms_draw_update(pw_state_t *s, const screen_flags_t *sf) {
                 .height=8,
                 .data=eeprom_buf,
                 .size=16,
+                .is_flipped=false,
                 .lookup_table = {
                     .addr=PW_FLASH_IMG_UP_ARROW,
                     .use_alt=false
@@ -656,6 +660,7 @@ void pw_comms_draw_update(pw_state_t *s, const screen_flags_t *sf) {
                 .height=8,
                 .data=eeprom_buf,
                 .size=32,
+                .is_flipped=false,
                 .lookup_table = {
                     .addr=PW_FLASH_IMG_FACE_SAD,
                     .use_alt=false

@@ -60,6 +60,7 @@ typedef struct pw_img_s {
     pw_screen_dim_t width, height;
     uint8_t *data;
     size_t size;
+    bool is_flipped: 1;
 
     struct {
         pw_eeprom_addr_t addr;
@@ -175,9 +176,10 @@ typedef enum pw_buttons_e {
  *  Functions defined by driver
  */
 void pw_accel_init();
-uint32_t pw_accel_get_new_steps();
 void pw_accel_sleep();
 void pw_accel_wake();
+uint32_t pw_accel_get_new_steps();
+uint8_t pw_accel_get_activity();
 
 /*
  *  ==================================================================================

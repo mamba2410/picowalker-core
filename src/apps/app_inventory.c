@@ -221,6 +221,7 @@ static void draw_animated_sprite(pw_state_t *s, const screen_flags_t *sf) {
         .height=24,
         .data=buf,
         .size=192, // 32*24/4
+        .is_flipped=false,
         .lookup_table = {
             .addr=-1,
             .use_alt=true
@@ -235,7 +236,7 @@ static void draw_animated_sprite(pw_state_t *s, const screen_flags_t *sf) {
         pw_eeprom_addr_t addr;
         pokemon_summary_t pokemon;
         pokemon_index_t pokemon_index = pw_pokemon_id_to_pokemon_index(gdetailed.entries[s->inventory.current_cursor], &pokemon);
-        pw_pokemon_index_to_small_sprite(pokemon_index, buf, (sf->frame&ANIM_FRAME_NORMAL_TIME)>>ANIM_FRAME_NORMAL_TIME_OFFSET, &addr);
+        pw_pokemon_index_to_small_sprite(pokemon_index, buf, (sf->frame&ANIM_FRAME_DOUBLE_TIME)>>ANIM_FRAME_DOUBLE_TIME_OFFSET, &addr);
         sprite.lookup_table.addr = addr;
         sprite.lookup_table.metadata.pokemon.species = pokemon.le_species;
         sprite.lookup_table.metadata.pokemon.pokemon_flags_1 = pokemon.pokemon_flags_1;
@@ -274,6 +275,7 @@ static void draw_name(pw_state_t *s, const screen_flags_t *sf) {
             .height=16,
             .data=buf,
             .size=PW_EEPROM_SIZE_TEXT_POKEMON_NAME,
+            .is_flipped=false,
             .lookup_table = {
                 .addr=-1,
                 .use_alt=false
@@ -288,6 +290,7 @@ static void draw_name(pw_state_t *s, const screen_flags_t *sf) {
             .height=16,
             .data=buf,
             .size=PW_EEPROM_SIZE_TEXT_ITEM_NAME_SINGLE,
+            .is_flipped=false,
             .lookup_table = {
                 .addr=-1,
                 .use_alt=false
@@ -336,6 +339,7 @@ static void pw_inventory_draw_screen1(pw_state_t *s, const screen_flags_t *sf) {
         .height=8,
         .data=buf_pokeball,
         .size=PW_EEPROM_SIZE_IMG_BALL,
+        .is_flipped=false,
         .lookup_table = {
             .addr=PW_EEPROM_ADDR_IMG_BALL,
             .use_alt=true
@@ -348,6 +352,7 @@ static void pw_inventory_draw_screen1(pw_state_t *s, const screen_flags_t *sf) {
         .height=8,
         .data=buf_item,
         .size=PW_EEPROM_SIZE_IMG_ITEM,
+        .is_flipped=false,
         .lookup_table = {
             .addr=PW_EEPROM_ADDR_IMG_ITEM,
             .use_alt=true
@@ -430,6 +435,7 @@ static void pw_inventory_draw_screen2(pw_state_t *s, const screen_flags_t *sf) {
         .height=8,
         .data=buf_item,
         .size=PW_EEPROM_SIZE_IMG_ITEM,
+        .is_flipped=false,
         .lookup_table = {
             .addr=PW_EEPROM_ADDR_IMG_ITEM,
             .use_alt=true

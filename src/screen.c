@@ -18,6 +18,7 @@ void pw_screen_draw_from_eeprom(pw_screen_pos_t x, pw_screen_pos_t y, pw_screen_
         .height=h,
         .data=eeprom_buf,
         .size=len,
+        .is_flipped=false,
         .lookup_table = {
             .addr=addr,
             .use_alt=use_alt
@@ -33,6 +34,7 @@ void pw_screen_draw_from_eeprom_with_text_box(pw_screen_pos_t x, pw_screen_pos_t
         .height=h,
         .data=eeprom_buf,
         .size=len,
+        .is_flipped=false,
         .lookup_table = {
             .addr=addr,
             .use_alt=false
@@ -79,6 +81,7 @@ pw_screen_pos_t pw_screen_draw_integer_with_overline(uint32_t n, pw_screen_pos_t
             .height=16,
             .data=eeprom_buf,
             .size=PW_EEPROM_SIZE_IMG_CHAR,
+            .is_flipped=false,
             .lookup_table = {
                 .addr=PW_EEPROM_ADDR_IMG_DIGITS+PW_EEPROM_SIZE_IMG_CHAR*idx,
                 .use_alt=false
@@ -149,6 +152,7 @@ void pw_screen_draw_message(pw_screen_pos_t y, uint8_t message_index, pw_screen_
         .height=h,
         .data=eeprom_buf,
         .size=sz,
+        .is_flipped=false,
         .lookup_table = {
             .addr=addr,
             .use_alt=false
@@ -174,6 +178,7 @@ void pw_screen_draw_message_with_text_box(pw_screen_pos_t y, uint8_t message_ind
         .height=h,
         .data=eeprom_buf,
         .size=sz,
+        .is_flipped=false,
         .lookup_table = {
             .addr=addr,
             .use_alt=false
@@ -191,6 +196,7 @@ void pw_screen_draw_pokemon_name_and_message(pw_eeprom_addr_t poke_addr, pw_eepr
         .height=32,
         .data=eeprom_buf,
         .size=2*PW_EEPROM_SIZE_TEXT_APPEARED,
+        .is_flipped=false,
         .lookup_table = {
             .addr=poke_addr,
             .use_alt=false
@@ -231,9 +237,7 @@ void pw_screen_overlay_text_box(pw_img_t *img, pw_screen_dim_t w, pw_screen_dim_
             for(int j = 2*img->width - 1; j >= 0; j--) {
                 img->data[i*2*w+j] = img->data[i*2*img->width + j];
             }
-            if(i > 0) {
-                memset(&img->data[i*2*img->width], 0, 2*(w-img->width));
-            }
+            memset(&img->data[i*2*w + 2*img->width], 0, 2*(w-img->width));
         }
         img->width = w;
         img->size = img->height * img->width;
