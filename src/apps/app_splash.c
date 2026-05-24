@@ -10,6 +10,7 @@
 #include "../audio.h"
 #include "../utils.h"
 #include "../types.h"
+#include "../accel.h"
 #include "../globals.h"
 
 #include "../picowalker_core.h"
@@ -160,7 +161,10 @@ void pw_splash_update_display(pw_state_t *s, const screen_flags_t *sf) {
 
     if(s->splash.inventory.caught_pokemon & INV_WALKING_POKEMON) {
 
-        pw_screen_clear_area(32, 0, 64, 48);
+        if (s->splash.walking == WALKING || s->splash.walking == STROLLING) {
+            pw_screen_clear_area(32, 0, 64, 48);
+        }
+
         switch(s->splash.walking) {
             case IDLE: {
                 pw_screen_draw_from_eeprom(
@@ -170,7 +174,7 @@ void pw_splash_update_display(pw_state_t *s, const screen_flags_t *sf) {
                     PW_EEPROM_SIZE_IMG_POKEMON_LARGE_ANIMATED_FRAME,
                     true
                 );
-                if (pw_is_walking) s->splash.walking = WALKING;
+                if (pw_accel_get_activity() != 0) s->splash.walking = WALKING;
                 break;
             }
             case WALKING: {
@@ -183,7 +187,7 @@ void pw_splash_update_display(pw_state_t *s, const screen_flags_t *sf) {
                 );
 
                 // Move right if still walking, move left if done walking...
-                if (pw_is_walking) {
+                if (pw_accel_get_activity() != 0) {
                     if (s->splash.offset >= PW_SCREEN_WIDTH - origin) {
                         s->splash.walking = STROLLING;
                         s->splash.offset = (PW_SCREEN_WIDTH - origin);
@@ -200,7 +204,7 @@ void pw_splash_update_display(pw_state_t *s, const screen_flags_t *sf) {
                 break;
             }
             case STROLLING: {
-                if (pw_is_walking) {
+                if (pw_accel_get_activity() != 0) {
                     if (s->splash.offset <= 0 && !s->splash.is_flipped) {
                         s->splash.is_flipped = true;
                         s->splash.offset = 0;
@@ -249,7 +253,6 @@ void pw_splash_update_display(pw_state_t *s, const screen_flags_t *sf) {
         }
     }
 
-    if (pw_is_walking) pw_accel_process_steps();
     pw_screen_pos_t left_x = pw_screen_draw_integer_with_overline(health_data_cache.today_steps, PW_SCREEN_WIDTH, PW_SCREEN_HEIGHT-16, PW_SCREEN_BLACK);
     pw_screen_draw_horiz_line(0, PW_SCREEN_HEIGHT-16, left_x, PW_SCREEN_BLACK);
 
@@ -258,15 +261,21 @@ void pw_splash_update_display(pw_state_t *s, const screen_flags_t *sf) {
 void pw_splash_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf) {
     (void)sf;
     switch(s->splash.current_substate) {
-    case SPLASH_GO_TO_MENU: {
-        p->sid = STATE_MAIN_MENU;
-        p->menu.cursor = s->splash.menu_cursor;
-        break;
-    }
-    default: {
-        // nothing to do
-        break;
-    }
+        case SPLASH_NORMAL: {
+            if((pw_accel_get_activity() != 0) && (sf->frame&ANIM_FRAME_NORMAL_TIME)) {
+                pw_accel_process_steps();
+            }
+            break;
+        }
+        case SPLASH_GO_TO_MENU: {
+            p->sid = STATE_MAIN_MENU;
+            p->menu.cursor = s->splash.menu_cursor;
+            break;
+        }
+        default: {
+            // nothing to do
+            break;
+        }
     }
 }
 

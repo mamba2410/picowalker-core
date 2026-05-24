@@ -176,9 +176,10 @@ typedef enum pw_buttons_e {
  *  Functions defined by driver
  */
 void pw_accel_init();
-uint32_t pw_accel_get_new_steps();
 void pw_accel_sleep();
 void pw_accel_wake();
+uint32_t pw_accel_get_new_steps();
+uint8_t pw_accel_get_activity();
 
 /*
  *  ==================================================================================

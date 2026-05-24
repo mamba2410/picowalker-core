@@ -15,9 +15,10 @@ void pw_accel_process_steps();
  */
 
 extern void pw_accel_init();
-extern uint32_t pw_accel_get_new_steps();
 extern void pw_accel_sleep();
 extern void pw_accel_wake();
+extern uint32_t pw_accel_get_new_steps();
+extern uint8_t pw_accel_get_activity();
 
 #endif /* PW_ACCEL_H */
 
