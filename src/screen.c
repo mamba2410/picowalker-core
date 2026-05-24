@@ -237,9 +237,7 @@ void pw_screen_overlay_text_box(pw_img_t *img, pw_screen_dim_t w, pw_screen_dim_
             for(int j = 2*img->width - 1; j >= 0; j--) {
                 img->data[i*2*w+j] = img->data[i*2*img->width + j];
             }
-            if(i > 0) {
-                memset(&img->data[i*2*img->width], 0, 2*(w-img->width));
-            }
+            memset(&img->data[i*2*w + 2*img->width], 0, 2*(w-img->width));
         }
         img->width = w;
         img->size = img->height * img->width;
