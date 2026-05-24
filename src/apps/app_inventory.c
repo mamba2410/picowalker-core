@@ -236,7 +236,7 @@ static void draw_animated_sprite(pw_state_t *s, const screen_flags_t *sf) {
         pw_eeprom_addr_t addr;
         pokemon_summary_t pokemon;
         pokemon_index_t pokemon_index = pw_pokemon_id_to_pokemon_index(gdetailed.entries[s->inventory.current_cursor], &pokemon);
-        pw_pokemon_index_to_small_sprite(pokemon_index, buf, (sf->frame&ANIM_FRAME_NORMAL_TIME)>>ANIM_FRAME_NORMAL_TIME_OFFSET, &addr);
+        pw_pokemon_index_to_small_sprite(pokemon_index, buf, (sf->frame&ANIM_FRAME_DOUBLE_TIME)>>ANIM_FRAME_DOUBLE_TIME_OFFSET, &addr);
         sprite.lookup_table.addr = addr;
         sprite.lookup_table.metadata.pokemon.species = pokemon.le_species;
         sprite.lookup_table.metadata.pokemon.pokemon_flags_1 = pokemon.pokemon_flags_1;
