@@ -222,6 +222,9 @@ void pw_sleep_loop() {
         //while(!pw_power_result_available());
         //uint8_t battery_level = pw_power_process_battery();
         //pw_log_debug("RTC wake checked battery: %d%%\n", battery_level);
+        //deep_sleep = false;
+        pw_power_light_sleep_for(200);
+        pw_power_update();
     }
 
     if(wake_reason & PW_WAKE_REASON_ACCEL) {
@@ -232,6 +235,7 @@ void pw_sleep_loop() {
     if(wake_reason & PW_WAKE_REASON_BUTTON) {
         //pw_log_debug("Wake because button\n");
 
+        //sleep_ms(1000);
         pw_power_light_sleep_for(1000);
         bool pressed = pw_button_is_pressed(PW_BUTTON_M);
 
