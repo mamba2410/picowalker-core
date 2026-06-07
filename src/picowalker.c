@@ -199,6 +199,7 @@ void pw_normal_loop() {
 void pw_sleep_loop() {
 
     pw_wake_reason_t wake_reason = pw_power_get_wake_reason();
+    bool deep_sleep = true;
 
     if(wake_reason & PW_WAKE_REASON_BATTERY) {
         //pw_log_debug("Wake because battery\n");
@@ -206,6 +207,7 @@ void pw_sleep_loop() {
         //power_context.last_bat_check = pw_now_us();
         //while(!pw_power_result_available());
         pw_power_update();
+        deep_sleep = true;
         //uint8_t battery_level = pw_power_process_battery();
     }
 
@@ -223,8 +225,10 @@ void pw_sleep_loop() {
         //uint8_t battery_level = pw_power_process_battery();
         //pw_log_debug("RTC wake checked battery: %d%%\n", battery_level);
         //deep_sleep = false;
-        pw_power_light_sleep_for(200);
-        pw_power_update();
+        //pw_log_debug("Waiting for battery\n");
+        //pw_power_light_sleep_for(500);
+        //pw_power_update();
+        deep_sleep = false;
     }
 
     if(wake_reason & PW_WAKE_REASON_ACCEL) {
@@ -256,8 +260,16 @@ void pw_sleep_loop() {
         }
     }
 
+    if(wake_reason == 0) {
+        pw_log_error("Awake with no reason\n");
+    }
+
     // If nothing else to do, we go back to sleep
-    pw_power_enter_sleep();
+    if(deep_sleep) {
+        pw_power_enter_sleep();
+    } else {
+        pw_power_light_sleep_for(500);
+    }
 }
 
 void pw_state_handle_input(pw_buttons_t b) {
