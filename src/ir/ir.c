@@ -78,10 +78,10 @@ ir_err_t pw_ir_recv_packet(pw_packet_t *packet, size_t len, size_t *pn_read) {
     uint8_t cmd = packet->cmd;
     bool skip_session_check = (cmd == 0xFA || cmd == 0xFC);
 
-    pw_log_debug("Session - Expected: %02X%02X%02X%02X, Got: %02X%02X%02X%02X\n",
-                g_session_id[0], g_session_id[1], g_session_id[2], g_session_id[3],
-                packet->session_id_bytes[0], packet->session_id_bytes[1], 
-                packet->session_id_bytes[2], packet->session_id_bytes[3]);
+    //pw_log_debug("Session - Expected: %02X%02X%02X%02X, Got: %02X%02X%02X%02X\n",
+    //            g_session_id[0], g_session_id[1], g_session_id[2], g_session_id[3],
+    //            packet->session_id_bytes[0], packet->session_id_bytes[1], 
+    //            packet->session_id_bytes[2], packet->session_id_bytes[3]);
     if (!skip_session_check) {
         for(size_t i = 0; i < 4; i++) {
             if(packet->session_id_bytes[i] != g_session_id[i]) return IR_ERR_BAD_SESSID;
