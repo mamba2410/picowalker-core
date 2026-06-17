@@ -44,6 +44,7 @@ typedef struct {
     uint8_t offset;
     uint8_t anim_frame;
     uint8_t is_flipped;
+    uint8_t last_check_frame;
 } app_splash_t;
 
 /*

@@ -68,6 +68,7 @@ void pw_splash_init_display(pw_state_t *s, const screen_flags_t *sf) {
     s->splash.offset = 0;
     s->splash.anim_frame = 0;
     s->splash.is_flipped = false;
+    s->splash.last_check_frame = sf->frame;
 
     (void)sf;
     if(s->splash.inventory.caught_pokemon & INV_WALKING_POKEMON) {
@@ -262,8 +263,11 @@ void pw_splash_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
     (void)sf;
     switch(s->splash.current_substate) {
         case SPLASH_NORMAL: {
-            if((pw_accel_get_activity() != 0) && (sf->frame&ANIM_FRAME_NORMAL_TIME)) {
-                pw_accel_process_steps();
+            if(s->splash.last_check_frame != sf->frame) {
+                s->splash.last_check_frame = sf->frame;
+                if(pw_accel_get_activity() != 0) {
+                    pw_accel_process_steps();
+                }
             }
             break;
         }
