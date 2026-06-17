@@ -161,11 +161,6 @@ void pw_splash_update_display(pw_state_t *s, const screen_flags_t *sf) {
     }
 
     if(s->splash.inventory.caught_pokemon & INV_WALKING_POKEMON) {
-
-        if (s->splash.walking == WALKING || s->splash.walking == STROLLING) {
-            pw_screen_clear_area(32, 0, 64, 48);
-        }
-
         switch(s->splash.walking) {
             case IDLE: {
                 pw_screen_draw_from_eeprom(
@@ -179,6 +174,7 @@ void pw_splash_update_display(pw_state_t *s, const screen_flags_t *sf) {
                 break;
             }
             case WALKING: {
+                pw_screen_clear_area(origin, 0, s->splash.offset, 48);
                 pw_screen_draw_from_eeprom(
                     origin + s->splash.offset, 0,
                     64, 48,
@@ -235,6 +231,8 @@ void pw_splash_update_display(pw_state_t *s, const screen_flags_t *sf) {
                     };
                     pw_eeprom_read(frame_addr, img.data, PW_EEPROM_SIZE_IMG_POKEMON_SMALL_ANIMATED_FRAME);
 
+                    pw_screen_clear_area(origin, 0, s->splash.offset, 48);
+                    pw_screen_clear_area(origin+s->splash.offset+32, 0, PW_SCREEN_WIDTH - (origin+s->splash.offset+32), 48);
                     pw_screen_draw_img(&img, origin + s->splash.offset, 24);
                     
                     if (s->splash.anim_frame >= 3 && s->splash.anim_frame % 2 == 0) {
