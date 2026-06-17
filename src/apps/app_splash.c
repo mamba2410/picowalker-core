@@ -151,8 +151,8 @@ void pw_splash_init_display(pw_state_t *s, const screen_flags_t *sf) {
     pw_screen_draw_horiz_line(0, PW_SCREEN_HEIGHT-16, left_x, PW_SCREEN_BLACK);
 }
 
-void pw_splash_update_display(pw_state_t *s, const screen_flags_t *sf) {
 
+static void splash_display_pokemon(pw_state_t *s, const screen_flags_t *sf) {
     uint16_t frame_addr;
     if(sf->frame&ANIM_FRAME_NORMAL_TIME) {
         frame_addr = PW_EEPROM_ADDR_IMG_POKEMON_LARGE_ANIMATED_FRAME1;
@@ -160,100 +160,134 @@ void pw_splash_update_display(pw_state_t *s, const screen_flags_t *sf) {
         frame_addr = PW_EEPROM_ADDR_IMG_POKEMON_LARGE_ANIMATED_FRAME2;
     }
 
+    switch(s->splash.walking) {
+        case IDLE: {
+            pw_screen_draw_from_eeprom(
+                PW_SCREEN_WIDTH-64, 0,
+                64, 48,
+                frame_addr,
+                PW_EEPROM_SIZE_IMG_POKEMON_LARGE_ANIMATED_FRAME,
+                true
+            );
+            break;
+        }
+        case WALKING: {
+            pw_screen_clear_area(origin, 0, s->splash.offset, 48);
+            pw_screen_draw_from_eeprom(
+                origin + s->splash.offset, 0,
+                64, 48,
+                frame_addr,
+                PW_EEPROM_SIZE_IMG_POKEMON_LARGE_ANIMATED_FRAME,
+                true
+            );
+            break;
+        }
+        case STROLLING: {
+            if(sf->frame&ANIM_FRAME_DOUBLE_TIME) {
+                frame_addr = PW_EEPROM_ADDR_IMG_POKEMON_SMALL_ANIMATED_FRAME1;
+            } else {
+                frame_addr = PW_EEPROM_ADDR_IMG_POKEMON_SMALL_ANIMATED_FRAME2;
+            }
+
+            pw_img_t img = {
+                .width=32,
+                .height=24,
+                .data=decompression_buf,
+                .size=PW_EEPROM_SIZE_IMG_POKEMON_SMALL_ANIMATED_FRAME,
+                .is_flipped=s->splash.is_flipped,
+                .lookup_table = {
+                    .addr=frame_addr,
+                    .use_alt=true
+                }
+            };
+            pw_eeprom_read(frame_addr, img.data, PW_EEPROM_SIZE_IMG_POKEMON_SMALL_ANIMATED_FRAME);
+
+            pw_screen_clear_area(origin, 0, s->splash.offset, 48);
+            pw_screen_clear_area(origin+s->splash.offset+32, 0, PW_SCREEN_WIDTH - (origin+s->splash.offset+32), 48);
+            pw_screen_draw_img(&img, origin + s->splash.offset, 24);
+            break;
+        }
+    }
+}
+
+
+void pw_splash_update_display(pw_state_t *s, const screen_flags_t *sf) {
+
     if(s->splash.inventory.caught_pokemon & INV_WALKING_POKEMON) {
-        switch(s->splash.walking) {
-            case IDLE: {
-                pw_screen_draw_from_eeprom(
-                    PW_SCREEN_WIDTH-64, 0,
-                    64, 48,
-                    frame_addr,
-                    PW_EEPROM_SIZE_IMG_POKEMON_LARGE_ANIMATED_FRAME,
-                    true
-                );
-                if (pw_accel_get_activity() != 0) s->splash.walking = WALKING;
-                break;
-            }
-            case WALKING: {
-                pw_screen_clear_area(origin, 0, s->splash.offset, 48);
-                pw_screen_draw_from_eeprom(
-                    origin + s->splash.offset, 0,
-                    64, 48,
-                    frame_addr,
-                    PW_EEPROM_SIZE_IMG_POKEMON_LARGE_ANIMATED_FRAME,
-                    true
-                );
+        splash_display_pokemon(s, sf);
+    }
 
-                // Move right if still walking, move left if done walking...
-                if (pw_accel_get_activity() != 0) {
-                    if (s->splash.offset >= PW_SCREEN_WIDTH - origin) {
-                        s->splash.walking = STROLLING;
-                        s->splash.offset = (PW_SCREEN_WIDTH - origin);
-                    }
-                    else s->splash.offset += 4;
+    pw_screen_pos_t left_x = pw_screen_draw_integer_with_overline(health_data_cache.today_steps, PW_SCREEN_WIDTH, PW_SCREEN_HEIGHT-16, PW_SCREEN_BLACK);
+    pw_screen_draw_horiz_line(0, PW_SCREEN_HEIGHT-16, left_x, PW_SCREEN_BLACK);
+
+}
+
+
+static void splash_calc_walking_animation(pw_state_t *s) {
+    switch(s->splash.walking) {
+        case IDLE: {
+            if (pw_accel_get_activity() != 0) {
+                s->splash.walking = WALKING;
+            }
+            break;
+        }
+        case WALKING: {
+            // Move right if still walking, move left if done walking...
+            if (pw_accel_get_activity() != 0) {
+                if (s->splash.offset >= PW_SCREEN_WIDTH - origin) {
+                    s->splash.walking = STROLLING;
+                    s->splash.offset = (PW_SCREEN_WIDTH - origin);
+                } else {
+                    s->splash.offset += 4;
                 }
-                else {
-                    if (s->splash.offset <= 0) {
-                        s->splash.walking = IDLE;
-                        s->splash.offset = 0;
-                    }
+            } else {
+                if (s->splash.offset <= 0) {
+                    s->splash.walking = IDLE;
+                    s->splash.offset = 0;
+                } else {
+                    s->splash.offset -= 4;
+                }
+            }
+            break;
+        }
+        case STROLLING: {
+            if (pw_accel_get_activity() != 0) {
+                if (s->splash.offset <= 0 && !s->splash.is_flipped) {
+                    s->splash.is_flipped = true;
+                    s->splash.offset = 0;
+                }
+
+                if (s->splash.offset >= 32 && s->splash.is_flipped) {
+                    s->splash.is_flipped = false;
+                    s->splash.offset = 32;
+                }
+
+                
+                if (s->splash.anim_frame >= 3 && s->splash.anim_frame % 2 == 0) {
+                    if (s->splash.is_flipped) s->splash.offset += 4;
                     else s->splash.offset -= 4;
+                    s->splash.anim_frame = 0;
                 }
-                break;
+                s->splash.anim_frame++;
             }
-            case STROLLING: {
-                if (pw_accel_get_activity() != 0) {
-                    if (s->splash.offset <= 0 && !s->splash.is_flipped) {
-                        s->splash.is_flipped = true;
-                        s->splash.offset = 0;
-                    }
-
-                    if (s->splash.offset >= 32 && s->splash.is_flipped) {
-                        s->splash.is_flipped = false;
-                        s->splash.offset = 32;
-                    }
-
-                    if(sf->frame&ANIM_FRAME_DOUBLE_TIME) {
-                        frame_addr = PW_EEPROM_ADDR_IMG_POKEMON_SMALL_ANIMATED_FRAME1;
-                    } else {
-                        frame_addr = PW_EEPROM_ADDR_IMG_POKEMON_SMALL_ANIMATED_FRAME2;
-                    }
-
-                    pw_img_t img = {
-                        .width=32, 
-                        .height=24,
-                        .data=decompression_buf,
-                        .size=PW_EEPROM_SIZE_IMG_POKEMON_SMALL_ANIMATED_FRAME, 
-                        .is_flipped=s->splash.is_flipped,
-                        .lookup_table = {
-                            .addr=frame_addr,
-                            .use_alt=true
-                        }
-                    };
-                    pw_eeprom_read(frame_addr, img.data, PW_EEPROM_SIZE_IMG_POKEMON_SMALL_ANIMATED_FRAME);
-
-                    pw_screen_clear_area(origin, 0, s->splash.offset, 48);
-                    pw_screen_clear_area(origin+s->splash.offset+32, 0, PW_SCREEN_WIDTH - (origin+s->splash.offset+32), 48);
-                    pw_screen_draw_img(&img, origin + s->splash.offset, 24);
-                    
+            else {
+                if(s->splash.offset >= (PW_SCREEN_WIDTH - origin)) {
+                    s->splash.walking = WALKING;
+                    s->splash.offset = (PW_SCREEN_WIDTH - origin);
+                    s->splash.anim_frame = 0;
+                } else {
+                    s->splash.is_flipped = true;
                     if (s->splash.anim_frame >= 3 && s->splash.anim_frame % 2 == 0) {
-                        if (img.is_flipped) s->splash.offset += 4;
+                        if (s->splash.is_flipped) s->splash.offset += 4;
                         else s->splash.offset -= 4;
                         s->splash.anim_frame = 0;
                     }
                     s->splash.anim_frame++;
                 }
-                else {
-                    s->splash.walking = WALKING;
-                    s->splash.offset = (PW_SCREEN_WIDTH - origin);
-                    s->splash.anim_frame = 0;
-                }
-                break;
             }
+            break;
         }
     }
-
-    pw_screen_pos_t left_x = pw_screen_draw_integer_with_overline(health_data_cache.today_steps, PW_SCREEN_WIDTH, PW_SCREEN_HEIGHT-16, PW_SCREEN_BLACK);
-    pw_screen_draw_horiz_line(0, PW_SCREEN_HEIGHT-16, left_x, PW_SCREEN_BLACK);
 
 }
 
@@ -263,6 +297,7 @@ void pw_splash_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf
         case SPLASH_NORMAL: {
             if(s->splash.last_check_frame != sf->frame) {
                 s->splash.last_check_frame = sf->frame;
+                splash_calc_walking_animation(s);
                 if(pw_accel_get_activity() != 0) {
                     pw_accel_process_steps();
                 }
