@@ -5,7 +5,6 @@
 
 #include "../states.h"
 
-
 /// @file app_splash.h
 
 void pw_settings_init(pw_state_t *s, const screen_flags_t *sf);

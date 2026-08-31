@@ -1,11 +1,12 @@
-#include <stdint.h>
-#include <stddef.h>
-
 #include "utils.h"
+
+#include <stddef.h>
+#include <stdint.h>
+
+#include "eeprom.h"
+#include "eeprom_map.h"
 #include "states.h"
 #include "types.h"
-#include "eeprom_map.h"
-#include "eeprom.h"
 
 extern uint16_t swap_bytes_u16(uint16_t x);
 extern uint32_t swap_bytes_u32(uint32_t x);
@@ -18,51 +19,39 @@ extern uint32_t swap_bytes_u32(uint32_t x);
  * reg_c = [0..3]=stamps
  */
 void pw_read_inventory(pw_brief_inventory_t *brief, pw_detailed_inventory_t *detailed) {
-    if(!brief || !detailed) return;
+    if (!brief || !detailed) return;
 
-    *brief = (pw_brief_inventory_t) {
-        0
-    };
-    *detailed = (pw_detailed_inventory_t) {
-        0
-    };
+    *brief = (pw_brief_inventory_t){0};
+    *detailed = (pw_detailed_inventory_t){0};
 
     pokemon_summary_t caught_pokemon[3];
 
     // walking pokemon
-    pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO, (uint8_t*)(caught_pokemon), sizeof(pokemon_summary_t));
+    pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO, (uint8_t *)(caught_pokemon), sizeof(pokemon_summary_t));
 
     detailed->walking_pokemon = caught_pokemon[0].le_species;
-    if(caught_pokemon[0].le_species != 0 && caught_pokemon[0].le_species != 0xffff) {
+    if (caught_pokemon[0].le_species != 0 && caught_pokemon[0].le_species != 0xffff) {
         brief->caught_pokemon |= INV_WALKING_POKEMON;
     }
 
     // normal caught pokemon
     pw_eeprom_read(
-        PW_EEPROM_ADDR_CAUGHT_POKEMON_SUMMARY,
-        (uint8_t*)caught_pokemon,
-        PW_EEPROM_SIZE_CAUGHT_POKEMON_SUMMARY
-    );
+        PW_EEPROM_ADDR_CAUGHT_POKEMON_SUMMARY, (uint8_t *)caught_pokemon, PW_EEPROM_SIZE_CAUGHT_POKEMON_SUMMARY);
 
-    for(uint8_t i = 0; i < 3; i++) {
+    for (uint8_t i = 0; i < 3; i++) {
         detailed->caught_pokemon[i] = caught_pokemon[i].le_species;
-        if(caught_pokemon[i].le_species != 0 && caught_pokemon[i].le_species != 0xffff) {
-            brief->caught_pokemon |= (1<<(i+1));
+        if (caught_pokemon[i].le_species != 0 && caught_pokemon[i].le_species != 0xffff) {
+            brief->caught_pokemon |= (1 << (i + 1));
         }
     }
 
     // event pokemon
-    pw_eeprom_read(
-        PW_EEPROM_ADDR_EVENT_POKEMON_BASIC_DATA,
-        (uint8_t*)(caught_pokemon),
-        sizeof(pokemon_summary_t)
-    );
+    pw_eeprom_read(PW_EEPROM_ADDR_EVENT_POKEMON_BASIC_DATA, (uint8_t *)(caught_pokemon), sizeof(pokemon_summary_t));
 
     detailed->event_pokemon = caught_pokemon[0].le_species;
-    if(caught_pokemon[0].le_species != 0 && caught_pokemon[0].le_species != 0xffff) {
+    if (caught_pokemon[0].le_species != 0 && caught_pokemon[0].le_species != 0xffff) {
         brief->caught_pokemon |= INV_EXTRA_POKEMON;
     }
-
 
     struct {
         uint16_t le_item;
@@ -70,55 +59,38 @@ void pw_read_inventory(pw_brief_inventory_t *brief, pw_detailed_inventory_t *det
     } items[10];
 
     // normal dowsing items
-    pw_eeprom_read(
-        PW_EEPROM_ADDR_OBTAINED_ITEMS,
-        (uint8_t*)(items),
-        PW_EEPROM_SIZE_OBTAINED_ITEMS
-    );
+    pw_eeprom_read(PW_EEPROM_ADDR_OBTAINED_ITEMS, (uint8_t *)(items), PW_EEPROM_SIZE_OBTAINED_ITEMS);
 
-    for(uint8_t i = 0; i < 3; i++) {
+    for (uint8_t i = 0; i < 3; i++) {
         detailed->dowsed_items[i] = items[i].le_item;
-        if(items[i].le_item != 0 && items[i].le_item != 0xffff) {
-            brief->dowsed_items |= (1<<(i+1));
+        if (items[i].le_item != 0 && items[i].le_item != 0xffff) {
+            brief->dowsed_items |= (1 << (i + 1));
         }
     }
 
     // event dowsing item
-    pw_eeprom_read(
-        PW_EEPROM_ADDR_EVENT_ITEM+6,    // ignore first 6 bytes of zeroes
-        (uint8_t*)items,
-        2
-    );
+    pw_eeprom_read(PW_EEPROM_ADDR_EVENT_ITEM + 6,  // ignore first 6 bytes of zeroes
+        (uint8_t *)items, 2);
 
     detailed->event_item = items[0].le_item;
-    if(items[0].le_item != 0 && items[0].le_item != 0xffff) {
+    if (items[0].le_item != 0 && items[0].le_item != 0xffff) {
         brief->dowsed_items |= INV_EXTRA_ITEM;
     }
 
-
     // special inventory (stamps, etc)
-    pw_eeprom_read(
-        PW_EEPROM_ADDR_RECEIVED_BITFIELD,
-        &(brief->received_bitfield),
-        1
-    );
+    pw_eeprom_read(PW_EEPROM_ADDR_RECEIVED_BITFIELD, &(brief->received_bitfield), 1);
 
     // gifted items from peer play
-    pw_eeprom_read(
-        PW_EEPROM_ADDR_PEER_PLAY_ITEMS,
-        (uint8_t*)items,
-        PW_EEPROM_SIZE_PEER_PLAY_ITEMS
-    );
+    pw_eeprom_read(PW_EEPROM_ADDR_PEER_PLAY_ITEMS, (uint8_t *)items, PW_EEPROM_SIZE_PEER_PLAY_ITEMS);
 
     brief->n_peer_play_items = 0;
-    for(size_t i = 0; i < 10; i++) {
+    for (size_t i = 0; i < 10; i++) {
         detailed->gifted_items[i] = items[i].le_item;
-        if(items[i].le_item != 0 && items[i].le_item != 0xffff) {
+        if (items[i].le_item != 0 && items[i].le_item != 0xffff) {
             brief->n_peer_play_items++;
-            brief->peer_play_items |= 1<<i;
+            brief->peer_play_items |= 1 << i;
         }
     }
-
 
     /*
      * packing
@@ -129,40 +101,37 @@ void pw_read_inventory(pw_brief_inventory_t *brief, pw_detailed_inventory_t *det
      * [6..8] = dowsed items
      * [9]    = event item
      */
-    brief->packed = (brief->caught_pokemon) | (brief->dowsed_items<<5);
-
+    brief->packed = (brief->caught_pokemon) | (brief->dowsed_items << 5);
 }
 
 void pw_pokemon_index_to_small_sprite(pokemon_index_t idx, uint8_t *buf, uint8_t frame, pw_eeprom_addr_t *addr) {
     // pw_eeprom_addr_t addr;
 
-    switch(idx) {
-    case PIDX_WALKING: {
-        *addr = PW_EEPROM_ADDR_IMG_POKEMON_SMALL_ANIMATED +
-               frame*PW_EEPROM_SIZE_IMG_POKEMON_SMALL_ANIMATED_FRAME;
-        break;
-    }
-    case PIDX_EXTRA: {
-        *addr = PW_EEPROM_ADDR_IMG_EVENT_POKEMON_SMALL_ANIMATED +
-               frame*PW_EEPROM_SIZE_IMG_EVENT_POKEMON_SMALL_ANIMATED_FRAME;
-        break;
-    }
-    case PIDX_OPTION_A:
-    case PIDX_OPTION_B:
-    case PIDX_OPTION_C: {
-        uint8_t offs = 2*(idx-1);
-        *addr = PW_EEPROM_ADDR_IMG_ROUTE_POKEMON_SMALL_ANIMATED
-               + (offs+frame)*PW_EEPROM_SIZE_IMG_POKEMON_SMALL_ANIMATED_FRAME;
-        break;
-    }
-    default: {
-        return;
-        break;
-    }
+    switch (idx) {
+        case PIDX_WALKING: {
+            *addr = PW_EEPROM_ADDR_IMG_POKEMON_SMALL_ANIMATED + frame * PW_EEPROM_SIZE_IMG_POKEMON_SMALL_ANIMATED_FRAME;
+            break;
+        }
+        case PIDX_EXTRA: {
+            *addr = PW_EEPROM_ADDR_IMG_EVENT_POKEMON_SMALL_ANIMATED +
+                    frame * PW_EEPROM_SIZE_IMG_EVENT_POKEMON_SMALL_ANIMATED_FRAME;
+            break;
+        }
+        case PIDX_OPTION_A:
+        case PIDX_OPTION_B:
+        case PIDX_OPTION_C: {
+            uint8_t offs = 2 * (idx - 1);
+            *addr = PW_EEPROM_ADDR_IMG_ROUTE_POKEMON_SMALL_ANIMATED +
+                    (offs + frame) * PW_EEPROM_SIZE_IMG_POKEMON_SMALL_ANIMATED_FRAME;
+            break;
+        }
+        default: {
+            return;
+            break;
+        }
     }
 
     pw_eeprom_read(*addr, buf, PW_EEPROM_SIZE_IMG_POKEMON_SMALL_ANIMATED_FRAME);
-
 }
 
 /**
@@ -171,30 +140,29 @@ void pw_pokemon_index_to_small_sprite(pokemon_index_t idx, uint8_t *buf, uint8_t
 void pw_pokemon_index_to_name(pokemon_index_t idx, uint8_t *buf) {
     pw_eeprom_addr_t addr;
 
-    switch(idx) {
-    case PIDX_WALKING: {
-        addr = PW_EEPROM_ADDR_TEXT_POKEMON_NAME;
-        break;
-    }
-    case PIDX_EXTRA: {
-        addr = PW_EEPROM_ADDR_TEXT_EVENT_POKEMON_NAME;
-        break;
-    }
-    case PIDX_OPTION_A:
-    case PIDX_OPTION_B:
-    case PIDX_OPTION_C: {
-        addr = PW_EEPROM_ADDR_TEXT_POKEMON_NAMES + (idx-1)*(PW_EEPROM_SIZE_TEXT_POKEMON_NAME);
-        break;
-    }
-    default: {
-        return;
-        break;
-    }
+    switch (idx) {
+        case PIDX_WALKING: {
+            addr = PW_EEPROM_ADDR_TEXT_POKEMON_NAME;
+            break;
+        }
+        case PIDX_EXTRA: {
+            addr = PW_EEPROM_ADDR_TEXT_EVENT_POKEMON_NAME;
+            break;
+        }
+        case PIDX_OPTION_A:
+        case PIDX_OPTION_B:
+        case PIDX_OPTION_C: {
+            addr = PW_EEPROM_ADDR_TEXT_POKEMON_NAMES + (idx - 1) * (PW_EEPROM_SIZE_TEXT_POKEMON_NAME);
+            break;
+        }
+        default: {
+            return;
+            break;
+        }
     }
 
     pw_eeprom_read(addr, buf, PW_EEPROM_SIZE_TEXT_POKEMON_NAME);
 }
-
 
 /**
  *
@@ -202,9 +170,9 @@ void pw_pokemon_index_to_name(pokemon_index_t idx, uint8_t *buf) {
 void pw_item_index_to_name(uint8_t idx, uint8_t *buf) {
     uint16_t addr;
 
-    if(idx < 10) {
-        addr = PW_EEPROM_ADDR_TEXT_ITEM_NAMES + idx*PW_EEPROM_SIZE_TEXT_ITEM_NAME_SINGLE;
-    } else if(idx == 10) {
+    if (idx < 10) {
+        addr = PW_EEPROM_ADDR_TEXT_ITEM_NAMES + idx * PW_EEPROM_SIZE_TEXT_ITEM_NAME_SINGLE;
+    } else if (idx == 10) {
         addr = PW_EEPROM_ADDR_TEXT_EVENT_ITEM_NAME;
     } else {
         return;
@@ -224,26 +192,17 @@ void pw_item_index_to_name(uint8_t idx, uint8_t *buf) {
 pokemon_index_t pw_pokemon_id_to_pokemon_index(uint16_t id, pokemon_summary_t *pokemon) {
     pokemon_summary_t pokes[N_PIDX];
 
-    pw_eeprom_read(
-        PW_EEPROM_ADDR_ROUTE_INFO+0x0000, // offset 0 = current pokemon
-        (uint8_t*)(&pokes[0]),
-        sizeof(pokemon_summary_t)
-    );
+    pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO + 0x0000,  // offset 0 = current pokemon
+        (uint8_t *)(&pokes[0]), sizeof(pokemon_summary_t));
+
+    pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_POKEMON, (uint8_t *)(&pokes[1]), 3 * sizeof(pokemon_summary_t));
 
     pw_eeprom_read(
-        PW_EEPROM_ADDR_ROUTE_POKEMON,
-        (uint8_t*)(&pokes[1]),
-        3*sizeof(pokemon_summary_t)
-    );
+        PW_EEPROM_ADDR_EVENT_POKEMON_BASIC_DATA,  // in inventory so look here for both gifted and special pokemon
+        (uint8_t *)(&pokes[4]), sizeof(pokemon_summary_t));
 
-    pw_eeprom_read(
-        PW_EEPROM_ADDR_EVENT_POKEMON_BASIC_DATA, // in inventory so look here for both gifted and special pokemon
-        (uint8_t*)(&pokes[4]),
-        sizeof(pokemon_summary_t)
-    );
-
-    for(size_t i = 0; i < N_PIDX; i++) {
-        if(pokes[i].le_species == id) {
+    for (size_t i = 0; i < N_PIDX; i++) {
+        if (pokes[i].le_species == id) {
             *pokemon = pokes[i];
             return (pokemon_index_t)i;
         }
@@ -253,28 +212,19 @@ pokemon_index_t pw_pokemon_id_to_pokemon_index(uint16_t id, pokemon_summary_t *p
     return (pokemon_index_t)0;
 }
 
-
 /**
  * Convert item id into index of route-available items
  */
 uint8_t pw_item_id_to_item_index(uint16_t id) {
-
     uint16_t items[11];
 
-    pw_eeprom_read(
-        PW_EEPROM_ADDR_ROUTE_ITEMS,
-        (uint8_t*)items,
-        PW_EEPROM_SIZE_ROUTE_ITEMS
-    );
+    pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_ITEMS, (uint8_t *)items, PW_EEPROM_SIZE_ROUTE_ITEMS);
 
-    pw_eeprom_read(
-        PW_EEPROM_ADDR_EVENT_ITEM+0x0006, // in inventory, so look here for gifted and special item.
-        (uint8_t*)(&items[10]),
-        2
-    );
+    pw_eeprom_read(PW_EEPROM_ADDR_EVENT_ITEM + 0x0006,  // in inventory, so look here for gifted and special item.
+        (uint8_t *)(&items[10]), 2);
 
-    for(size_t i = 0; i < 11; i++) {
-        if(items[i] == id) return (uint8_t)i;
+    for (size_t i = 0; i < 11; i++) {
+        if (items[i] == id) return (uint8_t)i;
     }
 
     // unreachable, hopefully

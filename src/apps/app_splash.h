@@ -1,7 +1,8 @@
 #ifndef PW_APP_SPLASH_H
 #define PW_APP_SPLASH_H
-#include "../states.h"
 #include <stdint.h>
+
+#include "../states.h"
 
 /// @file app_splash.h
 

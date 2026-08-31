@@ -1,9 +1,9 @@
 #ifndef PW_TYPES_H
 #define PW_TYPES_H
 
-#include <stdint.h>
-#include <stddef.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 /// @file types.h
 
@@ -29,34 +29,30 @@ typedef struct {
             uint8_t cmd;
             uint8_t extra;
             union {
-                uint8_t  checksum_bytes[2];
+                uint8_t checksum_bytes[2];
                 uint16_t le_checksum;
             };
             union {
-                uint8_t  session_id_bytes[4];
+                uint8_t session_id_bytes[4];
                 uint32_t le_session_id;
             };
             uint8_t payload[128];
-
         };
         uint8_t bytes[0x88];
     };
 } pw_packet_t;
 
-
 typedef struct {
     uint8_t data[0x28];
 } unique_identity_data_t;
-
 
 typedef struct {
     uint8_t data[0x10];
 } event_bitmap_t;
 
-
-#define WALKER_INFO_FLAG_INIT           (1<<0)
-#define WALKER_INFO_FLAG_HAS_POKEMON    (1<<1)
-#define WALKER_INFO_FLAG_POKEMON_JOINED (1<<2)
+#define WALKER_INFO_FLAG_INIT           (1 << 0)
+#define WALKER_INFO_FLAG_HAS_POKEMON    (1 << 1)
+#define WALKER_INFO_FLAG_POKEMON_JOINED (1 << 2)
 
 /*
  *  size: 0x68 = 104 bytes
@@ -84,27 +80,27 @@ typedef struct {
 } walker_info_t;
 
 #define SETTINGS_SPECIAL_MAP_OFFSET 0
-#define SETTINGS_SPECIAL_MAP_MASK   (0x1<<SETTINGS_SPECIAL_MAP_OFFSET)
+#define SETTINGS_SPECIAL_MAP_MASK   (0x1 << SETTINGS_SPECIAL_MAP_OFFSET)
 #define SETTINGS_SOUND_OFFSET       1
-#define SETTINGS_SOUND_MASK         (0x3<<SETTINGS_SOUND_OFFSET)
+#define SETTINGS_SOUND_MASK         (0x3 << SETTINGS_SOUND_OFFSET)
 #define SETTINGS_SHADE_OFFSET       3
-#define SETTINGS_SHADE_MASK         (0xf<<SETTINGS_SHADE_OFFSET)
+#define SETTINGS_SHADE_MASK         (0xf << SETTINGS_SHADE_OFFSET)
 /*
  *  size: 0x18 = 24 bytes
  *  dmitry: struct HealthData
  */
 typedef struct {
-    /* +0x00 */ uint32_t total_steps;           // BE in eeorom
-    /* +0x04 */ uint32_t today_steps;           // BE in eeprom
-    /* +0x08 */ uint32_t last_sync;             // BE in eeprom
-    /* +0x0c */ uint16_t total_days;            // BE in eeprom
-    /* +0x0e */ uint16_t current_watts;         // BE in eeprom
-    /* +0x10 */ uint16_t walk_minute_counter;   // BE in walker
-    /* +0x12 */ uint8_t  steps_this_watt;
-    /* +0x13 */ uint8_t  event_log_index;
-    /* +0x14 */ uint8_t  padding[2];
-    /* +0x16 */ uint8_t  color_mode;
-    /* +0x17 */ uint8_t  settings;              // [0]=special_map, [1..2]=volume, [3..6]=contrast
+    /* +0x00 */ uint32_t total_steps;          // BE in eeorom
+    /* +0x04 */ uint32_t today_steps;          // BE in eeprom
+    /* +0x08 */ uint32_t last_sync;            // BE in eeprom
+    /* +0x0c */ uint16_t total_days;           // BE in eeprom
+    /* +0x0e */ uint16_t current_watts;        // BE in eeprom
+    /* +0x10 */ uint16_t walk_minute_counter;  // BE in walker
+    /* +0x12 */ uint8_t steps_this_watt;
+    /* +0x13 */ uint8_t event_log_index;
+    /* +0x14 */ uint8_t padding[2];
+    /* +0x16 */ uint8_t color_mode;
+    /* +0x17 */ uint8_t settings;  // [0]=special_map, [1..2]=volume, [3..6]=contrast
 } health_data_t;
 
 typedef struct {
@@ -116,7 +112,7 @@ typedef struct {
  *  size: 0x38 = 56 bytes
  *  dmitry: struct PeerPlayData
  */
-typedef struct {    // Dmitry struct PeerPlayData
+typedef struct {  // Dmitry struct PeerPlayData
     /* +0x00 */ uint32_t le_current_steps;
     /* +0x04 */ uint16_t le_current_watts;
     /* +0x06 */ uint8_t padding[2];
@@ -138,8 +134,8 @@ typedef struct {
     /* +0x02 */ uint16_t le_held_item;
     /* +0x04 */ uint16_t le_moves[4];
     /* +0x0c */ uint8_t level;
-    /* +0x0d */ uint8_t pokemon_flags_1;    // [0..5] = variant (spinda, arceus, unown, etc.) [6] = female
-    /* +0x0e */ uint8_t pokemon_flags_2;    // [0] = has form, [1] = shiny
+    /* +0x0d */ uint8_t pokemon_flags_1;  // [0..5] = variant (spinda, arceus, unown, etc.) [6] = female
+    /* +0x0e */ uint8_t pokemon_flags_2;  // [0] = has form, [1] = shiny
     /* +0x0f */ uint8_t padding;
 } pokemon_summary_t;
 
@@ -154,7 +150,7 @@ typedef struct {
     /* +0x0c */ uint16_t le_ot_tid;
     /* +0x0e */ uint16_t le_ot_sid;
     /* +0x10 */ uint32_t le_pid;
-    /* +0x14 */ uint32_t ivs;   // packed to 5-bits each
+    /* +0x14 */ uint32_t ivs;  // packed to 5-bits each
     /* +0x18 */ uint8_t evs[6];
     /* +0x1e */ uint8_t pokemon_flags_1;
     /* +0x1f */ uint8_t source_game;
@@ -189,27 +185,25 @@ typedef struct __attribute__((packed)) {
     unique_identity_data_t unique_data;
     uint8_t unique_data_checksum;
     lcd_config_t lcd_config;
-    uint8_t lcd_config_checksum; // random 0xbf byte?
+    uint8_t lcd_config_checksum;  // random 0xbf byte?
     walker_info_t walker_info;
     uint8_t walker_info_checksum;
     health_data_t health_data;
     uint8_t health_data_checksum;
     uint8_t copy_marker;
     uint8_t padding[16];
-}
-reliable_data_t;
+} reliable_data_t;
 
 typedef struct {
-    uint8_t stamp_heart: 1;
-    uint8_t stamp_spade: 1;
-    uint8_t stamp_diamond: 1;
-    uint8_t stamp_club: 1;
-    uint8_t special_map: 1;
-    uint8_t event_pokemon: 1;
-    uint8_t event_item: 1;
-    uint8_t special_route: 1;
+    uint8_t stamp_heart : 1;
+    uint8_t stamp_spade : 1;
+    uint8_t stamp_diamond : 1;
+    uint8_t stamp_club : 1;
+    uint8_t special_map : 1;
+    uint8_t event_pokemon : 1;
+    uint8_t event_item : 1;
+    uint8_t special_route : 1;
 } special_inventory_t;
-
 
 /*
  *  size: 0xbe = 190 bytes
@@ -229,7 +223,6 @@ typedef struct {
     /* +0xa0 */ uint16_t le_route_item_steps[10];
     /* +0xb4 */ uint8_t route_item_percent[10];
 } route_info_t;
-
 
 /*
  *  size: 0x6ac = 1708 bytes
@@ -251,7 +244,7 @@ typedef struct {
     /* +0x0050 */ uint16_t route_name[21];
     /* +0x007a */ uint8_t pokemon_event_number;
     /* +0x007b */ uint8_t item_event_number;
-    /* +0x007c */ uint8_t special_pokemon_sprite_data[0x170]; // should be 0x180 bytes, truncated
+    /* +0x007c */ uint8_t special_pokemon_sprite_data[0x170];  // should be 0x180 bytes, truncated
     /* +0x01ec */ uint8_t special_pokemon_name_image[0x140];
     /* +0x032c */ uint8_t special_area_icon[0xc0];
     /* +0x03ec */ uint8_t special_area_name_image[0x140];
@@ -274,19 +267,17 @@ typedef struct {
     /* 0x20 */ uint16_t our_pokemon_name[11];
     /* 0x36 */ uint16_t other_pokemon_name[11];
     /* 0x4c */ uint16_t route_name[21];
-    /* 0x76 */ uint8_t  route_image_index;
-    /* 0x77 */ uint8_t  pokemon_friendship;
+    /* 0x76 */ uint8_t route_image_index;
+    /* 0x77 */ uint8_t pokemon_friendship;
     /* 0x78 */ uint16_t be_our_watts;
     /* 0x7a */ uint16_t be_other_watts;
     /* 0x7c */ uint32_t be_steps;
     /* 0x80 */ uint32_t be_other_steps;
-    /* 0x84 */ uint8_t  event_type;
-    /* 0x85 */ uint8_t  our_pokemon_flags;
-    /* 0x86 */ uint8_t  other_pokemon_flags;
-    /* 0x87 */ uint8_t  padding;
+    /* 0x84 */ uint8_t event_type;
+    /* 0x85 */ uint8_t our_pokemon_flags;
+    /* 0x86 */ uint8_t other_pokemon_flags;
+    /* 0x87 */ uint8_t padding;
 } event_log_item_t;
-
-
 
 typedef enum {
     /* 0x00 */ EVENT_TYPE_EMPTY_ENTRY,
@@ -330,6 +321,5 @@ typedef enum {
     /* 0x06 */ ROUTE_IMAGE_LAKE,
     /* 0x07 */ ROUTE_IMAGE_BEACH,
 } route_image_index_t;
-
 
 #endif /* PW_TYPES_H */

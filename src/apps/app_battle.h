@@ -1,8 +1,8 @@
 #ifndef PW_APP_BATTLE_H
 #define PW_APP_BATTLE_H
 
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #include "../states.h"
 

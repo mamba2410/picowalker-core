@@ -2,6 +2,7 @@
 #define PW_FLASH_H
 
 #include <stdint.h>
+
 #include "picowalker_structures.h"
 
 /// @file flash.h

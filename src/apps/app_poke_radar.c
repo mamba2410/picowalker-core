@@ -1,18 +1,18 @@
-#include <stdint.h>
-#include <stddef.h>
-
 #include "app_poke_radar.h"
 
-#include "../states.h"
-#include "../types.h"
-#include "../globals.h"
-#include "../screen.h"
+#include <stddef.h>
+#include <stdint.h>
+
 #include "../audio.h"
-#include "../utils.h"
+#include "../buttons.h"
 #include "../eeprom.h"
 #include "../eeprom_map.h"
+#include "../globals.h"
 #include "../rand.h"
-#include "../buttons.h"
+#include "../screen.h"
+#include "../states.h"
+#include "../types.h"
+#include "../utils.h"
 
 /** @file app_poke_radar.c
  * Radar find pokemon game
@@ -22,9 +22,8 @@
 static uint8_t radar_level_to_index[4] = {0, 0, 1, 2};
 static pw_screen_pos_t bush_xs[4] = {8, 16, 56, 64};
 static pw_screen_pos_t bush_ys[4] = {0, 24, 0, 24};
-static uint8_t invisible_timer_divisors[4] = {1, 1, 2, 3}; // idk
+static uint8_t invisible_timer_divisors[4] = {1, 1, 2, 3};  // idk
 static uint8_t active_timers[4] = {20, 15, 10, 7};
-
 
 /**
  * Redraw cursor and clear other cursor areas
@@ -34,19 +33,15 @@ static uint8_t active_timers[4] = {20, 15, 10, 7};
  *
  */
 static void draw_cursor_update(pw_state_t *s, const screen_flags_t *sf) {
-    pw_screen_draw_from_eeprom(
-        bush_xs[s->radar.user_cursor]-8, bush_ys[s->radar.user_cursor]+8,
-        8, 8,
-        (sf->frame&ANIM_FRAME_NORMAL_TIME)? PW_EEPROM_ADDR_IMG_ARROW_RIGHT_NORMAL:PW_EEPROM_ADDR_IMG_ARROW_RIGHT_OFFSET,
-        PW_EEPROM_SIZE_IMG_ARROW,
-        true
-    );
+    pw_screen_draw_from_eeprom(bush_xs[s->radar.user_cursor] - 8, bush_ys[s->radar.user_cursor] + 8, 8, 8,
+        (sf->frame & ANIM_FRAME_NORMAL_TIME) ? PW_EEPROM_ADDR_IMG_ARROW_RIGHT_NORMAL
+                                             : PW_EEPROM_ADDR_IMG_ARROW_RIGHT_OFFSET,
+        PW_EEPROM_SIZE_IMG_ARROW, true);
 
-    for(uint8_t i = 0; i < 4; i++) {
-        if(i == s->radar.user_cursor) continue;
-        pw_screen_clear_area(bush_xs[i]-8, bush_ys[i]+8, 8, 8);
+    for (uint8_t i = 0; i < 4; i++) {
+        if (i == s->radar.user_cursor) continue;
+        pw_screen_clear_area(bush_xs[i] - 8, bush_ys[i] + 8, 8, 8);
     }
-
 }
 
 /**
@@ -59,16 +54,16 @@ static void draw_cursor_update(pw_state_t *s, const screen_flags_t *sf) {
 void pw_poke_radar_init(pw_state_t *s, const screen_flags_t *sf) {
     (void)sf;
     route_info_t ri;
-    pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO, (uint8_t*)&ri, sizeof(ri));
+    pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO, (uint8_t *)&ri, sizeof(ri));
 
     pw_poke_radar_choose_pokemon(&(s->radar), &ri, &health_data_cache);
 
     s->radar.user_cursor = 0;
-    s->radar.active_bush = pw_rand()%4;
+    s->radar.active_bush = pw_rand() % 4;
     s->radar.current_substate = RADAR_CHOOSING;
     s->radar.previous_substate = RADAR_CHOOSING;
     s->radar.current_level = 0;
-    s->radar.invisible_timer = 2+(pw_rand()%10)/invisible_timer_divisors[s->radar.current_level];
+    s->radar.invisible_timer = 2 + (pw_rand() % 10) / invisible_timer_divisors[s->radar.current_level];
     s->radar.active_timer = active_timers[s->radar.current_level];
     s->radar.input_accepted = false;
 }
@@ -82,44 +77,33 @@ void pw_poke_radar_init(pw_state_t *s, const screen_flags_t *sf) {
  */
 void pw_poke_radar_init_display(pw_state_t *s, const screen_flags_t *sf) {
     (void)sf;
-    switch(s->radar.current_substate) {
-    case RADAR_CHOOSING: {
-        pw_img_t bush = {
-            .width=32,
-            .height=24,
-            .data=eeprom_buf,
-            .size=192,
-            .is_flipped=false,
-            .lookup_table = {
-                .addr=PW_EEPROM_ADDR_IMG_RADAR_BUSH,
-                .use_alt=true
-            }
-        };
-        pw_eeprom_read(PW_EEPROM_ADDR_IMG_RADAR_BUSH, eeprom_buf, PW_EEPROM_SIZE_IMG_RADAR_BUSH);
+    switch (s->radar.current_substate) {
+        case RADAR_CHOOSING: {
+            pw_img_t bush = {.width = 32,
+                .height = 24,
+                .data = eeprom_buf,
+                .size = 192,
+                .is_flipped = false,
+                .lookup_table = {.addr = PW_EEPROM_ADDR_IMG_RADAR_BUSH, .use_alt = true}};
+            pw_eeprom_read(PW_EEPROM_ADDR_IMG_RADAR_BUSH, eeprom_buf, PW_EEPROM_SIZE_IMG_RADAR_BUSH);
 
-        for(uint8_t i = 0; i < 4; i++)
-            pw_screen_draw_img(&bush, bush_xs[i], bush_ys[i]);
+            for (uint8_t i = 0; i < 4; i++) pw_screen_draw_img(&bush, bush_xs[i], bush_ys[i]);
 
-        pw_screen_draw_message_with_text_box(PW_SCREEN_HEIGHT-16, 28, 16, PW_SCREEN_BLACK); // "find a pokemon!"
-        break;
-    }
-    case RADAR_BUSH_OK: {
-        pw_screen_draw_from_eeprom(
-            bush_xs[s->radar.active_bush]+16, bush_ys[s->radar.active_bush],
-            16, 16,
-            PW_EEPROM_ADDR_IMG_RADAR_CLICK,
-            PW_EEPROM_SIZE_IMG_RADAR_CLICK,
-            true
-        );
-        break;
-    }
-    case RADAR_FAILED: {
-        pw_screen_draw_message_with_text_box(PW_SCREEN_HEIGHT-16, 30, 16, PW_SCREEN_BLACK); // "it got away"
-        break;
-    }
-    case RADAR_START_BATTLE: {
-        break;
-    }
+            pw_screen_draw_message_with_text_box(PW_SCREEN_HEIGHT - 16, 28, 16, PW_SCREEN_BLACK);  // "find a pokemon!"
+            break;
+        }
+        case RADAR_BUSH_OK: {
+            pw_screen_draw_from_eeprom(bush_xs[s->radar.active_bush] + 16, bush_ys[s->radar.active_bush], 16, 16,
+                PW_EEPROM_ADDR_IMG_RADAR_CLICK, PW_EEPROM_SIZE_IMG_RADAR_CLICK, true);
+            break;
+        }
+        case RADAR_FAILED: {
+            pw_screen_draw_message_with_text_box(PW_SCREEN_HEIGHT - 16, 30, 16, PW_SCREEN_BLACK);  // "it got away"
+            break;
+        }
+        case RADAR_START_BATTLE: {
+            break;
+        }
     }
 }
 
@@ -131,65 +115,55 @@ void pw_poke_radar_init_display(pw_state_t *s, const screen_flags_t *sf) {
  *
  */
 void pw_poke_radar_update_display(pw_state_t *s, const screen_flags_t *sf) {
-    if(s->radar.current_substate != s->radar.previous_substate) {
+    if (s->radar.current_substate != s->radar.previous_substate) {
         s->radar.previous_substate = s->radar.current_substate;
         pw_poke_radar_init_display(s, sf);
         return;
     }
 
+    switch (s->radar.current_substate) {
+        case RADAR_CHOOSING: {
+            draw_cursor_update(s, sf);
 
-    switch(s->radar.current_substate) {
-    case RADAR_CHOOSING: {
-        draw_cursor_update(s, sf);
+            if (s->radar.invisible_timer > 0) {
+                s->radar.invisible_timer--;
+                break;
+            }
 
-        if(s->radar.invisible_timer > 0) {
-            s->radar.invisible_timer--;
+            pw_screen_draw_from_eeprom(bush_xs[s->radar.active_bush] + 16, bush_ys[s->radar.active_bush], 16, 16,
+                PW_EEPROM_ADDR_IMG_RADAR_BUBBLE_ONE +
+                    radar_level_to_index[s->radar.current_level] * PW_EEPROM_SIZE_IMG_RADAR_BUBBLE_ONE,
+                PW_EEPROM_SIZE_IMG_RADAR_BUBBLE_ONE, true);
+
+            if (s->radar.active_timer > 0) {
+                s->radar.active_timer--;
+                break;
+            }
+
             break;
         }
-
-        pw_screen_draw_from_eeprom(
-            bush_xs[s->radar.active_bush]+16, bush_ys[s->radar.active_bush],
-            16, 16,
-            PW_EEPROM_ADDR_IMG_RADAR_BUBBLE_ONE + radar_level_to_index[s->radar.current_level]*PW_EEPROM_SIZE_IMG_RADAR_BUBBLE_ONE,
-            PW_EEPROM_SIZE_IMG_RADAR_BUBBLE_ONE,
-            true
-        );
-
-        if(s->radar.active_timer > 0) {
-            s->radar.active_timer--;
+        case RADAR_BUSH_OK: {
+            draw_cursor_update(s, sf);
+            if (s->radar.invisible_timer > 0) s->radar.invisible_timer--;
             break;
         }
-
-        break;
-    }
-    case RADAR_BUSH_OK: {
-        draw_cursor_update(s, sf);
-        if(s->radar.invisible_timer > 0)
-            s->radar.invisible_timer--;
-        break;
-    }
-    case RADAR_FAILED: {
-        draw_cursor_update(s, sf);
-        if (sf->frame & ANIM_FRAME_NORMAL_TIME) {
-            pw_screen_draw_from_eeprom(
-                PW_SCREEN_WIDTH - 9,
-                PW_SCREEN_HEIGHT - 9,
-                8, 8,
-                PW_EEPROM_ADDR_IMG_MORE_MESSAGE,
-                PW_EEPROM_SIZE_IMG_MORE_MESSAGE,
-                false
-            );
-        } else {
-            pw_screen_clear_area(PW_SCREEN_WIDTH - 9, PW_SCREEN_HEIGHT - 9, 8, 8);
+        case RADAR_FAILED: {
+            draw_cursor_update(s, sf);
+            if (sf->frame & ANIM_FRAME_NORMAL_TIME) {
+                pw_screen_draw_from_eeprom(PW_SCREEN_WIDTH - 9, PW_SCREEN_HEIGHT - 9, 8, 8,
+                    PW_EEPROM_ADDR_IMG_MORE_MESSAGE, PW_EEPROM_SIZE_IMG_MORE_MESSAGE, false);
+            } else {
+                pw_screen_clear_area(PW_SCREEN_WIDTH - 9, PW_SCREEN_HEIGHT - 9, 8, 8);
+            }
+            break;
         }
-        break;
-    }
-    case RADAR_START_BATTLE: {
-        pw_screen_fill_area(0, s->radar.begin_timer*8, PW_SCREEN_WIDTH, 8, PW_SCREEN_BLACK);
-        pw_screen_fill_area(0, PW_SCREEN_HEIGHT-(s->radar.begin_timer+1)*8, PW_SCREEN_WIDTH, 8, PW_SCREEN_BLACK);
-        s->radar.begin_timer++;
-        break;
-    }
+        case RADAR_START_BATTLE: {
+            pw_screen_fill_area(0, s->radar.begin_timer * 8, PW_SCREEN_WIDTH, 8, PW_SCREEN_BLACK);
+            pw_screen_fill_area(
+                0, PW_SCREEN_HEIGHT - (s->radar.begin_timer + 1) * 8, PW_SCREEN_WIDTH, 8, PW_SCREEN_BLACK);
+            s->radar.begin_timer++;
+            break;
+        }
     }
 }
 
@@ -203,41 +177,41 @@ void pw_poke_radar_update_display(pw_state_t *s, const screen_flags_t *sf) {
  */
 void pw_poke_radar_handle_input(pw_state_t *s, const screen_flags_t *sf, pw_buttons_t b) {
     (void)sf;
-    switch(s->radar.current_substate) {
-    case RADAR_CHOOSING: {
-        PW_SET_REQUEST(s->requests, PW_REQUEST_REDRAW);
-        switch(b) {
-        case PW_BUTTON_L: {
-            s->radar.user_cursor = (s->radar.user_cursor-1+4)%4; // in mod 4, +3 == -1
-	    pw_audio_play_sound(SOUND_CURSOR_MOVE);
-            break;
-        }
-        case PW_BUTTON_R: {
-            s->radar.user_cursor = (s->radar.user_cursor+1)%4;
-	    pw_audio_play_sound(SOUND_CURSOR_MOVE);
-            break;
-        }
-        case PW_BUTTON_M: {
-            if(s->radar.user_cursor == s->radar.active_bush) {
-                s->radar.current_substate = RADAR_BUSH_OK;
-                s->radar.invisible_timer = s->radar.active_timer = 3;
-	        pw_audio_play_sound(SOUND_POKERADAR_FOUND_STH);
-            } else {
-                s->radar.current_substate = RADAR_FAILED;
-	        pw_audio_play_sound(SOUND_SELECTION_MISS);
+    switch (s->radar.current_substate) {
+        case RADAR_CHOOSING: {
+            PW_SET_REQUEST(s->requests, PW_REQUEST_REDRAW);
+            switch (b) {
+                case PW_BUTTON_L: {
+                    s->radar.user_cursor = (s->radar.user_cursor - 1 + 4) % 4;  // in mod 4, +3 == -1
+                    pw_audio_play_sound(SOUND_CURSOR_MOVE);
+                    break;
+                }
+                case PW_BUTTON_R: {
+                    s->radar.user_cursor = (s->radar.user_cursor + 1) % 4;
+                    pw_audio_play_sound(SOUND_CURSOR_MOVE);
+                    break;
+                }
+                case PW_BUTTON_M: {
+                    if (s->radar.user_cursor == s->radar.active_bush) {
+                        s->radar.current_substate = RADAR_BUSH_OK;
+                        s->radar.invisible_timer = s->radar.active_timer = 3;
+                        pw_audio_play_sound(SOUND_POKERADAR_FOUND_STH);
+                    } else {
+                        s->radar.current_substate = RADAR_FAILED;
+                        pw_audio_play_sound(SOUND_SELECTION_MISS);
+                    }
+                    break;
+                }
             }
             break;
         }
+        case RADAR_BUSH_OK: {
+            break;
         }
-        break;
-    }
-    case RADAR_BUSH_OK: {
-        break;
-    }
-    case RADAR_FAILED: {
-        s->radar.input_accepted = true;
-        break;
-    }
+        case RADAR_FAILED: {
+            s->radar.input_accepted = true;
+            break;
+        }
     }
 }
 
@@ -251,51 +225,48 @@ void pw_poke_radar_handle_input(pw_state_t *s, const screen_flags_t *sf, pw_butt
  */
 void pw_poke_radar_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf) {
     (void)sf;
-    switch(s->radar.current_substate) {
-    case RADAR_CHOOSING: {
-        if(s->radar.invisible_timer <= 0 && s->radar.active_timer <= 0) {
-            s->radar.current_substate = RADAR_FAILED;
-	        pw_audio_play_sound(SOUND_BATTLE_FLED);
-            PW_SET_REQUEST(s->requests, PW_REQUEST_REDRAW);
-        }
-        break;
-    }
-    case RADAR_BUSH_OK: {
-        if(s->radar.invisible_timer <= 0) {
-
-            if(s->radar.current_level >= s->radar.radar_level) {
-                //  move to battle state
-                s->radar.invisible_timer = 0;
-                s->radar.current_substate = RADAR_START_BATTLE;
-                break;
+    switch (s->radar.current_substate) {
+        case RADAR_CHOOSING: {
+            if (s->radar.invisible_timer <= 0 && s->radar.active_timer <= 0) {
+                s->radar.current_substate = RADAR_FAILED;
+                pw_audio_play_sound(SOUND_BATTLE_FLED);
+                PW_SET_REQUEST(s->requests, PW_REQUEST_REDRAW);
             }
+            break;
+        }
+        case RADAR_BUSH_OK: {
+            if (s->radar.invisible_timer <= 0) {
+                if (s->radar.current_level >= s->radar.radar_level) {
+                    //  move to battle state
+                    s->radar.invisible_timer = 0;
+                    s->radar.current_substate = RADAR_START_BATTLE;
+                    break;
+                }
 
-            s->radar.active_bush = pw_rand()%4;
-            s->radar.current_level++;                // inc exclamation level
-            s->radar.current_substate = RADAR_CHOOSING;
-            s->radar.invisible_timer = 2+(pw_rand()%10)/invisible_timer_divisors[s->radar.current_level];
-            s->radar.active_timer = active_timers[s->radar.current_level];
-            PW_SET_REQUEST(s->requests, PW_REQUEST_REDRAW);
+                s->radar.active_bush = pw_rand() % 4;
+                s->radar.current_level++;  // inc exclamation level
+                s->radar.current_substate = RADAR_CHOOSING;
+                s->radar.invisible_timer = 2 + (pw_rand() % 10) / invisible_timer_divisors[s->radar.current_level];
+                s->radar.active_timer = active_timers[s->radar.current_level];
+                PW_SET_REQUEST(s->requests, PW_REQUEST_REDRAW);
+            }
+            break;
         }
-        break;
-    }
-    case RADAR_FAILED: {
-        if(s->radar.input_accepted) {
-            p->sid = STATE_SPLASH;
+        case RADAR_FAILED: {
+            if (s->radar.input_accepted) {
+                p->sid = STATE_SPLASH;
+            }
+            break;
         }
-        break;
-    }
-    case RADAR_START_BATTLE: {
-        if(s->radar.begin_timer >= 4) {
-            p->sid = STATE_BATTLE;
-            p->battle.chosen_pokemon = s->radar.chosen_pokemon;
+        case RADAR_START_BATTLE: {
+            if (s->radar.begin_timer >= 4) {
+                p->sid = STATE_BATTLE;
+                p->battle.chosen_pokemon = s->radar.chosen_pokemon;
+            }
+            break;
         }
-        break;
     }
-    }
-
 }
-
 
 /**
  * Choose the pokemon to be encountered based on steps.
@@ -306,59 +277,52 @@ void pw_poke_radar_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t
  *
  */
 void pw_poke_radar_choose_pokemon(app_radar_t *radar, route_info_t *ri, health_data_t *hd) {
-    uint32_t today_steps =hd->today_steps;
+    uint32_t today_steps = hd->today_steps;
 
     special_inventory_t inv;
-    pw_eeprom_read(PW_EEPROM_ADDR_RECEIVED_BITFIELD, (uint8_t*)&inv, 1);
+    pw_eeprom_read(PW_EEPROM_ADDR_RECEIVED_BITFIELD, (uint8_t *)&inv, 1);
 
     int8_t event_index;
-    pw_eeprom_read(PW_EEPROM_ADDR_SPECIAL_POKEMON_EVENT_INDEX, (uint8_t*)(&event_index), 1);
+    pw_eeprom_read(PW_EEPROM_ADDR_SPECIAL_POKEMON_EVENT_INDEX, (uint8_t *)(&event_index), 1);
 
-    //pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_POKEMON, (uint8_t*)(ri->route_pokemon), PW_EEPROM_SIZE_ROUTE_POKEMON);
+    // pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_POKEMON, (uint8_t*)(ri->route_pokemon), PW_EEPROM_SIZE_ROUTE_POKEMON);
 
     bool valid_event = event_index > 0;
-    if( valid_event && !inv.event_pokemon ) {
+    if (valid_event && !inv.event_pokemon) {
         // event
         pokemon_summary_t event_pokemon;
-        pw_eeprom_read(
-            PW_EEPROM_ADDR_SPECIAL_POKEMON_BASIC_DATA,
-            (uint8_t*)&event_pokemon,
-            sizeof(event_pokemon)
-        );
+        pw_eeprom_read(PW_EEPROM_ADDR_SPECIAL_POKEMON_BASIC_DATA, (uint8_t *)&event_pokemon, sizeof(event_pokemon));
 
         struct {
             uint16_t le_steps;
             uint8_t chance;
         } special;
-        pw_eeprom_read(PW_EEPROM_ADDR_SPECIAL_POKEMON_STEPS_REQUIRED, (uint8_t*)&special, sizeof(special));
+        pw_eeprom_read(PW_EEPROM_ADDR_SPECIAL_POKEMON_STEPS_REQUIRED, (uint8_t *)&special, sizeof(special));
 
-        if(today_steps > special.le_steps) {
-            if( pw_rand()%100 < special.chance ) {
+        if (today_steps > special.le_steps) {
+            if (pw_rand() % 100 < special.chance) {
                 uint32_t rnd = pw_rand();
-                radar->chosen_pokemon = OPTION_EVENT;   // found event pokemon
-                radar->radar_level = 2+rnd%2;        // radar level = 2 or 3
+                radar->chosen_pokemon = OPTION_EVENT;  // found event pokemon
+                radar->radar_level = 2 + rnd % 2;      // radar level = 2 or 3
                 return;
             }
         }
     } else {
         // not event
 
-        uint8_t rnd = pw_rand()%100;
+        uint8_t rnd = pw_rand() % 100;
 
-        for(uint8_t i = 0; i < 3; i++) {
-            if(today_steps < ri->le_route_pokemon_steps[i]) continue;
-            if(rnd > ri->route_pokemon_percent[i]) continue;
+        for (uint8_t i = 0; i < 3; i++) {
+            if (today_steps < ri->le_route_pokemon_steps[i]) continue;
+            if (rnd > ri->route_pokemon_percent[i]) continue;
 
-            radar->chosen_pokemon = i;                  // found pokemon index
-            radar->radar_level = 2-i+pw_rand()%2;    // set radar level based on rarity
+            radar->chosen_pokemon = i;                   // found pokemon index
+            radar->radar_level = 2 - i + pw_rand() % 2;  // set radar level based on rarity
             return;
         }
-
     }
 
     // unreachable
     radar->chosen_pokemon = OPTION_C;
-    radar->radar_level = pw_rand()%2;
-
+    radar->radar_level = pw_rand() % 2;
 }
-

@@ -1,23 +1,23 @@
 #ifndef PW_POWER_H
 #define PW_POWER_H
 
-#include <stdint.h>
-#include <stddef.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #include "picowalker_structures.h"
 
 // 10 seconds for debug testing
-//#define PW_POWER_SLEEP_TIMEOUT_MS   (10000)
-#define PW_POWER_SLEEP_TIMEOUT_MS   (30000) // 30 s
+// #define PW_POWER_SLEEP_TIMEOUT_MS   (10000)
+#define PW_POWER_SLEEP_TIMEOUT_MS (30000)  // 30 s
 
-#define PW_POWER_BATTERY_CHECK_INTERVAL (15000) // 15 s
+#define PW_POWER_BATTERY_CHECK_INTERVAL (15000)  // 15 s
 
 /**
  *  Power context of the Pokewalker.
  */
 typedef struct pw_power_context_s {
-    uint8_t  battery_percent;
+    uint8_t battery_percent;
     uint64_t last_user_action_time;
     uint64_t last_bat_check;
     bool show_battery_low_icon;
@@ -46,4 +46,3 @@ extern void pw_power_enter_light_sleep();
 extern void pw_power_light_sleep_for(uint32_t ms);
 
 #endif /* PW_POWER_H */
-

@@ -8,11 +8,11 @@
 
 /// @file states.h
 
-#define PW_REQUEST_REDRAW       (1<<0)
+#define PW_REQUEST_REDRAW (1 << 0)
 
 #define PW_CLR_REQUEST(x, y) x &= ~(y)
-#define PW_SET_REQUEST(x, y) x |=  (y)
-#define PW_GET_REQUEST(x, y) (x&(y))
+#define PW_SET_REQUEST(x, y) x |= (y)
+#define PW_GET_REQUEST(x, y) (x & (y))
 
 typedef enum {
     STATE_SCREENSAVER,
@@ -128,28 +128,27 @@ typedef struct {
 typedef struct {
     uint8_t current_substate;
     uint8_t previous_substate;
-    uint8_t current_hp; // lo= , hi=
-    uint8_t chosen_pokemon; // 0..3
-    int8_t  anim_frame;
+    uint8_t current_hp;      // lo= , hi=
+    uint8_t chosen_pokemon;  // 0..3
+    int8_t anim_frame;
     uint8_t actions;
     uint8_t substate_queue_index;
     uint8_t substate_queue_len;
     uint8_t wobbles;
-    uint8_t update_hp; // bit 0 = ours, bit 1 = theirs
+    uint8_t update_hp;  // bit 0 = ours, bit 1 = theirs
     bool user_input;
 } app_battle_t;
 
 typedef struct {
-    uint8_t  switch_type;   // item/pokemon
-    uint8_t  current_substate;
-    int8_t   cursor;
-    int8_t   prev_cursor;
-    uint16_t switch_id;     // id of item to switch in
-    uint8_t  switch_index;
-    uint16_t inv_ids[3];    // full id of item/pokemon
-    uint8_t  inv_indices[3];// index of item/pokemon in route list
+    uint8_t switch_type;  // item/pokemon
+    uint8_t current_substate;
+    int8_t cursor;
+    int8_t prev_cursor;
+    uint16_t switch_id;  // id of item to switch in
+    uint8_t switch_index;
+    uint16_t inv_ids[3];     // full id of item/pokemon
+    uint8_t inv_indices[3];  // index of item/pokemon in route list
 } app_switch_t;
-
 
 typedef struct {
     uint8_t current_substate;
@@ -159,7 +158,7 @@ typedef struct {
 
 typedef struct {
     uint8_t sid;
-    uint8_t requests;   // [0]=redraw
+    uint8_t requests;  // [0]=redraw
     union {
         app_screensaver_t screensaver;
         app_splash_t splash;
@@ -180,14 +179,14 @@ typedef struct {
     uint8_t frame;
 } screen_flags_t;
 
-#define ANIM_FRAME_NORMAL_TIME_OFFSET       1
-#define ANIM_FRAME_NORMAL_TIME              (1<<ANIM_FRAME_NORMAL_TIME_OFFSET)  // every half second
-#define ANIM_FRAME_DOUBLE_TIME_OFFSET       0
-#define ANIM_FRAME_DOUBLE_TIME              (1<<ANIM_FRAME_DOUBLE_TIME_OFFSET)  // every quarter second
+#define ANIM_FRAME_NORMAL_TIME_OFFSET 1
+#define ANIM_FRAME_NORMAL_TIME        (1 << ANIM_FRAME_NORMAL_TIME_OFFSET)  // every half second
+#define ANIM_FRAME_DOUBLE_TIME_OFFSET 0
+#define ANIM_FRAME_DOUBLE_TIME        (1 << ANIM_FRAME_DOUBLE_TIME_OFFSET)  // every quarter second
 
-typedef void (*state_loop_func_t)(pw_state_t* s, pw_state_t *p, const screen_flags_t *sf);
-typedef void (*state_void_func_t)(pw_state_t* s, const screen_flags_t *sf);
-typedef void (*state_input_func_t)(pw_state_t* s, const screen_flags_t *sf, pw_buttons_t b);
+typedef void (*state_loop_func_t)(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf);
+typedef void (*state_void_func_t)(pw_state_t *s, const screen_flags_t *sf);
+typedef void (*state_input_func_t)(pw_state_t *s, const screen_flags_t *sf, pw_buttons_t b);
 
 typedef struct {
     state_loop_func_t loop;
@@ -208,7 +207,7 @@ typedef struct {
  *  - draw initialiser function
  *  - draw update function
  */
-extern const char* const state_strings[];
+extern const char *const state_strings[];
 extern const state_funcs_t STATE_FUNCS[];
 
 void pw_state_init();
@@ -228,4 +227,3 @@ void pw_send_to_splash(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf);
 void pw_error_init_display(pw_state_t *s, const screen_flags_t *sf);
 
 #endif /* PW_STATES_H */
-

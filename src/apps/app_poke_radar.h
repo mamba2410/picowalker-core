@@ -15,10 +15,10 @@
  *  idk why they did this, since all they ever do is subtract 1 again
  *  but hey, i'll be consistent
  */
-#define OPTION_A        0
-#define OPTION_B        1
-#define OPTION_C        2
-#define OPTION_EVENT    3
+#define OPTION_A     0
+#define OPTION_B     1
+#define OPTION_C     2
+#define OPTION_EVENT 3
 
 typedef enum {
     RADAR_CHOOSING,

@@ -1,18 +1,18 @@
 #ifndef PW_IR_ACTIONS_H
 #define PW_IR_ACTIONS_H
 
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
-#include "ir.h"
 #include "../states.h"
 #include "../types.h"
+#include "ir.h"
 
 /// @file ir/actions.h
 
-#define WALK_START_ANIM_FRAMES (4+1+1+2+8)
-#define WALK_END_ANIM_FRAMES (4+1+3+8)
-#define PEER_PLAY_ANIM_FRAMES (24)
+#define WALK_START_ANIM_FRAMES (4 + 1 + 1 + 2 + 8)
+#define WALK_END_ANIM_FRAMES   (4 + 1 + 3 + 8)
+#define PEER_PLAY_ANIM_FRAMES  (24)
 
 typedef enum {
     COMM_SUBSTATE_FIRST_IDLE,
@@ -45,7 +45,7 @@ typedef enum {
     COMM_SUBSTATE_SEND_TO_SPLASH,
     COMM_SUBSTATE_NO_PEER_FOUND,
     COMM_SUBSTATE_CANNOT_CONNECT,   // Walker makes this distinction
-    COMM_SUBSTATE_CANNOT_COMPLETE,  // 
+    COMM_SUBSTATE_CANNOT_COMPLETE,  //
     COMM_SUBSTATE_TRAINER_UNAVAILABLE,
     COMM_SUBSTATE_ALREADY_RECEIVED_EVENT,
     COMM_SUBSTATE_CANNOT_CONNECT_AGAIN,
@@ -61,11 +61,11 @@ ir_err_t pw_action_peer_play(app_comms_t *comms, pw_packet_t *packet, size_t max
 ir_err_t pw_action_slave_perform_request(app_comms_t *comms, pw_packet_t *packet, size_t len);
 
 ir_err_t pw_action_send_large_raw_data_from_eeprom(uint16_t src, uint16_t dst, size_t final_write_size,
-        size_t write_size, uint8_t *pcounter, pw_packet_t *packet, size_t max_len);
-ir_err_t pw_action_read_large_raw_data_from_eeprom(uint16_t src, uint16_t dst, size_t final_read_size,
-        size_t read_size, uint8_t *pcounter, pw_packet_t *packet, size_t max_len);
+    size_t write_size, uint8_t *pcounter, pw_packet_t *packet, size_t max_len);
+ir_err_t pw_action_read_large_raw_data_from_eeprom(uint16_t src, uint16_t dst, size_t final_read_size, size_t read_size,
+    uint8_t *pcounter, pw_packet_t *packet, size_t max_len);
 ir_err_t pw_action_send_large_raw_data_from_pointer(uint8_t *src, uint16_t dst, size_t final_write_size,
-        size_t write_size, uint8_t *pcounter, pw_packet_t *packet, size_t max_len);
+    size_t write_size, uint8_t *pcounter, pw_packet_t *packet, size_t max_len);
 
 ir_err_t pw_ir_eeprom_do_write(pw_packet_t *packet, size_t len);
 void pw_ir_start_walk();
