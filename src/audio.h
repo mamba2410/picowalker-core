@@ -13,10 +13,10 @@
 #define SOUND_POKERADAR_FOUND_STH   3
 #define SOUND_SELECTION_MISS        4
 #define SOUND_DOWSING_FOUND_ITEM    5
-#define SOUND_BATTLE_UNKNOWN_6      6  // Success Sound?
+#define SOUND_GIFT_RECEIVED         6
 #define SOUND_BATTLE_CAUGHT         7
-#define SOUND_BATTLE_UNKNOWN_8      8  // Mono-tone sound . . . . .
-#define SOUND_BATTLE_UNKNOWN_9      9  // Special Sound?
+#define SOUND_BATTLE_UNKNOWN_8      8  // Five monotone beeps
+#define SOUND_PEER_PLAY             9
 #define SOUND_BATTLE_ENCOUNTER      10
 #define SOUND_BATTLE_HIT            11
 #define SOUND_BATTLE_EVADE          12

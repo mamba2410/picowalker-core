@@ -678,6 +678,7 @@ static void animation_peer_play(app_comms_t *comms, const screen_flags_t *sf) {
         pw_screen_draw_img(&pokemon_buffer, 0, 0);
         pw_screen_draw_message_with_text_box(48, comms->display_message, 16, PW_SCREEN_BLACK);
         // TODO: draw music notes based on something
+        pw_audio_play_sound(SOUND_PEER_PLAY);
     } else if (comms->anim_frame < 8 + 8 + 8 + 8) {  // "Here's a gift"
         if (comms->anim_frame == 8 + 8 + 8) {
             pw_screen_clear_area(0, 0, PW_SCREEN_WIDTH, 32);
@@ -692,6 +693,7 @@ static void animation_peer_play(app_comms_t *comms, const screen_flags_t *sf) {
             pw_screen_draw_item_name_and_message(
                 PW_EEPROM_ADDR_TEXT_ITEM_NAMES + item_index * PW_EEPROM_SIZE_TEXT_ITEM_NAME_SINGLE,
                 PW_EEPROM_ADDR_TEXT_RECV, PW_SCREEN_BLACK);
+            pw_audio_play_sound(SOUND_GIFT_RECEIVED);
         }
     }
 
