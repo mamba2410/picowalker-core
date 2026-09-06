@@ -145,6 +145,29 @@ void pw_screen_draw_message_with_text_box(
     pw_screen_draw_img(&img, 0, y);
 }
 
+void pw_screen_draw_item_name_and_message(
+    pw_eeprom_addr_t item_name_addr, pw_eeprom_addr_t message_addr, pw_screen_color_t c) {
+    pw_img_t img = {.width = PW_SCREEN_WIDTH,
+        .height = 32,
+        .data = eeprom_buf,
+        .size = 2 * PW_EEPROM_SIZE_TEXT_APPEARED,
+        .lookup_table = {.addr = item_name_addr, .use_alt = false}};
+    pw_eeprom_read(item_name_addr, img.data, PW_EEPROM_SIZE_TEXT_ITEM_NAME_SINGLE);
+    pw_eeprom_read(message_addr, img.data + PW_EEPROM_SIZE_TEXT_ITEM_NAME_SINGLE, PW_EEPROM_SIZE_TEXT_APPEARED);
+    /*
+    for(int i = 1; i >= 0; i--) {
+        for(int j = 2*80 - 1; j >= 0; j--) {
+            img.data[i*2*PW_SCREEN_WIDTH+j] = img.data[i*2*80 + j];
+        }
+        if(i > 0) {
+            memset(&img.data[i*2*80], 0, 2*(16));
+        }
+    }
+    */
+    pw_screen_overlay_text_box(&img, PW_SCREEN_WIDTH, 32, c);
+    pw_screen_draw_img(&img, 0, PW_SCREEN_HEIGHT - 32);
+}
+
 void pw_screen_draw_pokemon_name_and_message(
     pw_eeprom_addr_t poke_addr, pw_eeprom_addr_t message_addr, pw_screen_color_t c) {
     pw_img_t img = {.width = PW_SCREEN_WIDTH,
