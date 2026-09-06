@@ -72,7 +72,7 @@ ir_err_t pw_ir_recv_packet(pw_packet_t *packet, size_t len, size_t *pn_read) {
     // CMD_ASSERT_MASTER (0xFA) - Master is asserting control, brings its own session ID
     // CMD_ADVERTISING (0xFC) - Advertising doesn't use session IDs
     uint8_t cmd = packet->cmd;
-    bool skip_session_check = (cmd == 0xFA || cmd == 0xFC);
+    bool skip_session_check = (cmd == CMD_ADVERTISING || cmd == CMD_ASSERT_MASTER || cmd == CMD_SLAVE_ACK);
 
     // pw_log_debug("Session - Expected: %02X%02X%02X%02X, Got: %02X%02X%02X%02X\n",
     //             g_session_id[0], g_session_id[1], g_session_id[2], g_session_id[3],
