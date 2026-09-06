@@ -281,11 +281,20 @@ ir_err_t pw_action_slave_perform_request(app_comms_t *comms, pw_packet_t *packet
             packet->cmd = CMD_PEER_PLAY_RSP;
             packet->extra = EXTRA_BYTE_FROM_WALKER;
             pw_time_delay_ms(ACTION_DELAY_MS);
+
+            // Grab their protocol version so we can repeat it back to them.
+            // Dmitry's writeup says its 0x02 but my two OG walkers are 0x00
+            // Picowalker gets assigned 0x02 from the same ROM so I'm not sure why they're different.
+            uint8_t proto_ver = packet->payload[0x5c];
+
             pw_eeprom_reliable_read(
                 PW_EEPROM_ADDR_IDENTITY_DATA_1, PW_EEPROM_ADDR_IDENTITY_DATA_2, packet->payload, sizeof(walker_info_t));
+
             // TODO: remove
-            packet->payload[0x10] = pw_rand();
-            packet->payload[0x0c] = pw_rand();
+            packet->payload[0x10] = pw_rand();  // Randomise UID
+            packet->payload[0x0c] = pw_rand();  // Randomise TID
+            packet->payload[0x5c] = proto_ver;
+
             err = pw_ir_send_packet(packet, 8 + sizeof(walker_info_t), &n_rw);
             break;
         }
@@ -375,9 +384,11 @@ ir_err_t pw_action_peer_play(app_comms_t *comms, pw_packet_t *packet, size_t max
 
             pw_eeprom_read_walker_info((walker_info_t *)packet->payload);
 
-            packet->bytes[0x18] = (uint8_t)(pw_rand() & 0xff);  // Hack to change UID each time
-            // to prevent "already connected" error
             // TODO: remove this in proper code
+            packet->payload[0x10] =
+                (uint8_t)(pw_rand() & 0xff);  // Hack to change UID each time to prevent "already connected" error
+            packet->payload[0x5c] = 0x00;  // For some reason my pokewalker uses 0x00, but picowalker is assigned 0x02
+
             err = pw_ir_send_packet(packet, 8 + sizeof(walker_info_t), &n_read);
             if (err != IR_OK) return err;
 
