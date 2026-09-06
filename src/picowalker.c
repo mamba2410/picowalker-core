@@ -31,6 +31,7 @@ pw_state_t *current_state = &a1, *pending_state = &a2;
 screen_flags_t screen_flags;
 uint8_t pw_color_mode = 0;
 bool pw_is_walking = false;
+pw_buttons_t pending_input = 0;
 
 void (*pw_current_loop)(void);
 
@@ -115,6 +116,11 @@ void pw_normal_loop() {
 
     // Update power management
     pw_power_update();
+
+    if (pending_input != 0) {
+        STATE_FUNCS[current_state->sid].input(current_state, &screen_flags, pending_input);
+        pending_input = 0;
+    }
 
     // Run current state's event loop
     STATE_FUNCS[current_state->sid].loop(current_state, pending_state, &screen_flags);
@@ -265,7 +271,8 @@ void pw_sleep_loop() {
 }
 
 void pw_state_handle_input(pw_buttons_t b) {
-    STATE_FUNCS[current_state->sid].input(current_state, &screen_flags, b);
+    pending_input = b;
+    // STATE_FUNCS[current_state->sid].input(current_state, &screen_flags, b);
 }
 
 void pw_ir_loop() {
