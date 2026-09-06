@@ -13,6 +13,23 @@
 #include "types.h"
 #include "utils.h"
 
+#define FLAGS1_FORM(x)     ((x) & 0x1f)
+#define FLAGS1_GENDER(x)   (((x) & 0x20) >> 5)
+#define FLAGS2_HAS_FORM(x) ((x) & 0x01)
+
+static uint8_t setup_flags(uint8_t flags1, uint8_t flags2) {
+    // [0..4] = form
+    // [5..6] = gender (M, F, None)
+    // [7]    = special/has form
+    uint8_t ret = 0;
+
+    ret |= FLAGS1_FORM(flags1);
+    ret |= FLAGS1_GENDER(flags1) << 5;
+    ret |= FLAGS2_HAS_FORM(flags2) << 7;
+
+    return ret;
+}
+
 void pw_log_event(event_log_item_t *item, route_info_t *ri, event_log_type_t event_type, uint16_t extra,
     bool special_route, uint8_t pokemon_idx) {
     uint8_t next_idx = health_data_cache.event_log_index;
@@ -51,7 +68,7 @@ void pw_log_event(event_log_item_t *item, route_info_t *ri, event_log_type_t eve
     }
 
     item->pokemon_friendship = ri->pokemon_happiness;
-    item->our_pokemon_flags = ri->pokemon_summary.pokemon_flags_1;  // TODO: flag shenanegans
+    item->our_pokemon_flags = setup_flags(ri->pokemon_summary.pokemon_flags_1, ri->pokemon_summary.pokemon_flags_2);
 
     if (special_route) {
         pw_eeprom_read(0xbf06, (uint8_t *)(&item->route_image_index), 1);
@@ -68,8 +85,9 @@ void pw_log_event(event_log_item_t *item, route_info_t *ri, event_log_type_t eve
         case 1:
         case 2:
         case 3: {
-            item->le_other_species = ri->route_pokemon[pokemon_idx - 1].le_species;
-            item->other_pokemon_flags = ri->route_pokemon[pokemon_idx - 1].pokemon_flags_1;  // TODO: flag shenanegans
+            pokemon_summary_t summary = ri->route_pokemon[pokemon_idx - 1];
+            item->le_other_species = summary.le_species;
+            item->other_pokemon_flags = setup_flags(summary.pokemon_flags_1, summary.pokemon_flags_2);
             break;
         }
         case 4: {
@@ -79,8 +97,11 @@ void pw_log_event(event_log_item_t *item, route_info_t *ri, event_log_type_t eve
             } else {
                 pw_eeprom_read(0xba44, (uint8_t *)&item->le_other_species, 2);  // TODO: magnic number
             }
-            pw_eeprom_read(0xbf0d, (uint8_t *)&item->other_pokemon_flags, 1);  // TODO: magic number
-                                                                               // TODO: flag shenanegans
+            uint8_t other_flags_1;
+            uint8_t other_flags_2;
+            pw_eeprom_read(0xbf0d, (uint8_t *)&other_flags_1, 1);
+            pw_eeprom_read(0xbf0e, (uint8_t *)&other_flags_2, 1);
+            item->other_pokemon_flags = setup_flags(other_flags_1, other_flags_2);
             break;
         }
         default:
@@ -107,5 +128,5 @@ void pw_log_setup_peer_play_event(event_log_item_t *item, peer_play_data_t *peer
         item->other_pokemon_name[i] = peer_data->pokemon_name[i];
     }
 
-    item->other_pokemon_flags = peer_data->pokemon_flags_1;  // TODO: flag shenanegans
+    item->other_pokemon_flags = setup_flags(peer_data->pokemon_flags_1, peer_data->pokemon_flags_2);
 }
