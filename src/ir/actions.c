@@ -288,6 +288,13 @@ ir_err_t pw_action_slave_perform_request(app_comms_t *comms, pw_packet_t *packet
             // Picowalker gets assigned 0x02 from the same ROM so I'm not sure why they're different.
             uint8_t proto_ver = packet->payload[0x5c];
 
+            {  // Limit scope of pointer recast
+                walker_info_t *wi = (walker_info_t *)packet->payload;
+                pw_log_debug("Peer play peer has version %d.%d\n", wi->protocol_ver, wi->protocol_subver);
+                pw_log_debug(
+                    "We have version %d.%d\n", walker_info_cache.protocol_ver, walker_info_cache.protocol_subver);
+            }
+
             pw_eeprom_reliable_read(
                 PW_EEPROM_ADDR_IDENTITY_DATA_1, PW_EEPROM_ADDR_IDENTITY_DATA_2, packet->payload, sizeof(walker_info_t));
 
@@ -399,6 +406,13 @@ ir_err_t pw_action_peer_play(app_comms_t *comms, pw_packet_t *packet, size_t max
         }
         case COMM_SUBSTATE_PEER_PLAY_ACK: {
             err = pw_ir_recv_packet(packet, 8 + sizeof(walker_info_t), &n_read);
+            {  // Limit scope of pointer recast
+                walker_info_t *wi = (walker_info_t *)packet->payload;
+                pw_log_debug("Peer play peer has version %d.%d\n", wi->protocol_ver, wi->protocol_subver);
+                pw_log_debug(
+                    "We have version %d.%d\n", walker_info_cache.protocol_ver, walker_info_cache.protocol_subver);
+            }
+
             switch (packet->cmd) {
                 case CMD_PEER_PLAY_RSP:
                     break;
@@ -893,11 +907,14 @@ ir_err_t pw_ir_identity_ack(pw_packet_t *packet) {
             return IR_ERR_UNEXPECTED_PACKET;
     }
 
+    packet->extra = EXTRA_BYTE_TO_WALKER;
+
     for (size_t i = 0; i < sizeof(walker_info_t); i++) {
         ((uint8_t *)(&peer_info_cache))[i] = packet->payload[i];
     }
 
-    packet->extra = EXTRA_BYTE_TO_WALKER;
+    pw_log_debug("Peer version %d.%d\n", peer_info_cache.protocol_ver, peer_info_cache.protocol_subver);
+    pw_log_debug("We have version %d.%d\n", walker_info_cache.protocol_ver, walker_info_cache.protocol_subver);
 
     // Set the rtc, that's it
     if (peer_info_cache.be_last_sync != 0) {
