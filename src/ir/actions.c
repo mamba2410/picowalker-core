@@ -988,7 +988,7 @@ ir_err_t pw_ir_end_peer_play(app_comms_t *comms) {
         pw_ir_add_peer_play_item(comms->reward_item, free_index);
         pw_log_debug("Adding item 0x%04x\n", comms->reward_item);
     } else {
-        uint16_t watts_to_add = seed / 20;
+        uint16_t watts_to_add = seed / 200;
         watts_to_add = (watts_to_add > 99) ? 99 : watts_to_add;
         pw_log_debug("Adding %u watts\n", watts_to_add);
         health_data_cache.current_watts += watts_to_add;
