@@ -12,5 +12,6 @@
 
 void pw_log_event(event_log_item_t *item, route_info_t *ri, event_log_type_t log_type, uint16_t extra,
     bool special_route, uint8_t their_pokemon_idx);
+void pw_log_setup_peer_play_event(event_log_item_t *item, peer_play_data_t *peer_data);
 
 #endif /* EVENT_LOG_H */

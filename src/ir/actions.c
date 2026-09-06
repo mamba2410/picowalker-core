@@ -338,9 +338,7 @@ ir_err_t pw_action_slave_perform_request(app_comms_t *comms, pw_packet_t *packet
             packet->cmd = CMD_PEER_PLAY_END;
             packet->extra = EXTRA_BYTE_FROM_WALKER;
             err = pw_ir_send_packet(packet, 8, &n_rw);
-            comms->current_substate = COMM_SUBSTATE_DISPLAY_PEER_PLAY_ANIMATION;
-            comms->anim_frame = 0;
-            comms->final_anim_frame = PEER_PLAY_ANIM_FRAMES;
+            comms->current_substate = COMM_SUBSTATE_CALCULATE_PEER_PLAY_GIFT;
             break;
         }
         case CMD_PEER_PLAY_SEEN: {
@@ -936,4 +934,70 @@ ir_err_t pw_ir_identity_ack(pw_packet_t *packet) {
 
     ir_err_t err = pw_ir_send_packet(packet, 8, &n_rw);
     return err;
+}
+
+uint16_t pw_ir_calculate_peer_play_item(uint32_t seed) {
+    (void)seed;
+    return 0;
+}
+
+void pw_ir_add_peer_play_item(uint16_t item, uint8_t index) {
+    struct item {
+        uint16_t le_item;
+        uint16_t unused;
+    } items[10];
+    pw_eeprom_read(PW_EEPROM_ADDR_PEER_PLAY_ITEMS, (uint8_t *)items, PW_EEPROM_SIZE_PEER_PLAY_ITEMS);
+
+    items[index].le_item = item;
+
+    pw_eeprom_write(PW_EEPROM_ADDR_PEER_PLAY_ITEMS, (uint8_t *)items, PW_EEPROM_SIZE_PEER_PLAY_ITEMS);
+}
+
+ir_err_t pw_ir_end_peer_play() {
+    peer_play_data_t peer_data;
+    pw_eeprom_read(PW_EEPROM_ADDR_CURRENT_PEER_DATA, (uint8_t *)&peer_data, sizeof(peer_play_data_t));
+
+    uint32_t seed = 10 * (peer_data.le_current_watts + health_data_cache.current_watts) + peer_data.le_current_steps +
+                    health_data_cache.today_steps;
+    seed = (seed > 20000) ? 20000 : seed;
+
+    pw_log_debug("Peer play seed: %u\n", seed);
+
+    uint8_t free_index = pw_item_get_free_peer_play_index();
+    pw_log_debug("Free index: %u\n", free_index);
+
+    if (free_index != 0xff) {
+        uint16_t item = pw_ir_calculate_peer_play_item(seed);
+        pw_ir_add_peer_play_item(item, free_index);
+        pw_log_debug("Adding item 0x%04x\n", item);
+    } else {
+        uint16_t watts_to_add = seed / 20;
+        watts_to_add = (watts_to_add > 99) ? 99 : watts_to_add;
+        pw_log_debug("Adding %u watts\n", watts_to_add);
+        health_data_cache.current_watts += watts_to_add;
+        if (health_data_cache.current_watts > 9999) {
+            health_data_cache.current_watts = 9999;
+        }
+
+        // After 10 peers, we don't record any more
+        // TODO: Not sure if this is correct behaviour
+        return IR_OK;
+    }
+
+    {  // Limit pointer scope
+        event_log_item_t *item = (event_log_item_t *)eeprom_buf;
+        route_info_t *route_info = (route_info_t *)(eeprom_buf + sizeof(event_log_item_t));
+        pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO, (uint8_t *)route_info, PW_EEPROM_SIZE_ROUTE_INFO);
+
+        pw_log_setup_peer_play_event(item, &peer_data);
+        event_log_type_t event_type = 1 + free_index;
+
+        // TODO: special route
+        pw_log_event(item, route_info, event_type, 0, false, 0);
+        pw_log_debug("Logged peer play event\n");
+    }
+
+    pw_peer_shuffle_team_data();
+
+    return IR_OK;
 }

@@ -5,6 +5,7 @@
 
 #include "eeprom.h"
 #include "eeprom_map.h"
+#include "globals.h"
 #include "states.h"
 #include "types.h"
 
@@ -229,4 +230,35 @@ uint8_t pw_item_id_to_item_index(uint16_t id) {
 
     // unreachable, hopefully
     return 0;
+}
+
+uint8_t pw_item_get_free_peer_play_index() {
+    struct item {
+        uint16_t le_item;
+        uint16_t unused;
+    } items[10];
+    pw_eeprom_read(PW_EEPROM_ADDR_PEER_PLAY_ITEMS, (uint8_t *)items, PW_EEPROM_SIZE_PEER_PLAY_ITEMS);
+
+    for (uint8_t i = 0; i < 10; i++) {
+        if (items[i].le_item == 0x0000 || items[i].le_item == 0xffff) return i;
+    }
+
+    return 0xff;
+}
+
+/*
+ * Move MET_PEER_DATA array down by one and append the CURRENT_PEER_TEAM_DATA to the beginning
+ */
+void pw_peer_shuffle_team_data() {
+    // Move all data down by one index
+    for (size_t i = 9; i != 0; i--) {
+        pw_eeprom_read(PW_EEPROM_ADDR_MET_PEER_DATA + (i - 1) * PW_EEPROM_SIZE_CURRENT_PEER_TEAM_DATA, eeprom_buf,
+            PW_EEPROM_SIZE_CURRENT_PEER_TEAM_DATA);
+        pw_eeprom_write(PW_EEPROM_ADDR_MET_PEER_DATA + i * PW_EEPROM_SIZE_CURRENT_PEER_TEAM_DATA, eeprom_buf,
+            PW_EEPROM_SIZE_CURRENT_PEER_TEAM_DATA);
+    }
+
+    // Copy current peer data to start
+    pw_eeprom_read(PW_EEPROM_ADDR_CURRENT_PEER_TEAM_DATA, eeprom_buf, PW_EEPROM_SIZE_CURRENT_PEER_TEAM_DATA);
+    pw_eeprom_write(PW_EEPROM_ADDR_MET_PEER_DATA, eeprom_buf, PW_EEPROM_SIZE_CURRENT_PEER_TEAM_DATA);
 }
