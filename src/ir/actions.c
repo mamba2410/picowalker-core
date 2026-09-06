@@ -325,8 +325,8 @@ ir_err_t pw_action_slave_perform_request(app_comms_t *comms, pw_packet_t *packet
             PW_EEPROM_ADDR_IDENTITY_DATA_1, PW_EEPROM_ADDR_IDENTITY_DATA_2, eeprom_buf, sizeof(walker_info_t));
         walker_info_t *wi = (walker_info_t *)(eeprom_buf);
         // TODO: read from global health data
-        ppd->le_current_watts = 9999;
-        ppd->le_current_steps = 99999;
+        ppd->be_current_watts = 9999;
+        ppd->be_current_steps = 99999;
         ppd->le_unk0 = wi->le_unk0;
         ppd->le_unk2 = wi->le_unk2;
         for (size_t i = 0; i < 8; i++) ppd->trainer_name[i] = wi->le_trainer_name[i];
@@ -972,9 +972,11 @@ ir_err_t pw_ir_end_peer_play(app_comms_t *comms) {
     peer_play_data_t peer_data;
     pw_eeprom_read(PW_EEPROM_ADDR_CURRENT_PEER_DATA, (uint8_t *)&peer_data, sizeof(peer_play_data_t));
 
-    uint32_t seed = 10 * (peer_data.le_current_watts + health_data_cache.current_watts) + peer_data.le_current_steps +
+    uint32_t seed = 10 * (peer_data.be_current_watts + health_data_cache.current_watts) + peer_data.be_current_steps +
                     health_data_cache.today_steps;
     seed = (seed > 20000) ? 20000 : seed;
+    pw_log_debug("Watts: %u, %u; Steps: %u, %u\n", peer_data.be_current_watts, health_data_cache.current_watts,
+        peer_data.be_current_steps, health_data_cache.today_steps);
 
     pw_log_debug("Peer play seed: %u\n", seed);
 
@@ -982,7 +984,7 @@ ir_err_t pw_ir_end_peer_play(app_comms_t *comms) {
     pw_log_debug("Free index: %u\n", free_index);
 
     if (free_index != 0xff) {
-        pw_ir_calculate_peer_play_item(seed, peer_data.le_current_steps < health_data_cache.today_steps, comms);
+        pw_ir_calculate_peer_play_item(seed, peer_data.be_current_steps < health_data_cache.today_steps, comms);
         pw_ir_add_peer_play_item(comms->reward_item, free_index);
         pw_log_debug("Adding item 0x%04x\n", comms->reward_item);
     } else {
@@ -1019,10 +1021,10 @@ ir_err_t pw_ir_end_peer_play(app_comms_t *comms) {
 }
 
 static void create_peer_play_data(peer_play_data_t *ppd) {
-    ppd->le_current_steps = health_data_cache.today_steps;
-    ppd->le_current_watts = health_data_cache.current_watts;
-    // ppd->le_current_steps = 9999;
-    // ppd->le_current_watts = 9999;
+    ppd->be_current_steps = health_data_cache.today_steps;
+    ppd->be_current_watts = health_data_cache.current_watts;
+    // ppd->be_current_steps = 9999;
+    // ppd->be_current_watts = 9999;
 
     ppd->le_unk0 = walker_info_cache.le_unk0;
     ppd->le_unk2 = walker_info_cache.le_unk2;
