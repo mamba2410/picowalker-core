@@ -1,6 +1,7 @@
 #include "timer.h"
 
 #include <stdint.h>
+#include <string.h>  // memset
 
 #include "accel.h"
 #include "debug_log.h"
@@ -66,7 +67,13 @@ void pw_rtc_regular_processing() {
         pw_eeprom_write(
             PW_EEPROM_ADDR_HISTORIC_STEP_COUNT, (uint8_t *)historic_steps, PW_EEPROM_SIZE_HISTORIC_STEP_COUNT);
 
-        // supposed to erase peer team area 0xDC00/CURRENT_PEER_TEAM_DATA
+        // Clear met peer data so we can play with them again
+        memset(eeprom_buf, 0xff, sizeof(unique_identity_data_t));
+        for (size_t i = 0; i < 10; i++) {
+            pw_eeprom_addr_t unique_data_addr =
+                PW_EEPROM_ADDR_MET_PEER_DATA + i * PW_EEPROM_SIZE_MET_PEER_DATA_SINGLE + 8;
+            pw_eeprom_write(unique_data_addr, eeprom_buf, sizeof(unique_identity_data_t));
+        }
     }
 }
 

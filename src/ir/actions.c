@@ -23,6 +23,7 @@
 ir_err_t pw_ir_eeprom_do_write(pw_packet_t *packet, size_t len);
 ir_err_t pw_ir_identity_ack(pw_packet_t *packet);
 static void create_peer_play_data(peer_play_data_t *ppd);
+static bool peer_play_previously_interacted(const unique_identity_data_t *peer);
 
 /*
  *  Listen for a packet.
@@ -293,14 +294,21 @@ ir_err_t pw_action_slave_perform_request(app_comms_t *comms, pw_packet_t *packet
                 pw_log_debug("Peer play peer has version %d.%d\n", wi->protocol_ver, wi->protocol_subver);
                 pw_log_debug(
                     "We have version %d.%d\n", walker_info_cache.protocol_ver, walker_info_cache.protocol_subver);
+                bool has_played_with_peer = peer_play_previously_interacted(&wi->identity_data);
+                if (has_played_with_peer) {
+                    pw_log_debug("Already seen peer\n");
+                    packet->cmd = CMD_PEER_PLAY_SEEN;
+                    err = pw_ir_send_packet(packet, 8, &n_rw);
+                    break;
+                }
             }
 
             pw_eeprom_reliable_read(
                 PW_EEPROM_ADDR_IDENTITY_DATA_1, PW_EEPROM_ADDR_IDENTITY_DATA_2, packet->payload, sizeof(walker_info_t));
 
             // TODO: remove
-            packet->payload[0x10] = pw_rand();  // Randomise UID
-            packet->payload[0x0c] = pw_rand();  // Randomise TID
+            // packet->payload[0x10] = pw_rand();  // Randomise UID
+            // packet->payload[0x0c] = pw_rand();  // Randomise TID
             packet->payload[0x5c] = proto_ver;
 
             err = pw_ir_send_packet(packet, 8 + sizeof(walker_info_t), &n_rw);
@@ -391,17 +399,26 @@ ir_err_t pw_action_peer_play(app_comms_t *comms, pw_packet_t *packet, size_t max
             packet->cmd = CMD_PEER_PLAY_START;
             packet->extra = EXTRA_BYTE_FROM_WALKER;
 
-            pw_eeprom_read_walker_info((walker_info_t *)packet->payload);
+            walker_info_t *wi = (walker_info_t *)packet->payload;
 
             // TODO: remove this in proper code
-            packet->payload[0x10] =
-                (uint8_t)(pw_rand() & 0xff);  // Hack to change UID each time to prevent "already connected" error
-            packet->payload[0x5c] = 0x00;  // For some reason my pokewalker uses 0x00, but picowalker is assigned 0x02
+            // packet->payload[0x10] =
+            //(uint8_t)(pw_rand() & 0xff);  // Hack to change UID each time to prevent "already connected" error
+            // packet->payload[0x5c] = 0x00;  // For some reason my pokewalker uses 0x00, but picowalker is assigned
+            // 0x02
+            bool has_played_with_peer = peer_play_previously_interacted(&wi->identity_data);
+            if (has_played_with_peer) {
+                pw_log_debug("Already played\n");
+                packet->cmd = CMD_PEER_PLAY_SEEN;
+                err = pw_ir_send_packet(packet, 8, &n_read);
+                comms->current_substate = COMM_SUBSTATE_CANNOT_CONNECT_AGAIN;
+            } else {
+                pw_eeprom_read_walker_info((walker_info_t *)packet->payload);
+                err = pw_ir_send_packet(packet, 8 + sizeof(walker_info_t), &n_read);
+                if (err != IR_OK) return err;
+                comms->current_substate = COMM_SUBSTATE_PEER_PLAY_ACK;
+            }
 
-            err = pw_ir_send_packet(packet, 8 + sizeof(walker_info_t), &n_read);
-            if (err != IR_OK) return err;
-
-            comms->current_substate = COMM_SUBSTATE_PEER_PLAY_ACK;
             break;
         }
         case COMM_SUBSTATE_PEER_PLAY_ACK: {
@@ -1038,4 +1055,16 @@ static void create_peer_play_data(peer_play_data_t *ppd) {
 
     pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO + 10, (uint8_t *)ppd->pokemon_name, 22);
     pw_eeprom_read(PW_EEPROM_ADDR_IDENTITY_DATA_1 + 72, (uint8_t *)ppd->trainer_name, 16);
+}
+
+static bool peer_play_previously_interacted(const unique_identity_data_t *peer) {
+    for (size_t i = 0; i < 10; i++) {
+        pw_eeprom_addr_t peer_base = PW_EEPROM_ADDR_MET_PEER_DATA + i * PW_EEPROM_SIZE_MET_PEER_DATA_SINGLE;
+        pw_eeprom_read(peer_base + 8, eeprom_buf, sizeof(unique_identity_data_t));
+        if (memcmp(peer->data, eeprom_buf, sizeof(unique_identity_data_t)) == 0) {
+            return true;
+        }
+    }
+
+    return false;
 }
