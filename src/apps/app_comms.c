@@ -186,19 +186,7 @@ void pw_comms_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf)
             if (comms->timer == 0) {
                 comms->current_substate = COMM_SUBSTATE_FIRST_IDLE;
                 comms->advertising_attempts = 0;
-                comms->anim_frame = 0;
             }
-            err = IR_OK;
-            break;
-        }
-        case COMM_SUBSTATE_CANNOT_COMPLETE:
-        case COMM_SUBSTATE_TRAINER_UNAVAILABLE:
-        case COMM_SUBSTATE_ALREADY_RECEIVED_EVENT:
-        case COMM_SUBSTATE_CANNOT_CONNECT_AGAIN:
-        case COMM_SUBSTATE_COULD_NOT_RECEIVE:
-        case COMM_SUBSTATE_COMPLETED:
-        case COMM_SUBSTATE_NO_PEER_FOUND: {
-            // Spin while we wait for user input
             err = IR_OK;
             break;
         }
@@ -221,15 +209,24 @@ void pw_comms_event_loop(pw_state_t *s, pw_state_t *p, const screen_flags_t *sf)
 
             // TODO: Record who we played with (copy TeamData from 0xdc00 to array in 0xde24)
 
-            err = pw_ir_end_peer_play();
+            err = pw_ir_end_peer_play(comms);
 
             // Move on to showing the animation
             comms->current_substate = COMM_SUBSTATE_DISPLAY_PEER_PLAY_ANIMATION;
             comms->anim_frame = 0;
-            comms->final_anim_frame = PEER_PLAY_ANIM_FRAMES;
             break;
         }
-
+        case COMM_SUBSTATE_CANNOT_COMPLETE:
+        case COMM_SUBSTATE_TRAINER_UNAVAILABLE:
+        case COMM_SUBSTATE_ALREADY_RECEIVED_EVENT:
+        case COMM_SUBSTATE_CANNOT_CONNECT_AGAIN:
+        case COMM_SUBSTATE_COULD_NOT_RECEIVE:
+        case COMM_SUBSTATE_COMPLETED:
+        case COMM_SUBSTATE_NO_PEER_FOUND: {
+            // Spin while we wait for user input
+            err = IR_OK;
+            break;
+        }
         case COMM_SUBSTATE_DISPLAY_PEER_PLAY_ANIMATION:
         case COMM_SUBSTATE_DISPLAY_WALK_END_ANIMATION:
         case COMM_SUBSTATE_DISPLAY_WALK_START_ANIMATION: {
@@ -678,7 +675,7 @@ static void animation_peer_play(app_comms_t *comms, const screen_flags_t *sf) {
         pw_screen_get_blank_image(&pokemon_buffer, PW_SCREEN_WIDTH, PW_SCREEN_HEIGHT / 2);
         draw_peer_pair_at(&pokemon_buffer, 8, sf);
         pw_screen_draw_img(&pokemon_buffer, 0, 0);
-        pw_screen_draw_message_with_text_box(48, 47, 16, PW_SCREEN_BLACK);
+        pw_screen_draw_message_with_text_box(48, comms->display_message, 16, PW_SCREEN_BLACK);
         // TODO: draw music notes based on something
     } else if (comms->anim_frame < 8 + 8 + 8 + 8) {  // "Here's a gift"
         if (comms->anim_frame == 8 + 8 + 8) {
@@ -690,7 +687,7 @@ static void animation_peer_play(app_comms_t *comms, const screen_flags_t *sf) {
         }
     } else if (comms->anim_frame < 8 + 8 + 8 + 8 + 8) {  // "XX received"
         if (comms->anim_frame == 8 + 8 + 8 + 8) {
-            uint8_t item_index = pw_item_id_to_item_index(comms->gift_item);
+            uint8_t item_index = pw_item_id_to_item_index(comms->reward_item);
             pw_screen_draw_item_name_and_message(
                 PW_EEPROM_ADDR_TEXT_ITEM_NAMES + item_index * PW_EEPROM_SIZE_TEXT_ITEM_NAME_SINGLE,
                 PW_EEPROM_ADDR_TEXT_RECV, PW_SCREEN_BLACK);

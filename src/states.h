@@ -101,7 +101,8 @@ typedef struct {
     uint16_t timer;
     uint8_t anim_frame;
     uint8_t final_anim_frame;
-    uint8_t gift_item;
+    uint8_t reward_item;
+    uint8_t display_message;
     bool first_comms;
 } app_comms_t;
 

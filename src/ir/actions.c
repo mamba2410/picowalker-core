@@ -936,9 +936,28 @@ ir_err_t pw_ir_identity_ack(pw_packet_t *packet) {
     return err;
 }
 
-uint16_t pw_ir_calculate_peer_play_item(uint32_t seed) {
-    (void)seed;
-    return 0;
+void pw_ir_calculate_peer_play_item(uint32_t seed, bool our_steps_more, app_comms_t *comms) {
+    uint8_t reward_index = 0;
+    if (seed < 2500) {
+        reward_index = our_steps_more ? 8 : 9;
+        comms->display_message = 48;
+    } else if (seed < 5000) {
+        reward_index = our_steps_more ? 6 : 7;
+        comms->display_message = 47;
+    } else if (seed < 10000) {
+        reward_index = our_steps_more ? 4 : 5;
+        comms->display_message = 46;
+    } else if (seed < 20000) {
+        reward_index = our_steps_more ? 2 : 3;
+        comms->display_message = 45;
+    } else {
+        reward_index = our_steps_more ? 0 : 1;
+        comms->display_message = 44;
+    }
+
+    route_info_t *route_info = (route_info_t *)(eeprom_buf);
+    pw_eeprom_read(PW_EEPROM_ADDR_ROUTE_INFO, (uint8_t *)route_info, PW_EEPROM_SIZE_ROUTE_INFO);
+    comms->reward_item = route_info->le_route_items[reward_index];
 }
 
 void pw_ir_add_peer_play_item(uint16_t item, uint8_t index) {
@@ -953,7 +972,7 @@ void pw_ir_add_peer_play_item(uint16_t item, uint8_t index) {
     pw_eeprom_write(PW_EEPROM_ADDR_PEER_PLAY_ITEMS, (uint8_t *)items, PW_EEPROM_SIZE_PEER_PLAY_ITEMS);
 }
 
-ir_err_t pw_ir_end_peer_play() {
+ir_err_t pw_ir_end_peer_play(app_comms_t *comms) {
     peer_play_data_t peer_data;
     pw_eeprom_read(PW_EEPROM_ADDR_CURRENT_PEER_DATA, (uint8_t *)&peer_data, sizeof(peer_play_data_t));
 
@@ -967,9 +986,9 @@ ir_err_t pw_ir_end_peer_play() {
     pw_log_debug("Free index: %u\n", free_index);
 
     if (free_index != 0xff) {
-        uint16_t item = pw_ir_calculate_peer_play_item(seed);
-        pw_ir_add_peer_play_item(item, free_index);
-        pw_log_debug("Adding item 0x%04x\n", item);
+        pw_ir_calculate_peer_play_item(seed, peer_data.le_current_steps < health_data_cache.today_steps, comms);
+        pw_ir_add_peer_play_item(comms->reward_item, free_index);
+        pw_log_debug("Adding item 0x%04x\n", comms->reward_item);
     } else {
         uint16_t watts_to_add = seed / 20;
         watts_to_add = (watts_to_add > 99) ? 99 : watts_to_add;
